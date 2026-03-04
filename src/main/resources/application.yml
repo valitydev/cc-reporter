@@ -29,8 +29,8 @@ spring:
       auto-offset-reset: earliest
       max-poll-records: ${ccr.kafka.consumer.max-poll-records}
       properties:
-        max.poll.interval.ms: 30000
-        session.timeout.ms: 30000
+        max.poll.interval.ms: ${ccr.kafka.consumer.max-poll-interval-ms}
+        session.timeout.ms: ${ccr.kafka.consumer.session-timeout-ms}
     listener:
       ack-mode: manual
 
@@ -65,6 +65,8 @@ ccr:
     consumer:
       group-id: cc-reporter
       max-poll-records: 20
+      max-poll-interval-ms: 30000
+      session-timeout-ms: 30000
       poll-timeout-ms: 3000
       payments-concurrency: 1
       withdrawals-concurrency: 1
