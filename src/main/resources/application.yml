@@ -1,0 +1,122 @@
+server:
+  port: "${server.port}"
+
+spring:
+  application:
+    name: "${project.name}"
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: org.postgresql.Driver
+    url: "${db.url}"
+    username: '${db.user}'
+    password: "${db.password}"
+    hikari:
+      idle-timeout: 30000
+      maximum-pool-size: 2
+      data-source-properties:
+        reWriteBatchedInserts: true
+  flyway:
+    schemas: "${db.schema}"
+    postgresql:
+      transactional-lock: false
+  kafka:
+    bootstrap-servers: localhost:9092
+    client-id: cc-reporter
+    consumer:
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      max-poll-records: 20
+      properties:
+        max.poll.interval.ms: 30000
+        session.timeout.ms: 30000
+
+management:
+  server:
+    port: "${management.port}"
+  metrics:
+    export:
+      prometheus:
+        enabled: false
+    tags:
+      application: "${project.name}"
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
+kafka:
+  consumer:
+    group-id: "CCReporterListener"
+    invoicing-concurrency: 7
+    party-management-concurrency: 7
+    recurrent-payment-tool-concurrency: 7
+    rate-concurrency: 7
+    deposit-concurrency: 7
+    dominant-concurrency: 7
+    withdrawal-concurrency: 7
+    source-concurrency: 7
+    destination-concurrency: 7
+    withdrawal-session-concurrency: 7
+    limit-config-concurrency: 7
+    exrate-concurrency: 7
+    withdrawal-adjustment-concurrency: 7
+    dominant-error-backoff-interval-ms: 30000
+  topics:
+    invoice:
+      id: mg-invoice-100-2
+      enabled: false
+    recurrent-payment-tool:
+      id: mg-events-recurrent-paytools
+      enabled: false
+    party-management:
+      id: mg-events-party
+      enabled: false
+      consumer.group-id: "CCReporterListenerPartyManagement"
+    rate:
+      id: mg-events-rates
+      enabled: false
+    dominant:
+      id: mg-events-ff-dominant
+      enabled: false
+    deposit:
+      id: mg-events-ff-deposit
+      enabled: false
+    withdrawal:
+      id: mg-events-ff-withdrawal
+      enabled: false
+    withdrawal-session:
+      id: mg-events-ff-withdrawal-session
+      enabled: false
+    source:
+      id: mg-events-ff-source
+      enabled: false
+    destination:
+      id: mg-events-ff-destination
+      enabled: false
+    limit-config:
+      id: mg-events-lim-config
+      enabled: false
+    exrate:
+      id: etl-exchange-rate
+      enabled: false
+      consumer.group-id: "cc-reporter-exrate"
+    withdrawal-adjustment:
+      id: mg-events-ff-withdrawal
+      enabled: false
+      consumer.group-id: "cc-reporter-withdrawal-adjustment"
+
+cache:
+  party-shop:
+    size: 10000
+    expire:
+      after:
+        sec: 600
