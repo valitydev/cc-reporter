@@ -14,16 +14,21 @@ CREATE TYPE ccr.report_status AS ENUM (
 );
 
 CREATE TYPE ccr.report_type AS ENUM (
-  'payments_csv',
-  'withdrawals_csv'
+  'payments',
+  'withdrawals'
+);
+
+CREATE TYPE ccr.file_type AS ENUM (
+  'csv'
 );
 
 CREATE TABLE ccr.report_job (
   id BIGSERIAL PRIMARY KEY,
 
   report_type ccr.report_type NOT NULL,
-  source_query_json JSONB NOT NULL,
-  source_query_hash VARCHAR(64) NOT NULL,
+  file_type ccr.file_type NOT NULL,
+  query_json JSONB NOT NULL,
+  query_hash VARCHAR(64) NOT NULL,
 
   requested_time_from TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   requested_time_to TIMESTAMP WITHOUT TIME ZONE NOT NULL,
@@ -56,6 +61,7 @@ CREATE TABLE ccr.report_file (
   report_id BIGINT NOT NULL REFERENCES ccr.report_job(id) ON DELETE CASCADE,
 
   file_id VARCHAR NOT NULL UNIQUE,
+  file_type ccr.file_type NOT NULL,
   bucket VARCHAR NOT NULL,
   object_key VARCHAR NOT NULL,
   filename VARCHAR NOT NULL,
@@ -67,6 +73,7 @@ CREATE TABLE ccr.report_file (
 
   created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
 
+  CONSTRAINT report_file_report_id_uniq UNIQUE (report_id),
   CONSTRAINT report_file_storage_uniq UNIQUE (bucket, object_key)
 );
 
@@ -195,8 +202,8 @@ CREATE INDEX report_job_processing_updated_at_idx
 CREATE INDEX report_job_time_range_idx
   ON ccr.report_job (requested_time_from, requested_time_to, id DESC);
 
-CREATE INDEX report_job_report_type_created_at_idx
-  ON ccr.report_job (report_type, created_at DESC, id DESC);
+CREATE INDEX report_job_report_type_file_type_created_at_idx
+  ON ccr.report_job (report_type, file_type, created_at DESC, id DESC);
 
 CREATE INDEX report_job_expires_at_idx
   ON ccr.report_job (expires_at)
@@ -205,9 +212,6 @@ CREATE INDEX report_job_expires_at_idx
 CREATE UNIQUE INDEX report_job_idempotency_key_uniq
   ON ccr.report_job (created_by, idempotency_key)
   WHERE idempotency_key IS NOT NULL;
-
-CREATE INDEX report_file_report_id_idx
-  ON ccr.report_file (report_id, created_at DESC, id DESC);
 
 CREATE INDEX report_audit_event_report_id_idx
   ON ccr.report_audit_event (report_id, created_at DESC, id DESC);

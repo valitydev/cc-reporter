@@ -1,6 +1,11 @@
 # CSV Report Format (CC Reporter, final candidate)
 
-Документ описывает, как будет выглядеть итоговый CSV-файл для выгрузки. Для каждого типа отчета используется один фиксированный формат без дополнительных профилей.
+Документ описывает, как будет выглядеть итоговый CSV-файл для выгрузки.
+В терминах API:
+1. `report_type` задает бизнес-сущность отчета (`payments` или `withdrawals`);
+2. `file_type` задает формат файла (сейчас это только `csv`).
+
+Для каждой пары `report_type + file_type` используется один фиксированный формат без дополнительных профилей.
 
 Здесь зафиксированы:
 
@@ -20,7 +25,7 @@
 8. Порядок колонок фиксирован и меняется только новой версией контракта.
 9. Понятные человеку названия (`shop_name`, `wallet_name`, `provider_name`, `terminal_name`) могут использоваться для поиска внутри системы, но в текущем CSV-контракте не считаются окончательно зафиксированными.
 
-## Payments CSV (`payments_csv`)
+## Payments CSV (`report_type = payments`, `file_type = csv`)
 
 ### Порядок колонок в файле
 
@@ -87,7 +92,7 @@
 | `original_currency` | `payment_txn_current.original_currency` |
 | `converted_amount` | `payment_txn_current.converted_amount` |
 
-## Withdrawals CSV (`withdrawals_csv`)
+## Withdrawals CSV (`report_type = withdrawals`, `file_type = csv`)
 
 ### Порядок колонок в файле
 
