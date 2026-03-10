@@ -1,0 +1,94 @@
+server:
+  port: ${server.port}
+
+spring:
+  application:
+    name: ${project.name}
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: org.postgresql.Driver
+    url: ${db.url}
+    username: ${db.user}
+    password: ${db.password}
+    hikari:
+      idle-timeout: 30000
+      maximum-pool-size: 2
+      data-source-properties:
+        reWriteBatchedInserts: true
+  flyway:
+    enabled: true
+    schemas: ${db.schema}
+    postgresql:
+      transactional-lock: false
+  kafka:
+    bootstrap-servers: localhost:9092
+    client-id: cc-reporter
+    consumer:
+      group-id: ${ccr.kafka.consumer.group-id}
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      max-poll-records: ${ccr.kafka.consumer.max-poll-records}
+      properties:
+        max.poll.interval.ms: ${ccr.kafka.consumer.max-poll-interval-ms}
+        session.timeout.ms: ${ccr.kafka.consumer.session-timeout-ms}
+    listener:
+      ack-mode: manual
+
+management:
+  server:
+    port: ${management.port}
+  metrics:
+    export:
+      prometheus:
+        enabled: false
+    tags:
+      application: ${project.name}
+  endpoint:
+    health:
+      enabled: false
+      probes:
+        enabled: false
+      show-details: never
+    metrics:
+      enabled: false
+    prometheus:
+      enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      discovery:
+        enabled: false
+
+ccr:
+  kafka:
+    consumer:
+      group-id: cc-reporter
+      max-poll-records: 20
+      max-poll-interval-ms: 30000
+      session-timeout-ms: 30000
+      poll-timeout-ms: 3000
+      payments-concurrency: 1
+      withdrawals-concurrency: 1
+      error-backoff-interval-ms: 30000
+      error-max-attempts: -1
+    topics:
+      payments:
+        id: ""
+        enabled: false
+      withdrawals:
+        id: ""
+        enabled: false
+  scheduler:
+    enabled: false
+    poll-interval-ms: 10000
+    lock-timeout-ms: 30000
+    stale-processing-timeout-ms: 300000
+  report:
+    max-attempts: 5
+    presigned-url-ttl-sec: 900
+    expiration-sec: 604800
+  storage:
+    file-storage:
+      url: ""
+      networkTimeout: 5000
