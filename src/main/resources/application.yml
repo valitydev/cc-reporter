@@ -88,6 +88,11 @@ ccr:
     max-attempts: 5
     presigned-url-ttl-sec: 900
     expiration-sec: 604800
+  api:
+    path: /ccreports
+    created-by-header: X-User-Id
+    default-page-size: 50
+    max-page-size: 100
   storage:
     file-storage:
       url: ""
