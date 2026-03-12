@@ -55,14 +55,14 @@ public class PaymentEventProjector {
                     eventCreatedAt,
                     payment.isSetPartyRef() ? payment.getPartyRef().getId() : null,
                     payment.isSetShopRef() ? payment.getShopRef().getId() : null,
-                    null,
+                    null, // TODO CCR-INGESTION: confirm event-native source for shop_name/current-state display names.
                     Instant.parse(payment.getCreatedAt()),
                     terminalFinalizedAt(payment.getStatus(), eventCreatedAt),
                     status,
                     route != null ? String.valueOf(route.getProvider().getId()) : null,
-                    null,
+                    null, // TODO CCR-INGESTION: confirm event-native source for provider_name in current-state.
                     route != null ? String.valueOf(route.getTerminal().getId()) : null,
-                    null,
+                    null, // TODO CCR-INGESTION: confirm event-native source for terminal_name in current-state.
                     cost.getAmount(),
                     null,
                     cost.getCurrency().getSymbolicCode(),
@@ -83,11 +83,13 @@ public class PaymentEventProjector {
         if (paymentChange.getPayload().isSetInvoicePaymentRouteChanged()) {
             PaymentRoute route = paymentChange.getPayload().getInvoicePaymentRouteChanged().getRoute();
             return Optional.of(new PaymentCurrentUpdate(
-                    invoiceId, paymentId, event.getEventId(), eventCreatedAt, null, null, null,
+                    invoiceId, paymentId, event.getEventId(), eventCreatedAt, null, null,
+                    null, // TODO CCR-INGESTION: route change still does not populate display names.
                     null, null, null,
                     String.valueOf(route.getProvider().getId()),
-                    null,
+                    null, // TODO CCR-INGESTION: confirm provider_name source for route updates.
                     String.valueOf(route.getTerminal().getId()),
+                    null, // TODO CCR-INGESTION: confirm terminal_name source for route updates.
                     null, null, null, null, null, null, null, null, null, null, null, null, null, null, null
             ));
         }
