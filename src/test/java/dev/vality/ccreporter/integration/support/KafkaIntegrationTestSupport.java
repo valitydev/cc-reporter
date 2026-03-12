@@ -20,13 +20,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Predicate;
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * Выносит из Kafka integration-тестов техническую обвязку вокруг producer и ожидания записей в базе.
  */
 public final class KafkaIntegrationTestSupport {
 
-    private static final ThriftSerializer THRIFT_SERIALIZER = new ThriftSerializer();
+    private static final ThriftSerializer<SinkEvent> THRIFT_SERIALIZER = new ThriftSerializer<>();
 
     private KafkaIntegrationTestSupport() {
     }
@@ -74,7 +75,10 @@ public final class KafkaIntegrationTestSupport {
             if (!rows.isEmpty() && predicate.test(rows.getFirst())) {
                 return rows.getFirst();
             }
-            Thread.sleep(200L);
+            LockSupport.parkNanos(Duration.ofMillis(200L).toNanos());
+            if (Thread.interrupted()) {
+                throw new InterruptedException();
+            }
         }
         return jdbcTemplate.queryForList(sql, args).stream()
                 .filter(predicate)

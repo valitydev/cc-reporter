@@ -1,9 +1,8 @@
 package dev.vality.ccreporter.ingestion;
 
-import dev.vality.damsel.domain.*;
+import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.damsel.payment_processing.EventPayload;
 import dev.vality.damsel.payment_processing.InvoiceChange;
-import dev.vality.damsel.payment_processing.InvoicePaymentChange;
 import dev.vality.machinegun.eventsink.MachineEvent;
 import org.springframework.stereotype.Component;
 

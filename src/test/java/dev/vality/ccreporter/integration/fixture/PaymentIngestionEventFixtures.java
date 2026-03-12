@@ -1,44 +1,9 @@
 package dev.vality.ccreporter.integration.fixture;
 
-import dev.vality.damsel.domain.AdditionalTransactionInfo;
-import dev.vality.damsel.domain.BankCard;
-import dev.vality.damsel.domain.Cash;
-import dev.vality.damsel.domain.CashFlowAccount;
-import dev.vality.damsel.domain.ContactInfo;
-import dev.vality.damsel.domain.CurrencyRef;
-import dev.vality.damsel.domain.DisposablePaymentResource;
-import dev.vality.damsel.domain.FinalCashFlowAccount;
-import dev.vality.damsel.domain.FinalCashFlowPosting;
+import dev.vality.damsel.domain.*;
 import dev.vality.damsel.domain.InvoicePayment;
-import dev.vality.damsel.domain.InvoicePaymentCaptured;
-import dev.vality.damsel.domain.InvoicePaymentFlow;
-import dev.vality.damsel.domain.InvoicePaymentFlowInstant;
 import dev.vality.damsel.domain.InvoicePaymentPending;
-import dev.vality.damsel.domain.InvoicePaymentProcessed;
-import dev.vality.damsel.domain.InvoicePaymentStatus;
-import dev.vality.damsel.domain.MerchantCashFlowAccount;
-import dev.vality.damsel.domain.PartyConfigRef;
-import dev.vality.damsel.domain.Payer;
-import dev.vality.damsel.domain.PaymentResourcePayer;
-import dev.vality.damsel.domain.PaymentRoute;
-import dev.vality.damsel.domain.PaymentTool;
-import dev.vality.damsel.domain.ProviderCashFlowAccount;
-import dev.vality.damsel.domain.ProviderRef;
-import dev.vality.damsel.domain.ShopConfigRef;
-import dev.vality.damsel.domain.SystemCashFlowAccount;
-import dev.vality.damsel.domain.TargetInvoicePaymentStatus;
-import dev.vality.damsel.domain.TerminalRef;
-import dev.vality.damsel.domain.TransactionInfo;
-import dev.vality.damsel.payment_processing.EventPayload;
-import dev.vality.damsel.payment_processing.InvoiceChange;
-import dev.vality.damsel.payment_processing.InvoicePaymentCashFlowChanged;
-import dev.vality.damsel.payment_processing.InvoicePaymentChange;
-import dev.vality.damsel.payment_processing.InvoicePaymentChangePayload;
-import dev.vality.damsel.payment_processing.InvoicePaymentSessionChange;
-import dev.vality.damsel.payment_processing.InvoicePaymentStarted;
-import dev.vality.damsel.payment_processing.InvoicePaymentStatusChanged;
-import dev.vality.damsel.payment_processing.SessionChangePayload;
-import dev.vality.damsel.payment_processing.SessionTransactionBound;
+import dev.vality.damsel.payment_processing.*;
 import dev.vality.kafka.common.serialization.ThriftSerializer;
 import dev.vality.machinegun.eventsink.MachineEvent;
 import dev.vality.machinegun.msgpack.Value;
@@ -55,7 +20,7 @@ public final class PaymentIngestionEventFixtures {
     public static final String PAYMENT_INVOICE_ID = "invoice-serialized";
     public static final String PAYMENT_ID = "payment-serialized";
 
-    private static final ThriftSerializer THRIFT_SERIALIZER = new ThriftSerializer();
+    private static final ThriftSerializer<TBase<?, ?>> THRIFT_SERIALIZER = new ThriftSerializer<>();
 
     private PaymentIngestionEventFixtures() {
     }

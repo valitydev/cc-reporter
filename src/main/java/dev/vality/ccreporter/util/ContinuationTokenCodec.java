@@ -1,7 +1,6 @@
 package dev.vality.ccreporter.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import dev.vality.ccreporter.BadContinuationToken;
 import org.springframework.stereotype.Component;
 

@@ -1,6 +1,5 @@
 package dev.vality.ccreporter.ingestion;
 
-import dev.vality.fistful.base.TransactionInfo;
 import dev.vality.fistful.withdrawal_session.Change;
 import dev.vality.fistful.withdrawal_session.Event;
 import dev.vality.machinegun.eventsink.MachineEvent;

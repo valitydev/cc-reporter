@@ -1,9 +1,7 @@
 package dev.vality.ccreporter.integration;
 
 import dev.vality.ccreporter.GetReportRequest;
-import dev.vality.ccreporter.Report;
 import dev.vality.ccreporter.ReportStatus;
-import dev.vality.ccreporter.dao.ClaimedReportJob;
 import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
 import dev.vality.ccreporter.integration.fixture.ReportRecordFixtures;
 import dev.vality.ccreporter.integration.fixture.ReportRequestFixtures;
@@ -11,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.Optional;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -140,7 +138,7 @@ class ReportLifecycleWorkerIntegrationTest extends AbstractReportingIntegrationT
 
     private Instant readInstant(String sql, long reportId) {
         var timestamp = jdbcTemplate.queryForObject(sql, Timestamp.class, reportId);
-        return timestamp.toInstant();
+        return Objects.requireNonNull(timestamp).toInstant();
     }
 
     private Instant readNullableInstant(String sql, long reportId) {

@@ -11,7 +11,6 @@ import dev.vality.ccreporter.security.RequestAuditMetadataResolver;
 import dev.vality.ccreporter.storage.FileStorageService;
 import dev.vality.ccreporter.storage.StoredFileData;
 import dev.vality.ccreporter.util.ContinuationTokenCodec;
-import dev.vality.ccreporter.util.ContinuationTokenCodec.PageCursor;
 import dev.vality.ccreporter.util.ThriftQueryCodec;
 import dev.vality.ccreporter.util.TimestampUtils;
 import org.apache.thrift.TException;
@@ -27,7 +26,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 
 @Service
 public class ReportManagementService {
@@ -254,7 +253,7 @@ public class ReportManagementService {
             }
             if (StringUtils.hasText(request.getTimezone())) {
                 try {
-                    ZoneId.of(request.getTimezone());
+                    Objects.requireNonNull(ZoneId.of(request.getTimezone()));
                 } catch (Exception ex) {
                     errors.add("timezone must be a valid IANA timezone");
                 }

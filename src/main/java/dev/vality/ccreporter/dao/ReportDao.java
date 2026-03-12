@@ -18,6 +18,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Repository
@@ -68,7 +69,8 @@ public class ReportDao {
         var queryJson = thriftQueryCodec.serialize(query);
         var queryHash = thriftQueryCodec.hash(queryJson);
 
-        return jdbcTemplate.queryForObject(
+        return Objects.requireNonNull(
+                jdbcTemplate.queryForObject(
                 """
                         INSERT INTO ccr.report_job (
                             report_type,
@@ -94,7 +96,7 @@ public class ReportDao {
                         )
                         RETURNING id
                         """,
-                new MapSqlParameterSource()
+                        new MapSqlParameterSource()
                         .addValue("reportType", reportType.name())
                         .addValue("fileType", fileType.name())
                         .addValue("queryJson", queryJson)
@@ -104,7 +106,9 @@ public class ReportDao {
                         .addValue("timezone", timezone)
                         .addValue("createdBy", createdBy)
                         .addValue("idempotencyKey", StringUtils.hasText(idempotencyKey) ? idempotencyKey : null),
-                Long.class
+                        Long.class
+                ),
+                "Report creation must return an id"
         );
     }
 

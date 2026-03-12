@@ -1,6 +1,9 @@
 package dev.vality.ccreporter.integration;
 
-import dev.vality.ccreporter.*;
+import dev.vality.ccreporter.GetReportRequest;
+import dev.vality.ccreporter.PaymentsSearchFilter;
+import dev.vality.ccreporter.ReportStatus;
+import dev.vality.ccreporter.WithdrawalsSearchFilter;
 import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
 import dev.vality.ccreporter.integration.fixture.CurrentStateTableFixtures;
 import dev.vality.ccreporter.integration.fixture.ReportRequestFixtures;

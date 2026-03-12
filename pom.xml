@@ -172,6 +172,7 @@
                 <configuration>
                     <port>${local.pg.port}</port>
                     <dbName>${db.name}</dbName>
+                    <name>${db.name}</name>
                     <schemas>
                         <schema>${db.schema}</schema>
                     </schemas>

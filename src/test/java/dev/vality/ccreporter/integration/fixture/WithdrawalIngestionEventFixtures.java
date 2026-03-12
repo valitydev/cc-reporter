@@ -3,13 +3,7 @@ package dev.vality.ccreporter.integration.fixture;
 import dev.vality.fistful.cashflow.FinalCashFlow;
 import dev.vality.fistful.transfer.CreatedChange;
 import dev.vality.fistful.transfer.Transfer;
-import dev.vality.fistful.withdrawal.Change;
-import dev.vality.fistful.withdrawal.Event;
-import dev.vality.fistful.withdrawal.QuoteState;
-import dev.vality.fistful.withdrawal.Route;
-import dev.vality.fistful.withdrawal.StatusChange;
-import dev.vality.fistful.withdrawal.TransferChange;
-import dev.vality.fistful.withdrawal.Withdrawal;
+import dev.vality.fistful.withdrawal.*;
 import dev.vality.fistful.withdrawal.status.Status;
 import dev.vality.kafka.common.serialization.ThriftSerializer;
 import dev.vality.machinegun.eventsink.MachineEvent;
@@ -27,7 +21,7 @@ public final class WithdrawalIngestionEventFixtures {
     public static final String WITHDRAWAL_ID = "withdrawal-serialized";
     public static final String WITHDRAWAL_SESSION_ID = "session-serialized";
 
-    private static final ThriftSerializer THRIFT_SERIALIZER = new ThriftSerializer();
+    private static final ThriftSerializer<TBase<?, ?>> THRIFT_SERIALIZER = new ThriftSerializer<>();
 
     private WithdrawalIngestionEventFixtures() {
     }

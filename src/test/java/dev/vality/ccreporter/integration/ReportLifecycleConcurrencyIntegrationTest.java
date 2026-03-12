@@ -1,7 +1,6 @@
 package dev.vality.ccreporter.integration;
 
 import dev.vality.ccreporter.GetReportRequest;
-import dev.vality.ccreporter.Report;
 import dev.vality.ccreporter.ReportStatus;
 import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
 import dev.vality.ccreporter.integration.fixture.CurrentStateTableFixtures;
@@ -11,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -114,7 +114,7 @@ class ReportLifecycleConcurrencyIntegrationTest extends AbstractReportingIntegra
         var futures = new ArrayList<Future<Boolean>>();
         for (int i = 0; i < workers; i++) {
             futures.add(executor.submit(() -> {
-                startLatch.await(5, TimeUnit.SECONDS);
+                assertThat(startLatch.await(5, TimeUnit.SECONDS)).isTrue();
                 return task.call();
             }));
         }
@@ -132,15 +132,15 @@ class ReportLifecycleConcurrencyIntegrationTest extends AbstractReportingIntegra
     }
 
     private int countRows(String sql, Object... args) {
-        return jdbcTemplate.queryForObject(sql, Integer.class, args);
+        return Objects.requireNonNull(jdbcTemplate.queryForObject(sql, Integer.class, args));
     }
 
     private int readAttempt(long reportId) {
-        return jdbcTemplate.queryForObject(
+        return Objects.requireNonNull(jdbcTemplate.queryForObject(
                 "SELECT attempt FROM ccr.report_job WHERE id = ?",
                 Integer.class,
                 reportId
-        );
+        ));
     }
 
     private void assertCreatedReport(long reportId) throws Exception {
@@ -154,7 +154,7 @@ class ReportLifecycleConcurrencyIntegrationTest extends AbstractReportingIntegra
 
         void shutdown() throws InterruptedException {
             executor.shutdownNow();
-            executor.awaitTermination(5, TimeUnit.SECONDS);
+            assertThat(executor.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
         }
     }
 }

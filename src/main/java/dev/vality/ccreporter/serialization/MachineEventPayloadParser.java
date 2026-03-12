@@ -1,12 +1,13 @@
 package dev.vality.ccreporter.serialization;
 
 import dev.vality.machinegun.eventsink.MachineEvent;
+import org.apache.thrift.TBase;
 
-public class MachineEventPayloadParser<T> {
+public class MachineEventPayloadParser<T extends TBase<?, ?>> {
 
-    private final ThriftBinaryDeserializer<? extends T> binaryDeserializer;
+    private final ThriftBinaryDeserializer<T> binaryDeserializer;
 
-    public MachineEventPayloadParser(ThriftBinaryDeserializer<? extends T> binaryDeserializer) {
+    public MachineEventPayloadParser(ThriftBinaryDeserializer<T> binaryDeserializer) {
         this.binaryDeserializer = binaryDeserializer;
     }
 

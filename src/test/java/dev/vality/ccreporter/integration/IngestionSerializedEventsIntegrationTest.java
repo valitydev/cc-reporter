@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.Map;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -50,7 +50,7 @@ class IngestionSerializedEventsIntegrationTest extends AbstractReportingIntegrat
         assertThat(row.get("trx_id")).isEqualTo("trx-payment-1");
         assertThat(row.get("rrn")).isEqualTo("rrn-payment-1");
         assertThat(row.get("approval_code")).isEqualTo("approval-payment-1");
-        assertThat(((Timestamp) row.get("finalized_at")).toLocalDateTime())
+        assertThat(((Timestamp) Objects.requireNonNull(row.get("finalized_at"))).toLocalDateTime())
                 .isEqualTo(LocalDateTime.parse("2026-01-01T00:04:00"));
     }
 

@@ -1,7 +1,6 @@
 package dev.vality.ccreporter.integration;
 
 import dev.vality.ccreporter.GetReportRequest;
-import dev.vality.ccreporter.Report;
 import dev.vality.ccreporter.ReportStatus;
 import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
 import dev.vality.ccreporter.integration.fixture.CurrentStateTableFixtures;

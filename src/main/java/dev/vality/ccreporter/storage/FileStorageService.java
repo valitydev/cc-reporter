@@ -3,7 +3,6 @@ package dev.vality.ccreporter.storage;
 import dev.vality.ccreporter.config.properties.FileStorageProperties;
 import dev.vality.file.storage.FileNotFound;
 import dev.vality.file.storage.FileStorageSrv;
-import dev.vality.file.storage.NewFileResult;
 import dev.vality.woody.thrift.impl.http.THSpawnClientBuilder;
 import org.apache.thrift.TException;
 import org.springframework.stereotype.Component;
@@ -14,8 +13,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Path;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Collections;
 

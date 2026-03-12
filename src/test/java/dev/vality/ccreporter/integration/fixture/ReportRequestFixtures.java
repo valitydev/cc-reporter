@@ -1,12 +1,6 @@
 package dev.vality.ccreporter.integration.fixture;
 
-import dev.vality.ccreporter.CreateReportRequest;
-import dev.vality.ccreporter.FileType;
-import dev.vality.ccreporter.PaymentsQuery;
-import dev.vality.ccreporter.ReportQuery;
-import dev.vality.ccreporter.ReportType;
-import dev.vality.ccreporter.TimeRange;
-import dev.vality.ccreporter.WithdrawalsQuery;
+import dev.vality.ccreporter.*;
 
 import java.time.Instant;
 

@@ -1,46 +1,34 @@
 package dev.vality.ccreporter.report;
 
-import dev.vality.ccreporter.*;
+import dev.vality.ccreporter.PaymentsQuery;
+import dev.vality.ccreporter.PaymentsSearchFilter;
+import dev.vality.ccreporter.WithdrawalsQuery;
+import dev.vality.ccreporter.WithdrawalsSearchFilter;
 import dev.vality.ccreporter.dao.ClaimedReportJob;
 import dev.vality.ccreporter.util.ThriftQueryCodec;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.PreparedStatementCreatorFactory;
 import org.springframework.jdbc.core.PreparedStatementSetter;
-import org.springframework.jdbc.core.SqlParameter;
-import org.springframework.jdbc.core.namedparam.NamedParameterUtils;
-import org.springframework.jdbc.core.namedparam.ParsedSql;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.UncheckedIOException;
+import java.io.*;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
+import java.sql.*;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Currency;
-import java.util.HexFormat;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
+import java.util.*;
 
 @Service
 public class ReportCsvService {
@@ -224,7 +212,7 @@ public class ReportCsvService {
             List<String> columns,
             ZoneId zoneId
     ) {
-        var rowCount = new long[]{0L};
+        var rowCount = new long[] {0L};
         try {
             var preparedStatementCreator = buildCursorPreparedStatement(sql, parameters);
             jdbcTemplate.getJdbcTemplate().query(preparedStatementCreator, resultSet -> {
@@ -437,9 +425,12 @@ public class ReportCsvService {
     }
 
     private Instant currentSnapshot() {
-        var epochSeconds = jdbcTemplate.getJdbcTemplate().queryForObject(
+        var epochSeconds = Objects.requireNonNull(
+                jdbcTemplate.getJdbcTemplate().queryForObject(
                 "SELECT EXTRACT(EPOCH FROM now())",
                 BigDecimal.class
+                ),
+                "Current snapshot query must return epoch seconds"
         );
         var seconds = epochSeconds.longValue();
         var nanos = epochSeconds.subtract(BigDecimal.valueOf(seconds))

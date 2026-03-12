@@ -12,7 +12,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.Map;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -49,7 +49,7 @@ class CurrentStateDaoIntegrationTest extends AbstractReportingIntegrationTest {
 
         assertThat(row.get("domain_event_id")).isEqualTo(11L);
         assertThat(row.get("status")).isEqualTo("refunded");
-        assertThat(((Timestamp) row.get("finalized_at")).toLocalDateTime())
+        assertThat(((Timestamp) Objects.requireNonNull(row.get("finalized_at"))).toLocalDateTime())
                 .isEqualTo(LocalDateTime.ofInstant(finalizedAt, ZoneOffset.UTC));
     }
 
@@ -95,7 +95,7 @@ class CurrentStateDaoIntegrationTest extends AbstractReportingIntegrationTest {
         assertThat(row.get("domain_event_id")).isEqualTo(31L);
         assertThat(row.get("status")).isEqualTo("failed");
         assertThat(row.get("trx_id")).isEqualTo("trx-2");
-        assertThat(((Timestamp) row.get("finalized_at")).toLocalDateTime())
+        assertThat(((Timestamp) Objects.requireNonNull(row.get("finalized_at"))).toLocalDateTime())
                 .isEqualTo(LocalDateTime.ofInstant(finalizedAt, ZoneOffset.UTC));
     }
 }

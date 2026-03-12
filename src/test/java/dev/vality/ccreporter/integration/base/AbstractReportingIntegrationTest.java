@@ -1,11 +1,11 @@
 package dev.vality.ccreporter.integration.base;
 
+import dev.vality.ccreporter.ReportingSrv;
+import dev.vality.ccreporter.config.properties.FileStorageProperties;
 import dev.vality.ccreporter.dao.ReportLifecycleDao;
 import dev.vality.ccreporter.integration.config.ReportingIntegrationTestConfig;
-import dev.vality.ccreporter.ReportingSrv;
 import dev.vality.ccreporter.report.ReportLifecycleService;
 import dev.vality.ccreporter.storage.FileStorageService;
-import dev.vality.ccreporter.config.properties.FileStorageProperties;
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

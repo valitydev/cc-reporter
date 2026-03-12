@@ -1,13 +1,8 @@
 package dev.vality.ccreporter.ingestion;
 
-import dev.vality.fistful.base.Cash;
-import dev.vality.fistful.base.Failure;
-import dev.vality.fistful.base.SubFailure;
-import dev.vality.fistful.cashflow.FinalCashFlowPosting;
 import dev.vality.fistful.withdrawal.Change;
 import dev.vality.fistful.withdrawal.Event;
 import dev.vality.fistful.withdrawal.QuoteState;
-import dev.vality.fistful.withdrawal.Route;
 import dev.vality.fistful.withdrawal.status.Status;
 import dev.vality.machinegun.eventsink.MachineEvent;
 import org.springframework.stereotype.Component;

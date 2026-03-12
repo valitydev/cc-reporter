@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Optional;
 
 @Service
 public class ReportLifecycleService {
