@@ -41,7 +41,7 @@ CREATE TABLE ccr.report_job (
   rows_count BIGINT,
   attempt INT NOT NULL DEFAULT 0,
   next_attempt_at TIMESTAMP WITHOUT TIME ZONE,
-  data_window_fixed_at TIMESTAMP WITHOUT TIME ZONE,
+  data_snapshot_fixed_at TIMESTAMP WITHOUT TIME ZONE,
 
   error_code VARCHAR,
   error_message VARCHAR,
