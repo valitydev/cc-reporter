@@ -1,13 +1,12 @@
 package dev.vality.ccreporter.config;
 
+import dev.vality.ccreporter.config.properties.CcrKafkaProperties;
 import dev.vality.ccreporter.kafka.serde.SinkEventDeserializer;
-import dev.vality.ccreporter.serialization.BinaryDeserializer;
 import dev.vality.ccreporter.serialization.MachineEventPayloadParser;
 import dev.vality.ccreporter.serialization.ThriftBinaryDeserializer;
 import dev.vality.damsel.payment_processing.EventPayload;
 import dev.vality.fistful.withdrawal.Event;
 import dev.vality.machinegun.eventsink.SinkEvent;
-import java.util.Map;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -21,13 +20,15 @@ import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.util.backoff.FixedBackOff;
 
+import java.util.Map;
+
 @Configuration
 @EnableKafka
 @EnableConfigurationProperties(CcrKafkaProperties.class)
 public class KafkaIngestionConfig {
 
     @Bean
-    public BinaryDeserializer<EventPayload> paymentEventPayloadDeserializer() {
+    public ThriftBinaryDeserializer<EventPayload> paymentEventPayloadDeserializer() {
         return new ThriftBinaryDeserializer<>() {
             @Override
             protected EventPayload newInstance() {
@@ -38,13 +39,13 @@ public class KafkaIngestionConfig {
 
     @Bean
     public MachineEventPayloadParser<EventPayload> paymentEventPayloadMachineEventParser(
-            BinaryDeserializer<EventPayload> paymentEventPayloadDeserializer
+            ThriftBinaryDeserializer<EventPayload> paymentEventPayloadDeserializer
     ) {
         return new MachineEventPayloadParser<>(paymentEventPayloadDeserializer);
     }
 
     @Bean
-    public BinaryDeserializer<Event> withdrawalEventDeserializer() {
+    public ThriftBinaryDeserializer<Event> withdrawalEventDeserializer() {
         return new ThriftBinaryDeserializer<>() {
             @Override
             protected Event newInstance() {
@@ -54,12 +55,14 @@ public class KafkaIngestionConfig {
     }
 
     @Bean
-    public MachineEventPayloadParser<Event> withdrawalEventMachineEventParser(BinaryDeserializer<Event> withdrawalEventDeserializer) {
+    public MachineEventPayloadParser<Event> withdrawalEventMachineEventParser(
+            ThriftBinaryDeserializer<Event> withdrawalEventDeserializer) {
         return new MachineEventPayloadParser<>(withdrawalEventDeserializer);
     }
 
     @Bean
-    public BinaryDeserializer<dev.vality.fistful.withdrawal_session.Event> withdrawalSessionEventDeserializer() {
+    public ThriftBinaryDeserializer<dev.vality.fistful.withdrawal_session.Event>
+            withdrawalSessionEventDeserializer() {
         return new ThriftBinaryDeserializer<>() {
             @Override
             protected dev.vality.fistful.withdrawal_session.Event newInstance() {
@@ -69,8 +72,10 @@ public class KafkaIngestionConfig {
     }
 
     @Bean
-    public MachineEventPayloadParser<dev.vality.fistful.withdrawal_session.Event> withdrawalSessionEventMachineEventParser(
-            BinaryDeserializer<dev.vality.fistful.withdrawal_session.Event> withdrawalSessionEventDeserializer
+    public MachineEventPayloadParser<dev.vality.fistful.withdrawal_session.Event>
+            withdrawalSessionEventMachineEventParser(
+            ThriftBinaryDeserializer<dev.vality.fistful.withdrawal_session.Event>
+                    withdrawalSessionEventDeserializer
     ) {
         return new MachineEventPayloadParser<>(withdrawalSessionEventDeserializer);
     }
@@ -163,7 +168,8 @@ public class KafkaIngestionConfig {
         );
         config.put(
                 ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG,
-                Integer.parseInt(environment.getProperty("spring.kafka.consumer.properties.session.timeout.ms", "30000"))
+                Integer.parseInt(
+                        environment.getProperty("spring.kafka.consumer.properties.session.timeout.ms", "30000"))
         );
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, SinkEventDeserializer.class);

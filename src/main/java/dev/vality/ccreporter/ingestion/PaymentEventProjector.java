@@ -1,21 +1,17 @@
 package dev.vality.ccreporter.ingestion;
 
-import dev.vality.damsel.domain.Cash;
-import dev.vality.damsel.domain.AdditionalTransactionInfo;
-import dev.vality.damsel.domain.InvoicePayment;
-import dev.vality.damsel.domain.InvoicePaymentStatus;
-import dev.vality.damsel.domain.PaymentRoute;
-import dev.vality.damsel.domain.TransactionInfo;
+import dev.vality.damsel.domain.*;
 import dev.vality.damsel.payment_processing.EventPayload;
 import dev.vality.damsel.payment_processing.InvoiceChange;
 import dev.vality.damsel.payment_processing.InvoicePaymentChange;
 import dev.vality.machinegun.eventsink.MachineEvent;
+import org.springframework.stereotype.Component;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.stereotype.Component;
 
 @Component
 public class PaymentEventProjector {
@@ -130,7 +126,8 @@ public class PaymentEventProjector {
         }
 
         if (paymentChange.getPayload().isSetInvoicePaymentSessionChange()
-                && paymentChange.getPayload().getInvoicePaymentSessionChange().getPayload().isSetSessionTransactionBound()) {
+                && paymentChange.getPayload().getInvoicePaymentSessionChange().getPayload()
+                .isSetSessionTransactionBound()) {
             TransactionInfo trx = paymentChange.getPayload()
                     .getInvoicePaymentSessionChange()
                     .getPayload()
@@ -140,7 +137,8 @@ public class PaymentEventProjector {
             return Optional.of(new PaymentCurrentUpdate(
                     invoiceId, paymentId, event.getEventId(), eventCreatedAt, null, null, null,
                     null, null, null, null, null, null, null, null, null, null,
-                    trx.getId(), null, info != null ? info.getRrn() : null, info != null ? info.getApprovalCode() : null,
+                    trx.getId(), null, info != null ? info.getRrn() : null,
+                    info != null ? info.getApprovalCode() : null,
                     null, null, null, null, null, null, null
             ));
         }

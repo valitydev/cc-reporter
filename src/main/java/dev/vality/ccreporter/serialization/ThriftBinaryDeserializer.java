@@ -4,9 +4,8 @@ import org.apache.thrift.TBase;
 import org.apache.thrift.TDeserializer;
 import org.apache.thrift.protocol.TBinaryProtocol;
 
-public abstract class ThriftBinaryDeserializer<T extends TBase<?, ?>> implements BinaryDeserializer<T> {
+public abstract class ThriftBinaryDeserializer<T extends TBase<?, ?>> {
 
-    @Override
     public T deserialize(byte[] bytes) {
         try {
             T value = newInstance();

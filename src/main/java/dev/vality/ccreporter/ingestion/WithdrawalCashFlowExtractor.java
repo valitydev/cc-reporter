@@ -1,6 +1,7 @@
 package dev.vality.ccreporter.ingestion;
 
 import dev.vality.fistful.cashflow.FinalCashFlowPosting;
+
 import java.util.List;
 
 public final class WithdrawalCashFlowExtractor {
@@ -12,10 +13,10 @@ public final class WithdrawalCashFlowExtractor {
         return postings == null
                 ? null
                 : postings.stream()
-                        .filter(posting -> posting.getSource().getAccountType().isSetWallet()
-                                && posting.getDestination().getAccountType().isSetSystem())
-                        .map(FinalCashFlowPosting::getVolume)
-                        .mapToLong(volume -> volume.getAmount())
-                        .sum();
+                .filter(posting -> posting.getSource().getAccountType().isSetWallet()
+                        && posting.getDestination().getAccountType().isSetSystem())
+                .map(FinalCashFlowPosting::getVolume)
+                .mapToLong(volume -> volume.getAmount())
+                .sum();
     }
 }

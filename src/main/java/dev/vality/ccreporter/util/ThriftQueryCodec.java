@@ -5,18 +5,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import dev.vality.ccreporter.PaymentsQuery;
-import dev.vality.ccreporter.PaymentsSearchFilter;
-import dev.vality.ccreporter.ReportQuery;
-import dev.vality.ccreporter.ReportType;
-import dev.vality.ccreporter.TimeRange;
-import dev.vality.ccreporter.WithdrawalsQuery;
-import dev.vality.ccreporter.WithdrawalsSearchFilter;
+import dev.vality.ccreporter.*;
+import org.springframework.stereotype.Component;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.List;
-import org.springframework.stereotype.Component;
 
 @Component
 public class ThriftQueryCodec {

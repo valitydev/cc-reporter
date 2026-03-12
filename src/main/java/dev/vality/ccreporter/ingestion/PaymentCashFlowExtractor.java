@@ -1,9 +1,9 @@
 package dev.vality.ccreporter.ingestion;
 
-import dev.vality.damsel.domain.CashFlowAccount;
 import dev.vality.damsel.domain.FinalCashFlowPosting;
 import dev.vality.damsel.domain.MerchantCashFlowAccount;
 import dev.vality.damsel.domain.ProviderCashFlowAccount;
+
 import java.util.List;
 
 public final class PaymentCashFlowExtractor {
@@ -30,13 +30,14 @@ public final class PaymentCashFlowExtractor {
         );
     }
 
-    private static Long sum(List<FinalCashFlowPosting> postings, java.util.function.Predicate<FinalCashFlowPosting> filter) {
+    private static Long sum(List<FinalCashFlowPosting> postings,
+                            java.util.function.Predicate<FinalCashFlowPosting> filter) {
         return postings == null
                 ? null
                 : postings.stream()
-                        .filter(filter)
-                        .map(FinalCashFlowPosting::getVolume)
-                        .mapToLong(volume -> volume.getAmount())
-                        .sum();
+                .filter(filter)
+                .map(FinalCashFlowPosting::getVolume)
+                .mapToLong(volume -> volume.getAmount())
+                .sum();
     }
 }

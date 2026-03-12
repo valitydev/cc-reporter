@@ -4,9 +4,10 @@ import dev.vality.ccreporter.dao.WithdrawalCurrentDao;
 import dev.vality.ccreporter.dao.WithdrawalSessionBindingDao;
 import dev.vality.ccreporter.serialization.MachineEventPayloadParser;
 import dev.vality.machinegun.eventsink.MachineEvent;
-import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 public class WithdrawalSessionIngestionService {
@@ -14,13 +15,15 @@ public class WithdrawalSessionIngestionService {
     private final WithdrawalSessionBindingDao withdrawalSessionBindingDao;
     private final WithdrawalCurrentDao withdrawalCurrentDao;
     private final WithdrawalSessionEventProjector withdrawalSessionEventProjector;
-    private final MachineEventPayloadParser<dev.vality.fistful.withdrawal_session.Event> withdrawalSessionEventMachineEventParser;
+    private final MachineEventPayloadParser<dev.vality.fistful.withdrawal_session.Event>
+            withdrawalSessionEventMachineEventParser;
 
     public WithdrawalSessionIngestionService(
             WithdrawalSessionBindingDao withdrawalSessionBindingDao,
             WithdrawalCurrentDao withdrawalCurrentDao,
             WithdrawalSessionEventProjector withdrawalSessionEventProjector,
-            MachineEventPayloadParser<dev.vality.fistful.withdrawal_session.Event> withdrawalSessionEventMachineEventParser
+            MachineEventPayloadParser<dev.vality.fistful.withdrawal_session.Event>
+                    withdrawalSessionEventMachineEventParser
     ) {
         this.withdrawalSessionBindingDao = withdrawalSessionBindingDao;
         this.withdrawalCurrentDao = withdrawalCurrentDao;
@@ -39,7 +42,8 @@ public class WithdrawalSessionIngestionService {
         var payload = withdrawalSessionEventMachineEventParser.parse(event);
         withdrawalSessionEventProjector.projectBindings(event, payload).forEach(withdrawalSessionBindingDao::upsert);
         withdrawalSessionBindingDao.findWithdrawalId(event.getSourceId())
-                .flatMap(withdrawalId -> withdrawalSessionEventProjector.projectTransactionBound(event, payload, withdrawalId))
+                .flatMap(withdrawalId -> withdrawalSessionEventProjector.projectTransactionBound(event, payload,
+                        withdrawalId))
                 .ifPresent(withdrawalCurrentDao::upsert);
     }
 }

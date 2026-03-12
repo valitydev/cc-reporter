@@ -6,17 +6,18 @@ import dev.vality.fistful.base.SubFailure;
 import dev.vality.fistful.cashflow.FinalCashFlowPosting;
 import dev.vality.fistful.withdrawal.Change;
 import dev.vality.fistful.withdrawal.Event;
-import dev.vality.fistful.withdrawal.Route;
 import dev.vality.fistful.withdrawal.QuoteState;
+import dev.vality.fistful.withdrawal.Route;
 import dev.vality.fistful.withdrawal.status.Status;
 import dev.vality.machinegun.eventsink.MachineEvent;
+import org.springframework.stereotype.Component;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.stereotype.Component;
 
 @Component
 public class WithdrawalEventProjector {
@@ -104,8 +105,9 @@ public class WithdrawalEventProjector {
                 && change.getTransfer().getPayload().isSetCreated()
                 && change.getTransfer().getPayload().getCreated().isSetTransfer()
                 && change.getTransfer().getPayload().getCreated().getTransfer().isSetCashflow()) {
-            List<FinalCashFlowPosting> postings = change.getTransfer().getPayload().getCreated().getTransfer().getCashflow()
-                    .getPostings();
+            List<FinalCashFlowPosting> postings =
+                    change.getTransfer().getPayload().getCreated().getTransfer().getCashflow()
+                            .getPostings();
             return Optional.of(new WithdrawalCurrentUpdate(
                     withdrawalId,
                     event.getEventId(),

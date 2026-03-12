@@ -1,21 +1,23 @@
 package dev.vality.ccreporter.integration;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import dev.vality.ccreporter.GeneratePresignedUrlRequest;
-import dev.vality.ccreporter.GetReportRequest;
-import dev.vality.ccreporter.GetReportsRequest;
-import dev.vality.ccreporter.Report;
-import dev.vality.ccreporter.ReportStatus;
-import dev.vality.ccreporter.TimeRange;
+import dev.vality.ccreporter.*;
 import dev.vality.ccreporter.ingestion.PaymentIngestionService;
 import dev.vality.ccreporter.ingestion.WithdrawalIngestionService;
 import dev.vality.ccreporter.ingestion.WithdrawalSessionIngestionService;
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
+import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
+import dev.vality.ccreporter.integration.fixture.ReportRequestFixtures;
+import dev.vality.ccreporter.integration.fixture.SerializedIngestionEventFixtures;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * Сквозной сценарий от ingestion до готового отчёта, чтобы вся цепочка проверялась одним прогоном.
+ */
 class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegrationTest {
 
     @Autowired
@@ -39,7 +41,8 @@ class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegra
                 stubFileStorageClient.getStoredContent(report.getFile().getFileId()),
                 StandardCharsets.UTF_8
         );
-        String url = reportingHandler.generatePresignedUrl(new GeneratePresignedUrlRequest(report.getFile().getFileId()));
+        String url =
+                reportingHandler.generatePresignedUrl(new GeneratePresignedUrlRequest(report.getFile().getFileId()));
 
         assertThat(processed).isTrue();
         assertThat(report.getStatus()).isEqualTo(ReportStatus.created);
@@ -68,7 +71,8 @@ class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegra
                 stubFileStorageClient.getStoredContent(report.getFile().getFileId()),
                 StandardCharsets.UTF_8
         );
-        String url = reportingHandler.generatePresignedUrl(new GeneratePresignedUrlRequest(report.getFile().getFileId()));
+        String url =
+                reportingHandler.generatePresignedUrl(new GeneratePresignedUrlRequest(report.getFile().getFileId()));
 
         assertThat(processed).isTrue();
         assertThat(report.getStatus()).isEqualTo(ReportStatus.created);
@@ -83,20 +87,16 @@ class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegra
     }
 
     private dev.vality.ccreporter.CreateReportRequest paymentsLifecycleRequest() {
-        var request = createPaymentsReportRequest("ingestion-payments-lifecycle-1");
-        request.getQuery().getPayments().setTimeRange(new TimeRange(
+        return ReportRequestFixtures.payments("ingestion-payments-lifecycle-1", new TimeRange(
                 "2025-12-31T00:00:00Z",
                 "2026-01-02T00:00:00Z"
         ));
-        return request;
     }
 
     private dev.vality.ccreporter.CreateReportRequest withdrawalsLifecycleRequest() {
-        var request = createWithdrawalsReportRequest("ingestion-withdrawals-lifecycle-1");
-        request.getQuery().getWithdrawals().setTimeRange(new TimeRange(
+        return ReportRequestFixtures.withdrawals("ingestion-withdrawals-lifecycle-1", new TimeRange(
                 "2025-12-31T00:00:00Z",
                 "2026-01-02T00:00:00Z"
         ));
-        return request;
     }
 }

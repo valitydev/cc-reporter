@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.config;
+package dev.vality.ccreporter.config.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

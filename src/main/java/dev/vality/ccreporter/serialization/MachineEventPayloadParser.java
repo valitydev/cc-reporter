@@ -4,9 +4,9 @@ import dev.vality.machinegun.eventsink.MachineEvent;
 
 public class MachineEventPayloadParser<T> {
 
-    private final BinaryDeserializer<T> binaryDeserializer;
+    private final ThriftBinaryDeserializer<? extends T> binaryDeserializer;
 
-    public MachineEventPayloadParser(BinaryDeserializer<T> binaryDeserializer) {
+    public MachineEventPayloadParser(ThriftBinaryDeserializer<? extends T> binaryDeserializer) {
         this.binaryDeserializer = binaryDeserializer;
     }
 

@@ -1,28 +1,33 @@
 package dev.vality.ccreporter.integration;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import dev.vality.ccreporter.*;
+import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
+import dev.vality.ccreporter.integration.fixture.CurrentStateTableFixtures;
+import dev.vality.ccreporter.integration.fixture.ReportRequestFixtures;
+import org.junit.jupiter.api.Test;
 
-import dev.vality.ccreporter.GetReportRequest;
-import dev.vality.ccreporter.PaymentsSearchFilter;
-import dev.vality.ccreporter.Report;
-import dev.vality.ccreporter.ReportStatus;
-import dev.vality.ccreporter.WithdrawalsSearchFilter;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
-import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * Проверяет, что фильтры в запросе на отчёт реально меняют выборку, а не остаются декоративными полями.
+ */
 class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTest {
 
     @Test
     void paymentsQueryFiltersExcludeNonMatchingRows() throws Exception {
-        insertPaymentRow(
+        CurrentStateTableFixtures.insertPaymentRow(
+                jdbcTemplate,
                 "invoice-filter-1",
                 "payment-filter-1",
                 Instant.parse("2026-01-01T10:00:00Z"),
                 Instant.parse("2026-01-01T11:00:00Z")
         );
-        insertPaymentRow(
+        CurrentStateTableFixtures.insertPaymentRow(
+                jdbcTemplate,
                 "invoice-filter-2",
                 "payment-filter-2",
                 Instant.parse("2026-01-01T10:01:00Z"),
@@ -30,10 +35,10 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
         );
         jdbcTemplate.update(
                 """
-                UPDATE ccr.payment_txn_current
-                SET shop_id = ?, shop_name = ?, shop_search = ?, trx_id = ?, trx_search = ?
-                WHERE invoice_id = ? AND payment_id = ?
-                """,
+                        UPDATE ccr.payment_txn_current
+                        SET shop_id = ?, shop_name = ?, shop_search = ?, trx_id = ?, trx_search = ?
+                        WHERE invoice_id = ? AND payment_id = ?
+                        """,
                 "shop-2",
                 "Other Shop",
                 "other shop",
@@ -43,7 +48,7 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
                 "payment-filter-2"
         );
 
-        var request = createPaymentsReportRequest("payments-filter-1");
+        var request = ReportRequestFixtures.payments("payments-filter-1");
         request.getQuery().getPayments().setShopIds(List.of("shop-1"));
         PaymentsSearchFilter filter = new PaymentsSearchFilter();
         filter.setShopTerm("shop one");
@@ -68,22 +73,24 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
 
     @Test
     void withdrawalsQueryFiltersExcludeNonMatchingRows() throws Exception {
-        insertWithdrawalRow(
+        CurrentStateTableFixtures.insertWithdrawalRow(
+                jdbcTemplate,
                 "withdrawal-filter-1",
                 Instant.parse("2026-01-01T10:00:00Z"),
                 Instant.parse("2026-01-01T11:00:00Z")
         );
-        insertWithdrawalRow(
+        CurrentStateTableFixtures.insertWithdrawalRow(
+                jdbcTemplate,
                 "withdrawal-filter-2",
                 Instant.parse("2026-01-01T10:01:00Z"),
                 Instant.parse("2026-01-01T11:01:00Z")
         );
         jdbcTemplate.update(
                 """
-                UPDATE ccr.withdrawal_txn_current
-                SET wallet_id = ?, wallet_name = ?, wallet_search = ?, trx_id = ?, trx_search = ?
-                WHERE withdrawal_id = ?
-                """,
+                        UPDATE ccr.withdrawal_txn_current
+                        SET wallet_id = ?, wallet_name = ?, wallet_search = ?, trx_id = ?, trx_search = ?
+                        WHERE withdrawal_id = ?
+                        """,
                 "wallet-2",
                 "Other Wallet",
                 "other wallet",
@@ -92,7 +99,7 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
                 "withdrawal-filter-2"
         );
 
-        var request = createWithdrawalsReportRequest("withdrawals-filter-1");
+        var request = ReportRequestFixtures.withdrawals("withdrawals-filter-1");
         request.getQuery().getWithdrawals().setWalletIds(List.of("wallet-1"));
         WithdrawalsSearchFilter filter = new WithdrawalsSearchFilter();
         filter.setWalletTerm("wallet one");

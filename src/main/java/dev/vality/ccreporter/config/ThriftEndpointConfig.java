@@ -1,17 +1,14 @@
 package dev.vality.ccreporter.config;
 
 import dev.vality.ccreporter.ReportingSrv;
+import dev.vality.ccreporter.config.properties.CcrApiProperties;
 import dev.vality.woody.thrift.impl.http.THServiceBuilder;
-import jakarta.servlet.GenericServlet;
-import jakarta.servlet.Servlet;
-import jakarta.servlet.ServletConfig;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
-import java.io.IOException;
+import jakarta.servlet.*;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.io.IOException;
 
 @Configuration
 public class ThriftEndpointConfig {

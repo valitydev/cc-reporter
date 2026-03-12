@@ -1,6 +1,7 @@
-package dev.vality.ccreporter.service;
+package dev.vality.ccreporter.storage;
 
 import dev.vality.ccreporter.FileType;
+
 import java.time.Instant;
 
 public record StoredFileData(

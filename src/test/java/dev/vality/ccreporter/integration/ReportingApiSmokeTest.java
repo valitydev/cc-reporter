@@ -1,18 +1,15 @@
 package dev.vality.ccreporter.integration;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import dev.vality.ccreporter.CancelReportRequest;
-import dev.vality.ccreporter.CreateReportRequest;
-import dev.vality.ccreporter.GetReportRequest;
-import dev.vality.ccreporter.GetReportsMeta;
-import dev.vality.ccreporter.GetReportsRequest;
-import dev.vality.ccreporter.GetReportsResponse;
-import dev.vality.ccreporter.Report;
-import dev.vality.ccreporter.ReportStatus;
-import dev.vality.ccreporter.ReportType;
+import dev.vality.ccreporter.*;
+import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
+import dev.vality.ccreporter.integration.fixture.ReportRequestFixtures;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * Короткая проверка базового контракта API: сервис стартует, создаёт отчёт и умеет его читать обратно.
+ */
 class ReportingApiSmokeTest extends AbstractReportingIntegrationTest {
 
     @Test
@@ -38,7 +35,7 @@ class ReportingApiSmokeTest extends AbstractReportingIntegrationTest {
 
     @Test
     void createReportIsIdempotentAndReadable() throws Exception {
-        CreateReportRequest request = createPaymentsReportRequest("idem-1");
+        CreateReportRequest request = ReportRequestFixtures.payments("idem-1");
 
         long firstId = reportingHandler.createReport(request);
         long secondId = reportingHandler.createReport(request);
@@ -53,8 +50,8 @@ class ReportingApiSmokeTest extends AbstractReportingIntegrationTest {
 
     @Test
     void getReportsReturnsContinuationToken() throws Exception {
-        reportingHandler.createReport(createPaymentsReportRequest("page-1"));
-        reportingHandler.createReport(createPaymentsReportRequest("page-2"));
+        reportingHandler.createReport(ReportRequestFixtures.payments("page-1"));
+        reportingHandler.createReport(ReportRequestFixtures.payments("page-2"));
 
         GetReportsMeta meta = new GetReportsMeta();
         meta.setLimit(1);
@@ -66,7 +63,7 @@ class ReportingApiSmokeTest extends AbstractReportingIntegrationTest {
 
     @Test
     void cancelReportIsIdempotentForPendingReport() throws Exception {
-        long reportId = reportingHandler.createReport(createPaymentsReportRequest("cancel-1"));
+        long reportId = reportingHandler.createReport(ReportRequestFixtures.payments("cancel-1"));
 
         reportingHandler.cancelReport(new CancelReportRequest(reportId));
         reportingHandler.cancelReport(new CancelReportRequest(reportId));

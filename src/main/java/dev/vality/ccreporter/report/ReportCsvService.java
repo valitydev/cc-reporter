@@ -1,12 +1,15 @@
-package dev.vality.ccreporter.service;
+package dev.vality.ccreporter.report;
 
-import dev.vality.ccreporter.PaymentsQuery;
-import dev.vality.ccreporter.PaymentsSearchFilter;
-import dev.vality.ccreporter.ReportQuery;
-import dev.vality.ccreporter.WithdrawalsQuery;
-import dev.vality.ccreporter.WithdrawalsSearchFilter;
+import dev.vality.ccreporter.*;
 import dev.vality.ccreporter.dao.ClaimedReportJob;
 import dev.vality.ccreporter.util.ThriftQueryCodec;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
+
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -22,12 +25,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
 public class ReportCsvService {
@@ -146,16 +143,17 @@ public class ReportCsvService {
         writer.newLine();
         StringBuilder sql = new StringBuilder(
                 """
-                SELECT invoice_id, payment_id, party_id, shop_id, shop_name, created_at, finalized_at, status,
-                       provider_id, provider_name, terminal_id, terminal_name, amount, fee, currency, trx_id,
-                       external_id, rrn, approval_code, payment_tool_type, original_amount, original_currency,
-                       converted_amount, exchange_rate_internal, provider_amount, provider_currency
-                FROM ccr.payment_txn_current
-                WHERE created_at >= :fromTime
-                  AND created_at < :toTime
-                """
+                        SELECT invoice_id, payment_id, party_id, shop_id, shop_name, created_at, finalized_at, status,
+                               provider_id, provider_name, terminal_id, terminal_name, amount, fee, currency, trx_id,
+                               external_id, rrn, approval_code, payment_tool_type, original_amount, original_currency,
+                               converted_amount, exchange_rate_internal, provider_amount, provider_currency
+                        FROM ccr.payment_txn_current
+                        WHERE created_at >= :fromTime
+                          AND created_at < :toTime
+                        """
         );
-        MapSqlParameterSource parameters = baseTimeRange(query.getTimeRange().getFromTime(), query.getTimeRange().getToTime());
+        MapSqlParameterSource parameters =
+                baseTimeRange(query.getTimeRange().getFromTime(), query.getTimeRange().getToTime());
         appendCommonFilters(sql, parameters, "party_id", "partyIds", query.getPartyIds());
         appendCommonFilters(sql, parameters, "shop_id", "shopIds", query.getShopIds());
         appendCommonFilters(sql, parameters, "provider_id", "providerIds", query.getProviderIds());
@@ -168,21 +166,30 @@ public class ReportCsvService {
         return writeRows(writer, sql.toString(), parameters, PAYMENT_COLUMNS, zoneId);
     }
 
-    private long writeWithdrawalsCsv(BufferedWriter writer, WithdrawalsQuery query, ZoneId zoneId) throws IOException {
+    private long writeWithdrawalsCsv(
+            BufferedWriter writer,
+            WithdrawalsQuery query,
+            ZoneId zoneId
+    ) throws IOException {
         writer.write(String.join(",", WITHDRAWAL_COLUMNS));
         writer.newLine();
         StringBuilder sql = new StringBuilder(
                 """
-                SELECT withdrawal_id, party_id, wallet_id, wallet_name, destination_id, created_at, finalized_at,
-                       status, provider_id, provider_name, terminal_id, terminal_name, amount, fee, currency,
-                       trx_id, external_id, error_code, error_reason, error_sub_failure, original_amount,
-                       original_currency, converted_amount, exchange_rate_internal, provider_amount, provider_currency
-                FROM ccr.withdrawal_txn_current
-                WHERE created_at >= :fromTime
-                  AND created_at < :toTime
-                """
+                        SELECT withdrawal_id, party_id, wallet_id, wallet_name, destination_id,
+                               created_at, finalized_at,
+                               status, provider_id, provider_name, terminal_id, terminal_name, amount, fee, currency,
+                               trx_id, external_id, error_code, error_reason, error_sub_failure, original_amount,
+                               original_currency, converted_amount, exchange_rate_internal, provider_amount,
+                               provider_currency
+                        FROM ccr.withdrawal_txn_current
+                        WHERE created_at >= :fromTime
+                          AND created_at < :toTime
+                        """
         );
-        MapSqlParameterSource parameters = baseTimeRange(query.getTimeRange().getFromTime(), query.getTimeRange().getToTime());
+        MapSqlParameterSource parameters = baseTimeRange(
+                query.getTimeRange().getFromTime(),
+                query.getTimeRange().getToTime()
+        );
         appendCommonFilters(sql, parameters, "party_id", "partyIds", query.getPartyIds());
         appendCommonFilters(sql, parameters, "wallet_id", "walletIds", query.getWalletIds());
         appendCommonFilters(sql, parameters, "provider_id", "providerIds", query.getProviderIds());
@@ -202,7 +209,8 @@ public class ReportCsvService {
             List<String> columns,
             ZoneId zoneId
     ) {
-        List<List<String>> rows = jdbcTemplate.query(sql, parameters, (resultSet, rowNum) -> mapRow(resultSet, columns, zoneId));
+        List<List<String>> rows =
+                jdbcTemplate.query(sql, parameters, (resultSet, rowNum) -> mapRow(resultSet, columns, zoneId));
         try {
             for (List<String> row : rows) {
                 writer.write(String.join(",", row));

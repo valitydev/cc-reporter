@@ -12,3 +12,4 @@
 - Keep schema, Thrift IDL, CSV spec, and implementation aligned when changing shared contracts.
 - If continuity docs exist for the active task, treat them as the restore surface after pause, resume, or context compaction.
 - If execution state becomes uncertain, re-read the continuity docs that exist for the active task before reopening decisions or widening scope. This may include `EXECUTION_INPUT.md`, `INVARIANTS.md`, `PROJECT_STATE.md`, and the active handoff doc(s).
+- checkstyle.LineLength <= 120, checkstyle.VariableDeclarationUsageDistance <= 3, npath < 200 if possible, var priority

@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.service;
+package dev.vality.ccreporter.report;
 
 public record ReportFileMetadata(
         String fileId,

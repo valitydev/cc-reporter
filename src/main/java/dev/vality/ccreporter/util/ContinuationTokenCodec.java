@@ -3,10 +3,11 @@ package dev.vality.ccreporter.util;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import dev.vality.ccreporter.BadContinuationToken;
+import org.springframework.stereotype.Component;
+
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
-import org.springframework.stereotype.Component;
 
 @Component
 public class ContinuationTokenCodec {

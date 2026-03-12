@@ -4,9 +4,10 @@ import dev.vality.ccreporter.dao.WithdrawalCurrentDao;
 import dev.vality.ccreporter.serialization.MachineEventPayloadParser;
 import dev.vality.fistful.withdrawal.Event;
 import dev.vality.machinegun.eventsink.MachineEvent;
-import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 public class WithdrawalIngestionService {

@@ -4,11 +4,12 @@ import dev.vality.fistful.base.TransactionInfo;
 import dev.vality.fistful.withdrawal_session.Change;
 import dev.vality.fistful.withdrawal_session.Event;
 import dev.vality.machinegun.eventsink.MachineEvent;
+import org.springframework.stereotype.Component;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.stereotype.Component;
 
 @Component
 public class WithdrawalSessionEventProjector {

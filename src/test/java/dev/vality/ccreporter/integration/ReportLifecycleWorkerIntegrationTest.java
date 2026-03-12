@@ -1,22 +1,29 @@
 package dev.vality.ccreporter.integration;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import dev.vality.ccreporter.GetReportRequest;
 import dev.vality.ccreporter.Report;
 import dev.vality.ccreporter.ReportStatus;
 import dev.vality.ccreporter.dao.ClaimedReportJob;
+import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
+import dev.vality.ccreporter.integration.fixture.ReportRecordFixtures;
+import dev.vality.ccreporter.integration.fixture.ReportRequestFixtures;
+import org.junit.jupiter.api.Test;
+
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Optional;
-import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * Проверяет работу фонового воркера, который подбирает pending-отчёты и доводит их до финального состояния.
+ */
 class ReportLifecycleWorkerIntegrationTest extends AbstractReportingIntegrationTest {
 
     @Test
     void claimPicksOldestDuePendingReportAndMarksItProcessing() throws Exception {
-        long firstReportId = reportingHandler.createReport(createPaymentsReportRequest("claim-order-1"));
-        long secondReportId = reportingHandler.createReport(createPaymentsReportRequest("claim-order-2"));
+        long firstReportId = reportingHandler.createReport(ReportRequestFixtures.payments("claim-order-1"));
+        final long secondReportId = reportingHandler.createReport(ReportRequestFixtures.payments("claim-order-2"));
         Instant claimTime = Instant.parse("2026-01-06T10:00:00Z");
 
         Optional<ClaimedReportJob> claimedReport = reportLifecycleDao.claimNextPendingReport(claimTime);
@@ -25,14 +32,16 @@ class ReportLifecycleWorkerIntegrationTest extends AbstractReportingIntegrationT
         assertThat(claimedReport.get().id()).isEqualTo(firstReportId);
         assertThat(claimedReport.get().attempt()).isEqualTo(1);
         assertReportStatus(firstReportId, ReportStatus.processing);
-        assertThat(readInstant("SELECT started_at FROM ccr.report_job WHERE id = ?", firstReportId)).isEqualTo(claimTime);
-        assertThat(readNullableInstant("SELECT next_attempt_at FROM ccr.report_job WHERE id = ?", firstReportId)).isNull();
+        assertThat(readInstant("SELECT started_at FROM ccr.report_job WHERE id = ?", firstReportId)).isEqualTo(
+                claimTime);
+        assertThat(
+                readNullableInstant("SELECT next_attempt_at FROM ccr.report_job WHERE id = ?", firstReportId)).isNull();
         assertReportStatus(secondReportId, ReportStatus.pending);
     }
 
     @Test
     void rescheduleMakesReportClaimableAgainWhenRetryTimeArrives() throws Exception {
-        long reportId = reportingHandler.createReport(createPaymentsReportRequest("retry-1"));
+        long reportId = reportingHandler.createReport(ReportRequestFixtures.payments("retry-1"));
         Instant firstClaimTime = Instant.parse("2026-01-06T11:00:00Z");
         Instant retryAt = Instant.parse("2026-01-06T11:05:00Z");
         Instant secondClaimTime = Instant.parse("2026-01-06T11:06:00Z");
@@ -44,7 +53,8 @@ class ReportLifecycleWorkerIntegrationTest extends AbstractReportingIntegrationT
                 "storage_unavailable",
                 "temporary upload issue"
         );
-        Optional<ClaimedReportJob> prematureClaim = reportLifecycleDao.claimNextPendingReport(firstClaimTime.plusSeconds(30));
+        Optional<ClaimedReportJob> prematureClaim =
+                reportLifecycleDao.claimNextPendingReport(firstClaimTime.plusSeconds(30));
         ClaimedReportJob secondClaim = reportLifecycleDao.claimNextPendingReport(secondClaimTime).orElseThrow();
 
         assertThat(firstClaim.id()).isEqualTo(reportId);
@@ -61,7 +71,7 @@ class ReportLifecycleWorkerIntegrationTest extends AbstractReportingIntegrationT
 
     @Test
     void terminalTransitionPreservesFirstFinishedAtAndBlocksLaterTerminalRewrite() throws Exception {
-        long reportId = reportingHandler.createReport(createPaymentsReportRequest("terminal-1"));
+        long reportId = reportingHandler.createReport(ReportRequestFixtures.payments("terminal-1"));
         Instant claimTime = Instant.parse("2026-01-06T12:00:00Z");
         Instant snapshotFixedAt = Instant.parse("2026-01-06T12:01:00Z");
         Instant failedAt = Instant.parse("2026-01-06T12:02:00Z");
@@ -96,7 +106,7 @@ class ReportLifecycleWorkerIntegrationTest extends AbstractReportingIntegrationT
 
     @Test
     void createdReportCanBeExpiredWithoutChangingFinishedAt() throws Exception {
-        long reportId = reportingHandler.createReport(createPaymentsReportRequest("expire-1"));
+        long reportId = reportingHandler.createReport(ReportRequestFixtures.payments("expire-1"));
         Instant claimTime = Instant.parse("2026-01-06T13:00:00Z");
         Instant snapshotFixedAt = Instant.parse("2026-01-06T13:01:00Z");
         Instant createdAt = Instant.parse("2026-01-06T13:02:00Z");
@@ -105,7 +115,7 @@ class ReportLifecycleWorkerIntegrationTest extends AbstractReportingIntegrationT
 
         reportLifecycleDao.claimNextPendingReport(claimTime).orElseThrow();
         boolean created = reportLifecycleDao.markCreated(reportId, snapshotFixedAt, createdAt, expiresAt, 7L);
-        attachCsvFile(reportId, "file-expire-1", createdAt);
+        ReportRecordFixtures.attachCsvFile(jdbcTemplate, reportId, "file-expire-1", createdAt);
         boolean expired = reportLifecycleDao.expireReport(reportId, expiredAt);
 
         assertThat(created).isTrue();

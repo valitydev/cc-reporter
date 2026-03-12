@@ -1,17 +1,19 @@
-package dev.vality.ccreporter.service;
+package dev.vality.ccreporter.report;
 
-import dev.vality.ccreporter.config.ReportProperties;
-import dev.vality.ccreporter.config.ReportSchedulerProperties;
+import dev.vality.ccreporter.config.properties.ReportProperties;
+import dev.vality.ccreporter.config.properties.ReportSchedulerProperties;
 import dev.vality.ccreporter.dao.ClaimedReportJob;
 import dev.vality.ccreporter.dao.ReportLifecycleDao;
+import dev.vality.ccreporter.storage.FileStorageService;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+
 import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Optional;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
 public class ReportLifecycleService {
@@ -20,7 +22,7 @@ public class ReportLifecycleService {
 
     private final ReportLifecycleDao reportLifecycleDao;
     private final ReportCsvService reportCsvService;
-    private final FileStorageClient fileStorageClient;
+    private final FileStorageService fileStorageService;
     private final ReportProperties reportProperties;
     private final ReportSchedulerProperties reportSchedulerProperties;
     private final TransactionTemplate transactionTemplate;
@@ -28,14 +30,14 @@ public class ReportLifecycleService {
     public ReportLifecycleService(
             ReportLifecycleDao reportLifecycleDao,
             ReportCsvService reportCsvService,
-            FileStorageClient fileStorageClient,
+            FileStorageService fileStorageService,
             ReportProperties reportProperties,
             ReportSchedulerProperties reportSchedulerProperties,
             PlatformTransactionManager transactionManager
     ) {
         this.reportLifecycleDao = reportLifecycleDao;
         this.reportCsvService = reportCsvService;
-        this.fileStorageClient = fileStorageClient;
+        this.fileStorageService = fileStorageService;
         this.reportProperties = reportProperties;
         this.reportSchedulerProperties = reportSchedulerProperties;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
@@ -75,7 +77,7 @@ public class ReportLifecycleService {
         try {
             GeneratedCsvReport generatedCsvReport = reportCsvService.generate(claimedReportJob);
             Instant expiresAt = processingTime.plusSeconds(reportProperties.getExpirationSec());
-            String fileId = fileStorageClient.storeFile(
+            String fileId = fileStorageService.storeFile(
                     generatedCsvReport.fileName(),
                     generatedCsvReport.contentType(),
                     generatedCsvReport.content(),

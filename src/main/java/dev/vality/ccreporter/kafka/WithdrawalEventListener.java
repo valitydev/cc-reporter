@@ -2,11 +2,12 @@ package dev.vality.ccreporter.kafka;
 
 import dev.vality.ccreporter.ingestion.WithdrawalIngestionService;
 import dev.vality.machinegun.eventsink.SinkEvent;
-import java.util.List;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 @ConditionalOnProperty(prefix = "ccr.kafka.topics.withdrawals", name = "enabled", havingValue = "true")

@@ -1,16 +1,22 @@
 package dev.vality.ccreporter.integration;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import dev.vality.ccreporter.ingestion.PaymentIngestionService;
 import dev.vality.ccreporter.ingestion.WithdrawalIngestionService;
 import dev.vality.ccreporter.ingestion.WithdrawalSessionIngestionService;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
-import java.util.Map;
+import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
+import dev.vality.ccreporter.integration.fixture.SerializedIngestionEventFixtures;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * Проверяет разбор сериализованных событий и то, как ingestion переносит их в current-state таблицы.
+ */
 class IngestionSerializedEventsIntegrationTest extends AbstractReportingIntegrationTest {
 
     @Autowired
@@ -28,10 +34,10 @@ class IngestionSerializedEventsIntegrationTest extends AbstractReportingIntegrat
 
         Map<String, Object> row = jdbcTemplate.queryForMap(
                 """
-                SELECT status, provider_id, terminal_id, amount, fee, trx_id, rrn, approval_code, finalized_at
-                FROM ccr.payment_txn_current
-                WHERE invoice_id = ? AND payment_id = ?
-                """,
+                        SELECT status, provider_id, terminal_id, amount, fee, trx_id, rrn, approval_code, finalized_at
+                        FROM ccr.payment_txn_current
+                        WHERE invoice_id = ? AND payment_id = ?
+                        """,
                 SerializedIngestionEventFixtures.PAYMENT_INVOICE_ID,
                 SerializedIngestionEventFixtures.PAYMENT_ID
         );
@@ -55,11 +61,11 @@ class IngestionSerializedEventsIntegrationTest extends AbstractReportingIntegrat
 
         Map<String, Object> row = jdbcTemplate.queryForMap(
                 """
-                SELECT status, provider_id, terminal_id, amount, fee, trx_id, wallet_id,
-                       original_amount, original_currency, converted_amount, provider_amount, provider_currency
-                FROM ccr.withdrawal_txn_current
-                WHERE withdrawal_id = ?
-                """,
+                        SELECT status, provider_id, terminal_id, amount, fee, trx_id, wallet_id,
+                               original_amount, original_currency, converted_amount, provider_amount, provider_currency
+                        FROM ccr.withdrawal_txn_current
+                        WHERE withdrawal_id = ?
+                        """,
                 SerializedIngestionEventFixtures.WITHDRAWAL_ID
         );
 

@@ -1,40 +1,27 @@
-package dev.vality.ccreporter.service;
+package dev.vality.ccreporter.report;
 
-import dev.vality.ccreporter.BadContinuationToken;
-import dev.vality.ccreporter.CancelReportRequest;
-import dev.vality.ccreporter.CreateReportRequest;
-import dev.vality.ccreporter.ErrorInfo;
-import dev.vality.ccreporter.FileMeta;
-import dev.vality.ccreporter.FileNotFound;
-import dev.vality.ccreporter.FileSignature;
-import dev.vality.ccreporter.GeneratePresignedUrlRequest;
-import dev.vality.ccreporter.GetReportRequest;
-import dev.vality.ccreporter.GetReportsFilter;
-import dev.vality.ccreporter.GetReportsMeta;
-import dev.vality.ccreporter.GetReportsRequest;
-import dev.vality.ccreporter.GetReportsResponse;
-import dev.vality.ccreporter.InvalidRequest;
-import dev.vality.ccreporter.Report;
-import dev.vality.ccreporter.ReportNotFound;
-import dev.vality.ccreporter.ReportQuery;
-import dev.vality.ccreporter.ReportStatus;
-import dev.vality.ccreporter.ReportType;
-import dev.vality.ccreporter.config.CcrApiProperties;
-import dev.vality.ccreporter.config.ReportProperties;
+import dev.vality.ccreporter.*;
+import dev.vality.ccreporter.config.properties.CcrApiProperties;
+import dev.vality.ccreporter.config.properties.ReportProperties;
 import dev.vality.ccreporter.dao.ReportDao;
+import dev.vality.ccreporter.security.CurrentPrincipalResolver;
+import dev.vality.ccreporter.storage.FileStorageService;
+import dev.vality.ccreporter.storage.StoredFileData;
 import dev.vality.ccreporter.util.ContinuationTokenCodec;
 import dev.vality.ccreporter.util.ContinuationTokenCodec.PageCursor;
 import dev.vality.ccreporter.util.ThriftQueryCodec;
 import dev.vality.ccreporter.util.TimestampUtils;
+import org.apache.thrift.TException;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+
+import java.nio.file.NoSuchFileException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.apache.thrift.TException;
-import org.springframework.dao.DuplicateKeyException;
-import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 @Service
 public class ReportManagementService {
@@ -45,7 +32,7 @@ public class ReportManagementService {
     private final CurrentPrincipalResolver currentPrincipalResolver;
     private final CcrApiProperties apiProperties;
     private final ReportProperties reportProperties;
-    private final FileStorageClient fileStorageClient;
+    private final FileStorageService fileStorageService;
 
     public ReportManagementService(
             ReportDao reportDao,
@@ -54,7 +41,7 @@ public class ReportManagementService {
             CurrentPrincipalResolver currentPrincipalResolver,
             CcrApiProperties apiProperties,
             ReportProperties reportProperties,
-            FileStorageClient fileStorageClient
+            FileStorageService fileStorageService
     ) {
         this.reportDao = reportDao;
         this.thriftQueryCodec = thriftQueryCodec;
@@ -62,7 +49,7 @@ public class ReportManagementService {
         this.currentPrincipalResolver = currentPrincipalResolver;
         this.apiProperties = apiProperties;
         this.reportProperties = reportProperties;
-        this.fileStorageClient = fileStorageClient;
+        this.fileStorageService = fileStorageService;
     }
 
     public long createReport(CreateReportRequest request) throws InvalidRequest {
@@ -127,7 +114,7 @@ public class ReportManagementService {
     }
 
     public String generatePresignedUrl(GeneratePresignedUrlRequest request)
-            throws InvalidRequest, FileNotFound, TException {
+            throws TException {
         if (request == null || !StringUtils.hasText(request.getFileId())) {
             throw invalidRequest("file_id is required");
         }
@@ -147,8 +134,11 @@ public class ReportManagementService {
         }
         Instant effectiveExpiresAt = requestedExpiresAt.isAfter(ttlCap) ? ttlCap : requestedExpiresAt;
         try {
-            return fileStorageClient.generateDownloadUrl(fileData.get().fileId(), effectiveExpiresAt);
-        } catch (StoredFileNotFoundException ex) {
+            return fileStorageService.generateDownloadUrl(
+                    fileData.get().fileId(),
+                    effectiveExpiresAt
+            );
+        } catch (NoSuchFileException ex) {
             throw new FileNotFound();
         }
     }

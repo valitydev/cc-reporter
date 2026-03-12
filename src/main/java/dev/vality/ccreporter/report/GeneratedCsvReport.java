@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.service;
+package dev.vality.ccreporter.report;
 
 import java.time.Instant;
 

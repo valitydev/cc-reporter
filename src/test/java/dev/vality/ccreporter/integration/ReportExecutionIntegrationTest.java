@@ -1,25 +1,33 @@
 package dev.vality.ccreporter.integration;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import dev.vality.ccreporter.GetReportRequest;
 import dev.vality.ccreporter.Report;
 import dev.vality.ccreporter.ReportStatus;
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
+import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
+import dev.vality.ccreporter.integration.fixture.CurrentStateTableFixtures;
+import dev.vality.ccreporter.integration.fixture.ReportRequestFixtures;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * Проверяет, как из current state собирается CSV и как готовый файл публикуется в storage.
+ */
 class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
 
     @Test
     void paymentsReportIsBuiltAndPublishedEndToEnd() throws Exception {
-        insertPaymentRow(
+        CurrentStateTableFixtures.insertPaymentRow(
+                jdbcTemplate,
                 "invoice-1",
                 "payment-1",
                 Instant.parse("2026-01-01T10:00:00Z"),
                 Instant.parse("2026-01-01T11:00:00Z")
         );
-        long reportId = reportingHandler.createReport(createPaymentsReportRequest("exec-payments-1"));
+        long reportId = reportingHandler.createReport(ReportRequestFixtures.payments("exec-payments-1"));
 
         boolean processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
 
@@ -41,12 +49,13 @@ class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
 
     @Test
     void withdrawalsReportIsBuiltAndPublishedEndToEnd() throws Exception {
-        insertWithdrawalRow(
+        CurrentStateTableFixtures.insertWithdrawalRow(
+                jdbcTemplate,
                 "withdrawal-1",
                 Instant.parse("2026-01-01T10:00:00Z"),
                 Instant.parse("2026-01-01T11:00:00Z")
         );
-        long reportId = reportingHandler.createReport(createWithdrawalsReportRequest("exec-withdrawals-1"));
+        long reportId = reportingHandler.createReport(ReportRequestFixtures.withdrawals("exec-withdrawals-1"));
 
         boolean processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
 
@@ -66,13 +75,14 @@ class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
 
     @Test
     void failedUploadIsRetriedAndThenMarkedFailedAtAttemptLimit() throws Exception {
-        insertPaymentRow(
+        CurrentStateTableFixtures.insertPaymentRow(
+                jdbcTemplate,
                 "invoice-2",
                 "payment-2",
                 Instant.parse("2026-01-01T10:00:00Z"),
                 Instant.parse("2026-01-01T11:00:00Z")
         );
-        long reportId = reportingHandler.createReport(createPaymentsReportRequest("exec-failure-1"));
+        long reportId = reportingHandler.createReport(ReportRequestFixtures.payments("exec-failure-1"));
         stubFileStorageClient.setFailUploads(true);
 
         reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
@@ -92,7 +102,7 @@ class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
 
     @Test
     void staleProcessingReportIsMarkedTimedOut() throws Exception {
-        long reportId = reportingHandler.createReport(createPaymentsReportRequest("exec-timeout-1"));
+        long reportId = reportingHandler.createReport(ReportRequestFixtures.payments("exec-timeout-1"));
         Instant startedAt = Instant.parse("2026-01-01T12:00:00Z");
 
         reportLifecycleDao.claimNextPendingReport(startedAt).orElseThrow();
@@ -107,13 +117,14 @@ class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
 
     @Test
     void createdReportExpiresAfterConfiguredTtl() throws Exception {
-        insertPaymentRow(
+        CurrentStateTableFixtures.insertPaymentRow(
+                jdbcTemplate,
                 "invoice-3",
                 "payment-3",
                 Instant.parse("2026-01-01T10:00:00Z"),
                 Instant.parse("2026-01-01T11:00:00Z")
         );
-        long reportId = reportingHandler.createReport(createPaymentsReportRequest("exec-expire-1"));
+        long reportId = reportingHandler.createReport(ReportRequestFixtures.payments("exec-expire-1"));
         Instant claimTime = Instant.parse("2026-01-01T12:00:00Z");
 
         reportLifecycleService.processNextPendingReport(claimTime);

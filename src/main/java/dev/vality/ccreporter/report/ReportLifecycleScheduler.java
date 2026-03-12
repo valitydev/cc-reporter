@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.service;
+package dev.vality.ccreporter.report;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;

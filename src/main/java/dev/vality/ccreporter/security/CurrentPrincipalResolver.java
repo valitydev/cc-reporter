@@ -1,12 +1,13 @@
-package dev.vality.ccreporter.service;
+package dev.vality.ccreporter.security;
 
 import dev.vality.ccreporter.InvalidRequest;
-import dev.vality.ccreporter.config.CcrApiProperties;
+import dev.vality.ccreporter.config.properties.CcrApiProperties;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.List;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+
+import java.util.List;
 
 @Component
 public class CurrentPrincipalResolver {

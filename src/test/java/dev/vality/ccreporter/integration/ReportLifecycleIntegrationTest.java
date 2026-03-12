@@ -1,23 +1,24 @@
 package dev.vality.ccreporter.integration;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import dev.vality.ccreporter.CancelReportRequest;
-import dev.vality.ccreporter.GetReportRequest;
-import dev.vality.ccreporter.GetReportsFilter;
-import dev.vality.ccreporter.GetReportsRequest;
-import dev.vality.ccreporter.GetReportsResponse;
-import dev.vality.ccreporter.Report;
-import dev.vality.ccreporter.ReportStatus;
-import java.time.Instant;
-import java.util.List;
+import dev.vality.ccreporter.*;
+import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
+import dev.vality.ccreporter.integration.fixture.ReportRecordFixtures;
+import dev.vality.ccreporter.integration.fixture.ReportRequestFixtures;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * Проверяет обычные переходы отчёта по статусам без фоновой конкуренции.
+ */
 class ReportLifecycleIntegrationTest extends AbstractReportingIntegrationTest {
 
     @Test
     void reportLifecycleProgressesFromPendingToCreated() throws Exception {
-        long reportId = reportingHandler.createReport(createPaymentsReportRequest("lifecycle-created-1"));
+        long reportId = reportingHandler.createReport(ReportRequestFixtures.payments("lifecycle-created-1"));
         final Instant startedAt = Instant.parse("2026-01-02T10:00:00Z");
         final Instant snapshotFixedAt = Instant.parse("2026-01-02T10:05:00Z");
         final Instant finishedAt = Instant.parse("2026-01-02T10:10:00Z");
@@ -29,7 +30,7 @@ class ReportLifecycleIntegrationTest extends AbstractReportingIntegrationTest {
         assertThat(pendingReport.isSetFinishedAt()).isFalse();
         assertThat(pendingReport.isSetFile()).isFalse();
 
-        markReportProcessing(reportId, startedAt, snapshotFixedAt);
+        ReportRecordFixtures.markReportProcessing(jdbcTemplate, reportId, startedAt, snapshotFixedAt);
 
         Report processingReport = reportingHandler.getReport(new GetReportRequest(reportId));
         assertThat(processingReport.getStatus()).isEqualTo(ReportStatus.processing);
@@ -37,8 +38,16 @@ class ReportLifecycleIntegrationTest extends AbstractReportingIntegrationTest {
         assertThat(processingReport.getDataSnapshotFixedAt()).isEqualTo(snapshotFixedAt.toString());
         assertThat(processingReport.isSetFinishedAt()).isFalse();
 
-        markReportCreated(reportId, startedAt, snapshotFixedAt, finishedAt, expiresAt, 42L);
-        attachCsvFile(reportId, "file-lifecycle-1", finishedAt);
+        ReportRecordFixtures.markReportCreated(
+                jdbcTemplate,
+                reportId,
+                startedAt,
+                snapshotFixedAt,
+                finishedAt,
+                expiresAt,
+                42L
+        );
+        ReportRecordFixtures.attachCsvFile(jdbcTemplate, reportId, "file-lifecycle-1", finishedAt);
 
         Report createdReport = reportingHandler.getReport(new GetReportRequest(reportId));
         assertThat(createdReport.getStatus()).isEqualTo(ReportStatus.created);
@@ -59,11 +68,11 @@ class ReportLifecycleIntegrationTest extends AbstractReportingIntegrationTest {
 
     @Test
     void processingReportCanBeCanceledAndBecomesTerminal() throws Exception {
-        long reportId = reportingHandler.createReport(createPaymentsReportRequest("cancel-processing-1"));
+        long reportId = reportingHandler.createReport(ReportRequestFixtures.payments("cancel-processing-1"));
         Instant startedAt = Instant.parse("2026-01-03T10:00:00Z");
         Instant snapshotFixedAt = Instant.parse("2026-01-03T10:02:00Z");
 
-        markReportProcessing(reportId, startedAt, snapshotFixedAt);
+        ReportRecordFixtures.markReportProcessing(jdbcTemplate, reportId, startedAt, snapshotFixedAt);
 
         reportingHandler.cancelReport(new CancelReportRequest(reportId));
         reportingHandler.cancelReport(new CancelReportRequest(reportId));
@@ -77,12 +86,20 @@ class ReportLifecycleIntegrationTest extends AbstractReportingIntegrationTest {
 
     @Test
     void failedReportRemainsFailedWhenCancelIsCalled() throws Exception {
-        long reportId = reportingHandler.createReport(createPaymentsReportRequest("failed-1"));
+        long reportId = reportingHandler.createReport(ReportRequestFixtures.payments("failed-1"));
         Instant startedAt = Instant.parse("2026-01-04T10:00:00Z");
         Instant snapshotFixedAt = Instant.parse("2026-01-04T10:03:00Z");
         Instant finishedAt = Instant.parse("2026-01-04T10:07:00Z");
 
-        markReportFailed(reportId, startedAt, snapshotFixedAt, finishedAt, "storage_error", "upload failed");
+        ReportRecordFixtures.markReportFailed(
+                jdbcTemplate,
+                reportId,
+                startedAt,
+                snapshotFixedAt,
+                finishedAt,
+                "storage_error",
+                "upload failed"
+        );
 
         reportingHandler.cancelReport(new CancelReportRequest(reportId));
 

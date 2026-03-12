@@ -1,21 +1,11 @@
 package dev.vality.ccreporter.dao;
 
-import dev.vality.ccreporter.FileType;
-import dev.vality.ccreporter.GetReportsFilter;
-import dev.vality.ccreporter.ReportQuery;
-import dev.vality.ccreporter.ReportStatus;
-import dev.vality.ccreporter.ReportType;
-import dev.vality.ccreporter.service.StoredFileData;
-import dev.vality.ccreporter.service.StoredReport;
+import dev.vality.ccreporter.*;
+import dev.vality.ccreporter.report.StoredReport;
+import dev.vality.ccreporter.storage.StoredFileData;
 import dev.vality.ccreporter.util.ContinuationTokenCodec.PageCursor;
 import dev.vality.ccreporter.util.ThriftQueryCodec;
 import dev.vality.ccreporter.util.TimestampUtils;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 import org.postgresql.util.PGobject;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.RowMapper;
@@ -23,6 +13,12 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class ReportDao {
@@ -45,10 +41,10 @@ public class ReportDao {
         try {
             Long id = jdbcTemplate.queryForObject(
                     """
-                    SELECT id
-                    FROM ccr.report_job
-                    WHERE created_by = :createdBy AND idempotency_key = :idempotencyKey
-                    """,
+                            SELECT id
+                            FROM ccr.report_job
+                            WHERE created_by = :createdBy AND idempotency_key = :idempotencyKey
+                            """,
                     new MapSqlParameterSource()
                             .addValue("createdBy", createdBy)
                             .addValue("idempotencyKey", idempotencyKey),
@@ -74,30 +70,30 @@ public class ReportDao {
 
         return jdbcTemplate.queryForObject(
                 """
-                INSERT INTO ccr.report_job (
-                    report_type,
-                    file_type,
-                    query_json,
-                    query_hash,
-                    requested_time_from,
-                    requested_time_to,
-                    timezone,
-                    created_by,
-                    idempotency_key
-                )
-                VALUES (
-                    CAST(:reportType AS ccr.report_type),
-                    CAST(:fileType AS ccr.file_type),
-                    CAST(:queryJson AS jsonb),
-                    :queryHash,
-                    :requestedTimeFrom,
-                    :requestedTimeTo,
-                    :timezone,
-                    :createdBy,
-                    :idempotencyKey
-                )
-                RETURNING id
-                """,
+                        INSERT INTO ccr.report_job (
+                            report_type,
+                            file_type,
+                            query_json,
+                            query_hash,
+                            requested_time_from,
+                            requested_time_to,
+                            timezone,
+                            created_by,
+                            idempotency_key
+                        )
+                        VALUES (
+                            CAST(:reportType AS ccr.report_type),
+                            CAST(:fileType AS ccr.file_type),
+                            CAST(:queryJson AS jsonb),
+                            :queryHash,
+                            :requestedTimeFrom,
+                            :requestedTimeTo,
+                            :timezone,
+                            :createdBy,
+                            :idempotencyKey
+                        )
+                        RETURNING id
+                        """,
                 new MapSqlParameterSource()
                         .addValue("reportType", reportType.name())
                         .addValue("fileType", fileType.name())
@@ -115,33 +111,33 @@ public class ReportDao {
     public Optional<StoredReport> getReport(String createdBy, long reportId) {
         List<StoredReport> result = jdbcTemplate.query(
                 """
-                SELECT r.id,
-                       r.report_type,
-                       r.file_type,
-                       r.query_json,
-                       r.timezone,
-                       r.status,
-                       r.created_at,
-                       r.updated_at,
-                       r.started_at,
-                       r.data_snapshot_fixed_at,
-                       r.finished_at,
-                       r.rows_count,
-                       r.expires_at,
-                       r.error_code,
-                       r.error_message,
-                       rf.file_id,
-                       rf.file_type AS report_file_type,
-                       rf.filename,
-                       rf.content_type,
-                       rf.md5,
-                       rf.sha256,
-                       rf.size_bytes,
-                       rf.created_at AS file_created_at
-                FROM ccr.report_job r
-                LEFT JOIN ccr.report_file rf ON rf.report_id = r.id
-                WHERE r.id = :reportId AND r.created_by = :createdBy
-                """,
+                        SELECT r.id,
+                               r.report_type,
+                               r.file_type,
+                               r.query_json,
+                               r.timezone,
+                               r.status,
+                               r.created_at,
+                               r.updated_at,
+                               r.started_at,
+                               r.data_snapshot_fixed_at,
+                               r.finished_at,
+                               r.rows_count,
+                               r.expires_at,
+                               r.error_code,
+                               r.error_message,
+                               rf.file_id,
+                               rf.file_type AS report_file_type,
+                               rf.filename,
+                               rf.content_type,
+                               rf.md5,
+                               rf.sha256,
+                               rf.size_bytes,
+                               rf.created_at AS file_created_at
+                        FROM ccr.report_job r
+                        LEFT JOIN ccr.report_file rf ON rf.report_id = r.id
+                        WHERE r.id = :reportId AND r.created_by = :createdBy
+                        """,
                 new MapSqlParameterSource()
                         .addValue("reportId", reportId)
                         .addValue("createdBy", createdBy),
@@ -158,33 +154,33 @@ public class ReportDao {
     ) {
         StringBuilder sql = new StringBuilder(
                 """
-                SELECT r.id,
-                       r.report_type,
-                       r.file_type,
-                       r.query_json,
-                       r.timezone,
-                       r.status,
-                       r.created_at,
-                       r.updated_at,
-                       r.started_at,
-                       r.data_snapshot_fixed_at,
-                       r.finished_at,
-                       r.rows_count,
-                       r.expires_at,
-                       r.error_code,
-                       r.error_message,
-                       rf.file_id,
-                       rf.file_type AS report_file_type,
-                       rf.filename,
-                       rf.content_type,
-                       rf.md5,
-                       rf.sha256,
-                       rf.size_bytes,
-                       rf.created_at AS file_created_at
-                FROM ccr.report_job r
-                LEFT JOIN ccr.report_file rf ON rf.report_id = r.id
-                WHERE r.created_by = :createdBy
-                """
+                        SELECT r.id,
+                               r.report_type,
+                               r.file_type,
+                               r.query_json,
+                               r.timezone,
+                               r.status,
+                               r.created_at,
+                               r.updated_at,
+                               r.started_at,
+                               r.data_snapshot_fixed_at,
+                               r.finished_at,
+                               r.rows_count,
+                               r.expires_at,
+                               r.error_code,
+                               r.error_message,
+                               rf.file_id,
+                               rf.file_type AS report_file_type,
+                               rf.filename,
+                               rf.content_type,
+                               rf.md5,
+                               rf.sha256,
+                               rf.size_bytes,
+                               rf.created_at AS file_created_at
+                        FROM ccr.report_job r
+                        LEFT JOIN ccr.report_file rf ON rf.report_id = r.id
+                        WHERE r.created_by = :createdBy
+                        """
         );
         MapSqlParameterSource parameters = new MapSqlParameterSource().addValue("createdBy", createdBy);
 
@@ -229,14 +225,14 @@ public class ReportDao {
     public boolean cancelReport(String createdBy, long reportId, Instant now) {
         int updated = jdbcTemplate.update(
                 """
-                UPDATE ccr.report_job
-                SET status = CAST(:canceledStatus AS ccr.report_status),
-                    finished_at = COALESCE(finished_at, :finishedAt),
-                    updated_at = :updatedAt
-                WHERE id = :reportId
-                  AND created_by = :createdBy
-                  AND status::text IN (:cancelableStatuses)
-                """,
+                        UPDATE ccr.report_job
+                        SET status = CAST(:canceledStatus AS ccr.report_status),
+                            finished_at = COALESCE(finished_at, :finishedAt),
+                            updated_at = :updatedAt
+                        WHERE id = :reportId
+                          AND created_by = :createdBy
+                          AND status::text IN (:cancelableStatuses)
+                        """,
                 new MapSqlParameterSource()
                         .addValue("canceledStatus", ReportStatus.canceled.name())
                         .addValue("finishedAt", TimestampUtils.toLocalDateTime(now))
@@ -254,10 +250,10 @@ public class ReportDao {
     public boolean reportExists(String createdBy, long reportId) {
         Integer count = jdbcTemplate.queryForObject(
                 """
-                SELECT count(*)
-                FROM ccr.report_job
-                WHERE id = :reportId AND created_by = :createdBy
-                """,
+                        SELECT count(*)
+                        FROM ccr.report_job
+                        WHERE id = :reportId AND created_by = :createdBy
+                        """,
                 new MapSqlParameterSource()
                         .addValue("reportId", reportId)
                         .addValue("createdBy", createdBy),
@@ -269,20 +265,20 @@ public class ReportDao {
     public Optional<StoredFileData> getFile(String createdBy, String fileId) {
         List<StoredFileData> files = jdbcTemplate.query(
                 """
-                SELECT rf.file_id,
-                       rf.file_type,
-                       rf.filename,
-                       rf.content_type,
-                       rf.md5,
-                       rf.sha256,
-                       rf.size_bytes,
-                       rf.created_at,
-                       rf.bucket,
-                       rf.object_key
-                FROM ccr.report_file rf
-                JOIN ccr.report_job r ON r.id = rf.report_id
-                WHERE rf.file_id = :fileId AND r.created_by = :createdBy
-                """,
+                        SELECT rf.file_id,
+                               rf.file_type,
+                               rf.filename,
+                               rf.content_type,
+                               rf.md5,
+                               rf.sha256,
+                               rf.size_bytes,
+                               rf.created_at,
+                               rf.bucket,
+                               rf.object_key
+                        FROM ccr.report_file rf
+                        JOIN ccr.report_job r ON r.id = rf.report_id
+                        WHERE rf.file_id = :fileId AND r.created_by = :createdBy
+                        """,
                 new MapSqlParameterSource()
                         .addValue("fileId", fileId)
                         .addValue("createdBy", createdBy),
