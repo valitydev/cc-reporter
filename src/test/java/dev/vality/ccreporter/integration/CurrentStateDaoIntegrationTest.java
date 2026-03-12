@@ -32,14 +32,14 @@ class CurrentStateDaoIntegrationTest extends AbstractReportingIntegrationTest {
 
     @Test
     void paymentUpsertIsMonotonicAndKeepsFirstFinalizedAt() {
-        Instant finalizedAt = Instant.parse("2026-01-01T10:10:00Z");
-        Instant laterFinalizedAt = Instant.parse("2026-01-01T10:20:00Z");
+        var finalizedAt = Instant.parse("2026-01-01T10:10:00Z");
+        var laterFinalizedAt = Instant.parse("2026-01-01T10:20:00Z");
 
         paymentCurrentDao.upsert(CurrentStateUpdateFixtures.paymentUpdate(10L, "captured", finalizedAt));
         paymentCurrentDao.upsert(CurrentStateUpdateFixtures.paymentUpdate(11L, "refunded", laterFinalizedAt));
         paymentCurrentDao.upsert(CurrentStateUpdateFixtures.paymentUpdate(9L, "pending", null));
 
-        Map<String, Object> row = jdbcTemplate.queryForMap(
+        var row = jdbcTemplate.queryForMap(
                 """
                         SELECT domain_event_id, status, finalized_at
                         FROM ccr.payment_txn_current
@@ -73,8 +73,8 @@ class CurrentStateDaoIntegrationTest extends AbstractReportingIntegrationTest {
 
     @Test
     void withdrawalUpsertIsMonotonicAndKeepsFirstFinalizedAt() {
-        Instant finalizedAt = Instant.parse("2026-01-01T11:10:00Z");
-        Instant laterFinalizedAt = Instant.parse("2026-01-01T11:20:00Z");
+        var finalizedAt = Instant.parse("2026-01-01T11:10:00Z");
+        var laterFinalizedAt = Instant.parse("2026-01-01T11:20:00Z");
 
         withdrawalCurrentDao.upsert(
                 CurrentStateUpdateFixtures.withdrawalUpdate(30L, "succeeded", finalizedAt, "trx-1")
@@ -84,7 +84,7 @@ class CurrentStateDaoIntegrationTest extends AbstractReportingIntegrationTest {
         );
         withdrawalCurrentDao.upsert(CurrentStateUpdateFixtures.withdrawalUpdate(29L, "pending", null, "trx-stale"));
 
-        Map<String, Object> row = jdbcTemplate.queryForMap(
+        var row = jdbcTemplate.queryForMap(
                 """
                         SELECT domain_event_id, status, finalized_at, trx_id
                         FROM ccr.withdrawal_txn_current

@@ -39,7 +39,7 @@ public class ReportDao {
             return Optional.empty();
         }
         try {
-            Long id = jdbcTemplate.queryForObject(
+            var id = jdbcTemplate.queryForObject(
                     """
                             SELECT id
                             FROM ccr.report_job
@@ -65,8 +65,8 @@ public class ReportDao {
             String idempotencyKey
     ) {
         var timeRange = thriftQueryCodec.extractTimeRange(query);
-        String queryJson = thriftQueryCodec.serialize(query);
-        String queryHash = thriftQueryCodec.hash(queryJson);
+        var queryJson = thriftQueryCodec.serialize(query);
+        var queryHash = thriftQueryCodec.hash(queryJson);
 
         return jdbcTemplate.queryForObject(
                 """
@@ -109,7 +109,7 @@ public class ReportDao {
     }
 
     public Optional<StoredReport> getReport(String createdBy, long reportId) {
-        List<StoredReport> result = jdbcTemplate.query(
+        var result = jdbcTemplate.query(
                 """
                         SELECT r.id,
                                r.report_type,
@@ -152,7 +152,7 @@ public class ReportDao {
             PageCursor cursor,
             int limit
     ) {
-        StringBuilder sql = new StringBuilder(
+        var sql = new StringBuilder(
                 """
                         SELECT r.id,
                                r.report_type,
@@ -182,7 +182,7 @@ public class ReportDao {
                         WHERE r.created_by = :createdBy
                         """
         );
-        MapSqlParameterSource parameters = new MapSqlParameterSource().addValue("createdBy", createdBy);
+        var parameters = new MapSqlParameterSource().addValue("createdBy", createdBy);
 
         if (filter != null && filter.isSetStatuses() && !filter.getStatuses().isEmpty()) {
             sql.append(" AND r.status::text IN (:statuses)");
@@ -223,7 +223,7 @@ public class ReportDao {
     }
 
     public boolean cancelReport(String createdBy, long reportId, Instant now) {
-        int updated = jdbcTemplate.update(
+        var updated = jdbcTemplate.update(
                 """
                         UPDATE ccr.report_job
                         SET status = CAST(:canceledStatus AS ccr.report_status),
@@ -248,7 +248,7 @@ public class ReportDao {
     }
 
     public boolean reportExists(String createdBy, long reportId) {
-        Integer count = jdbcTemplate.queryForObject(
+        var count = jdbcTemplate.queryForObject(
                 """
                         SELECT count(*)
                         FROM ccr.report_job
@@ -263,7 +263,7 @@ public class ReportDao {
     }
 
     public Optional<StoredFileData> getFile(String createdBy, String fileId) {
-        List<StoredFileData> files = jdbcTemplate.query(
+        var files = jdbcTemplate.query(
                 """
                         SELECT rf.report_id,
                                rf.file_id,
@@ -338,7 +338,7 @@ public class ReportDao {
     }
 
     private static Long optionalLong(ResultSet rs, String columnName) throws SQLException {
-        long value = rs.getLong(columnName);
+        var value = rs.getLong(columnName);
         return rs.wasNull() ? null : value;
     }
 

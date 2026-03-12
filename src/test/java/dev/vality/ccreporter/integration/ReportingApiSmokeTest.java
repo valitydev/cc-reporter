@@ -14,14 +14,14 @@ class ReportingApiSmokeTest extends AbstractReportingIntegrationTest {
 
     @Test
     void applicationStartsWithDatabase() {
-        Integer result = jdbcTemplate.queryForObject("select 1", Integer.class);
-        Integer flywayHistoryTableCount = jdbcTemplate.queryForObject(
+        var result = jdbcTemplate.queryForObject("select 1", Integer.class);
+        var flywayHistoryTableCount = jdbcTemplate.queryForObject(
                 "select count(*) from information_schema.tables where table_schema = ? and table_name = ?",
                 Integer.class,
                 "ccr",
                 "flyway_schema_history"
         );
-        Integer reportJobTableCount = jdbcTemplate.queryForObject(
+        var reportJobTableCount = jdbcTemplate.queryForObject(
                 "select count(*) from information_schema.tables where table_schema = ? and table_name = ?",
                 Integer.class,
                 "ccr",
@@ -35,11 +35,11 @@ class ReportingApiSmokeTest extends AbstractReportingIntegrationTest {
 
     @Test
     void createReportIsIdempotentAndReadable() throws Exception {
-        CreateReportRequest request = ReportRequestFixtures.payments("idem-1");
+        var request = ReportRequestFixtures.payments("idem-1");
 
-        long firstId = reportingHandler.createReport(request);
-        long secondId = reportingHandler.createReport(request);
-        Report report = reportingHandler.getReport(new GetReportRequest(firstId));
+        var firstId = reportingHandler.createReport(request);
+        var secondId = reportingHandler.createReport(request);
+        var report = reportingHandler.getReport(new GetReportRequest(firstId));
 
         assertThat(secondId).isEqualTo(firstId);
         assertThat(report.getReportId()).isEqualTo(firstId);
@@ -53,9 +53,9 @@ class ReportingApiSmokeTest extends AbstractReportingIntegrationTest {
         reportingHandler.createReport(ReportRequestFixtures.payments("page-1"));
         reportingHandler.createReport(ReportRequestFixtures.payments("page-2"));
 
-        GetReportsMeta meta = new GetReportsMeta();
+        var meta = new GetReportsMeta();
         meta.setLimit(1);
-        GetReportsResponse response = reportingHandler.getReports(new GetReportsRequest().setMeta(meta));
+        var response = reportingHandler.getReports(new GetReportsRequest().setMeta(meta));
 
         assertThat(response.getReports()).hasSize(1);
         assertThat(response.getContinuationToken()).isNotBlank();
@@ -63,12 +63,12 @@ class ReportingApiSmokeTest extends AbstractReportingIntegrationTest {
 
     @Test
     void cancelReportIsIdempotentForPendingReport() throws Exception {
-        long reportId = reportingHandler.createReport(ReportRequestFixtures.payments("cancel-1"));
+        var reportId = reportingHandler.createReport(ReportRequestFixtures.payments("cancel-1"));
 
         reportingHandler.cancelReport(new CancelReportRequest(reportId));
         reportingHandler.cancelReport(new CancelReportRequest(reportId));
 
-        Report report = reportingHandler.getReport(new GetReportRequest(reportId));
+        var report = reportingHandler.getReport(new GetReportRequest(reportId));
         assertThat(report.getStatus()).isEqualTo(ReportStatus.canceled);
         assertThat(report.getFinishedAt()).isNotBlank();
     }

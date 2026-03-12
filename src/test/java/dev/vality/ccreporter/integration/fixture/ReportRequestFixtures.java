@@ -23,12 +23,12 @@ public final class ReportRequestFixtures {
     }
 
     public static CreateReportRequest payments(String idempotencyKey, TimeRange timeRange) {
-        PaymentsQuery paymentsQuery = new PaymentsQuery();
+        var paymentsQuery = new PaymentsQuery();
         paymentsQuery.setTimeRange(timeRange);
-        ReportQuery reportQuery = new ReportQuery();
+        var reportQuery = new ReportQuery();
         reportQuery.setPayments(paymentsQuery);
 
-        CreateReportRequest request = new CreateReportRequest();
+        var request = new CreateReportRequest();
         request.setReportType(ReportType.payments);
         request.setFileType(FileType.csv);
         request.setQuery(reportQuery);
@@ -41,12 +41,12 @@ public final class ReportRequestFixtures {
     }
 
     public static CreateReportRequest withdrawals(String idempotencyKey, TimeRange timeRange) {
-        WithdrawalsQuery withdrawalsQuery = new WithdrawalsQuery();
+        var withdrawalsQuery = new WithdrawalsQuery();
         withdrawalsQuery.setTimeRange(timeRange);
-        ReportQuery reportQuery = new ReportQuery();
+        var reportQuery = new ReportQuery();
         reportQuery.setWithdrawals(withdrawalsQuery);
 
-        CreateReportRequest request = new CreateReportRequest();
+        var request = new CreateReportRequest();
         request.setReportType(ReportType.withdrawals);
         request.setFileType(FileType.csv);
         request.setQuery(reportQuery);

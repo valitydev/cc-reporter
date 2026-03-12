@@ -110,15 +110,15 @@ public class ReportCsvService {
 
     public GeneratedCsvReport generate(ClaimedReportJob claimedReportJob) {
         return Objects.requireNonNull(readOnlyRepeatableReadTx.execute(status -> {
-            Instant snapshotFixedAt = currentSnapshot();
-            ReportQuery reportQuery = thriftQueryCodec.deserialize(claimedReportJob.queryJson());
-            ZoneId zoneId = ZoneId.of(claimedReportJob.timezone());
-            String fileName = claimedReportJob.reportType().name() + "-report-" + claimedReportJob.id() + ".csv";
-            Path stagedFile = createTempFile(claimedReportJob.id());
+            var snapshotFixedAt = currentSnapshot();
+            var reportQuery = thriftQueryCodec.deserialize(claimedReportJob.queryJson());
+            var zoneId = ZoneId.of(claimedReportJob.timezone());
+            var fileName = claimedReportJob.reportType().name() + "-report-" + claimedReportJob.id() + ".csv";
+            var stagedFile = createTempFile(claimedReportJob.id());
             try {
-                MessageDigest md5 = createDigest("MD5");
-                MessageDigest sha256 = createDigest("SHA-256");
-                long rowsCount;
+                var md5 = createDigest("MD5");
+                var sha256 = createDigest("SHA-256");
+                var rowsCount = 0L;
                 try (var fileOutputStream = Files.newOutputStream(stagedFile);
                         var bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
                         var md5OutputStream = new DigestOutputStream(bufferedOutputStream, md5);
@@ -158,7 +158,7 @@ public class ReportCsvService {
     private long writePaymentsCsv(BufferedWriter writer, PaymentsQuery query, ZoneId zoneId) throws IOException {
         writer.write(String.join(",", PAYMENT_COLUMNS));
         writer.newLine();
-        StringBuilder sql = new StringBuilder(
+        var sql = new StringBuilder(
                 """
                         SELECT created_at, finalized_at, invoice_id, payment_id, status,
                                amount, currency, trx_id, provider_id, terminal_id, shop_id,
@@ -169,7 +169,7 @@ public class ReportCsvService {
                           AND created_at < :toTime
                         """
         );
-        MapSqlParameterSource parameters =
+        var parameters =
                 baseTimeRange(query.getTimeRange().getFromTime(), query.getTimeRange().getToTime());
         appendCommonFilters(sql, parameters, "party_id", "partyIds", query.getPartyIds());
         appendCommonFilters(sql, parameters, "shop_id", "shopIds", query.getShopIds());
@@ -190,7 +190,7 @@ public class ReportCsvService {
     ) throws IOException {
         writer.write(String.join(",", WITHDRAWAL_COLUMNS));
         writer.newLine();
-        StringBuilder sql = new StringBuilder(
+        var sql = new StringBuilder(
                 """
                         SELECT created_at, finalized_at, withdrawal_id, status, amount, currency,
                                trx_id, provider_id, terminal_id, wallet_id, exchange_rate_internal,
@@ -201,7 +201,7 @@ public class ReportCsvService {
                           AND created_at < :toTime
                         """
         );
-        MapSqlParameterSource parameters = baseTimeRange(
+        var parameters = baseTimeRange(
                 query.getTimeRange().getFromTime(),
                 query.getTimeRange().getToTime()
         );
@@ -224,9 +224,9 @@ public class ReportCsvService {
             List<String> columns,
             ZoneId zoneId
     ) {
-        long[] rowCount = {0L};
+        var rowCount = new long[]{0L};
         try {
-            PreparedStatementCreator preparedStatementCreator = buildCursorPreparedStatement(sql, parameters);
+            var preparedStatementCreator = buildCursorPreparedStatement(sql, parameters);
             jdbcTemplate.getJdbcTemplate().query(preparedStatementCreator, resultSet -> {
                 try {
                     writeRow(writer, resultSet, columns, zoneId);
@@ -242,13 +242,13 @@ public class ReportCsvService {
     }
 
     private PreparedStatementCreator buildCursorPreparedStatement(String sql, MapSqlParameterSource parameters) {
-        ParsedSql parsedSql = NamedParameterUtils.parseSqlStatement(sql);
-        String expandedSql = NamedParameterUtils.substituteNamedParameters(parsedSql, parameters);
-        List<SqlParameter> sqlParameters = NamedParameterUtils.buildSqlParameterList(parsedSql, parameters);
-        Object[] values = NamedParameterUtils.buildValueArray(parsedSql, parameters, null);
-        PreparedStatementCreatorFactory preparedStatementCreatorFactory =
+        var parsedSql = NamedParameterUtils.parseSqlStatement(sql);
+        var expandedSql = NamedParameterUtils.substituteNamedParameters(parsedSql, parameters);
+        var sqlParameters = NamedParameterUtils.buildSqlParameterList(parsedSql, parameters);
+        var values = NamedParameterUtils.buildValueArray(parsedSql, parameters, null);
+        var preparedStatementCreatorFactory =
                 new PreparedStatementCreatorFactory(expandedSql, sqlParameters);
-        PreparedStatementSetter preparedStatementSetter =
+        var preparedStatementSetter =
                 preparedStatementCreatorFactory.newPreparedStatementSetter(values);
         return connection -> prepareCursorStatement(connection, expandedSql, preparedStatementSetter);
     }
@@ -258,7 +258,7 @@ public class ReportCsvService {
             String sql,
             PreparedStatementSetter preparedStatementSetter
     ) throws SQLException {
-        PreparedStatement preparedStatement = connection.prepareStatement(
+        var preparedStatement = connection.prepareStatement(
                 sql,
                 ResultSet.TYPE_FORWARD_ONLY,
                 ResultSet.CONCUR_READ_ONLY
@@ -278,7 +278,7 @@ public class ReportCsvService {
             if (i > 0) {
                 writer.write(',');
             }
-            String column = columns.get(i);
+            var column = columns.get(i);
             writer.write(escapeCsv(renderValue(resultSet, column, zoneId)));
         }
         writer.newLine();
@@ -321,7 +321,7 @@ public class ReportCsvService {
         if (timestamp == null) {
             return "";
         }
-        LocalDateTime localDateTime = timestamp.toInstant().atZone(zoneId).toLocalDateTime();
+        var localDateTime = timestamp.toInstant().atZone(zoneId).toLocalDateTime();
         return CSV_DATE_FORMATTER.format(localDateTime.toLocalDate());
     }
 
@@ -329,7 +329,7 @@ public class ReportCsvService {
         if (timestamp == null) {
             return "";
         }
-        LocalDateTime localDateTime = timestamp.toInstant().atZone(zoneId).toLocalDateTime();
+        var localDateTime = timestamp.toInstant().atZone(zoneId).toLocalDateTime();
         return CSV_TIME_FORMATTER.format(localDateTime.toLocalTime());
     }
 
@@ -343,14 +343,14 @@ public class ReportCsvService {
         if (currencyCode == null || currencyCode.isBlank()) {
             return Long.toString(number.longValue());
         }
-        int exponent = currencyExponent(currencyCode);
+        var exponent = currencyExponent(currencyCode);
         return BigDecimal.valueOf(number.longValue(), exponent).toPlainString();
     }
 
     private int currencyExponent(String currencyCode) {
         try {
-            Currency currency = Currency.getInstance(currencyCode.toUpperCase(Locale.ROOT));
-            int exponent = currency.getDefaultFractionDigits();
+            var currency = Currency.getInstance(currencyCode.toUpperCase(Locale.ROOT));
+            var exponent = currency.getDefaultFractionDigits();
             if (exponent < 0) {
                 throw new IllegalStateException("Unsupported currency exponent for " + currencyCode);
             }
@@ -437,12 +437,12 @@ public class ReportCsvService {
     }
 
     private Instant currentSnapshot() {
-        BigDecimal epochSeconds = jdbcTemplate.getJdbcTemplate().queryForObject(
+        var epochSeconds = jdbcTemplate.getJdbcTemplate().queryForObject(
                 "SELECT EXTRACT(EPOCH FROM now())",
                 BigDecimal.class
         );
-        long seconds = epochSeconds.longValue();
-        long nanos = epochSeconds.subtract(BigDecimal.valueOf(seconds))
+        var seconds = epochSeconds.longValue();
+        var nanos = epochSeconds.subtract(BigDecimal.valueOf(seconds))
                 .movePointRight(9)
                 .longValue();
         return Instant.ofEpochSecond(seconds, nanos);

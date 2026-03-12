@@ -80,7 +80,7 @@ public final class WithdrawalIngestionEventFixtures {
         body.setAmount(1000L);
         body.setCurrency(rub);
 
-        Route route = new Route();
+        var route = new Route();
         route.setProviderId(300);
         route.setTerminalId(400);
 
@@ -95,13 +95,13 @@ public final class WithdrawalIngestionEventFixtures {
         cashTo.setAmount(1000L);
         cashTo.setCurrency(rub.deepCopy());
 
-        QuoteState quoteState = new QuoteState();
+        var quoteState = new QuoteState();
         quoteState.setCashFrom(cashFrom);
         quoteState.setCashTo(cashTo);
         quoteState.setCreatedAt("2026-01-01T00:00:00Z");
         quoteState.setExpiresOn("2026-01-01T01:00:00Z");
 
-        Withdrawal withdrawal = new Withdrawal();
+        var withdrawal = new Withdrawal();
         withdrawal.setId(WITHDRAWAL_ID);
         withdrawal.setPartyId("party-serialized");
         withdrawal.setWalletId("wallet-serialized");
@@ -116,10 +116,10 @@ public final class WithdrawalIngestionEventFixtures {
                 new dev.vality.fistful.withdrawal.CreatedChange();
         createdChange.setWithdrawal(withdrawal);
 
-        Change change = new Change();
+        var change = new Change();
         change.setCreated(createdChange);
 
-        Event event = new Event();
+        var event = new Event();
         event.setEventId(1L);
         event.setOccuredAt("2026-01-01T00:01:00Z");
         event.setChange(change);
@@ -154,26 +154,26 @@ public final class WithdrawalIngestionEventFixtures {
         feePosting.setDestination(systemAccount);
         feePosting.setVolume(feeCash);
 
-        FinalCashFlow finalCashFlow = new FinalCashFlow();
+        var finalCashFlow = new FinalCashFlow();
         finalCashFlow.setPostings(List.of(feePosting));
 
-        Transfer transfer = new Transfer();
+        var transfer = new Transfer();
         transfer.setId("transfer-serialized");
         transfer.setCashflow(finalCashFlow);
 
-        CreatedChange createdChange = new CreatedChange();
+        var createdChange = new CreatedChange();
         createdChange.setTransfer(transfer);
 
         dev.vality.fistful.transfer.Change transferPayload = new dev.vality.fistful.transfer.Change();
         transferPayload.setCreated(createdChange);
 
-        TransferChange transferChange = new TransferChange();
+        var transferChange = new TransferChange();
         transferChange.setPayload(transferPayload);
 
-        Change change = new Change();
+        var change = new Change();
         change.setTransfer(transferChange);
 
-        Event event = new Event();
+        var event = new Event();
         event.setEventId(2L);
         event.setOccuredAt("2026-01-01T00:02:00Z");
         event.setChange(change);
@@ -181,16 +181,16 @@ public final class WithdrawalIngestionEventFixtures {
     }
 
     private static Event withdrawalStatusEvent() {
-        Status status = new Status();
+        var status = new Status();
         status.setSucceeded(new dev.vality.fistful.withdrawal.status.Succeeded());
 
-        StatusChange statusChange = new StatusChange();
+        var statusChange = new StatusChange();
         statusChange.setStatus(status);
 
-        Change change = new Change();
+        var change = new Change();
         change.setStatusChanged(statusChange);
 
-        Event event = new Event();
+        var event = new Event();
         event.setEventId(5L);
         event.setOccuredAt("2026-01-01T00:05:00Z");
         event.setChange(change);

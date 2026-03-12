@@ -34,7 +34,7 @@ public class PaymentIngestionService {
     }
 
     private void handleEvent(MachineEvent event) {
-        EventPayload payload = paymentEventPayloadMachineEventParser.parse(event);
+        var payload = paymentEventPayloadMachineEventParser.parse(event);
         paymentEventProjector.project(event, payload).forEach(paymentCurrentDao::upsert);
     }
 }

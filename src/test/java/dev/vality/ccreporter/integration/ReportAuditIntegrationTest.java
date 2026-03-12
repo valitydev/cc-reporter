@@ -19,9 +19,9 @@ class ReportAuditIntegrationTest extends AbstractReportingIntegrationTest {
     void createReportWritesAuditEventWithTrustedRequestMetadata() throws Exception {
         bindCallerWithAuditMetadata("user-7");
 
-        long reportId = reportingHandler.createReport(ReportRequestFixtures.payments("audit-create-1"));
+        var reportId = reportingHandler.createReport(ReportRequestFixtures.payments("audit-create-1"));
 
-        Map<String, Object> auditRow = findLatestAudit(reportId, "report_created");
+        var auditRow = findLatestAudit(reportId, "report_created");
 
         assertThat(auditRow.get("actor")).isEqualTo("user-7");
         assertThat(auditRow.get("event_type")).isEqualTo("report_created");
@@ -40,24 +40,24 @@ class ReportAuditIntegrationTest extends AbstractReportingIntegrationTest {
     @Test
     void cancelReportAndPresignedUrlWriteAuditEvents() throws Exception {
         bindCallerWithAuditMetadata("user-9");
-        long reportId = reportingHandler.createReport(ReportRequestFixtures.payments("audit-actions-1"));
-        Instant fileCreatedAt = Instant.parse("2026-01-05T10:00:00Z");
+        var reportId = reportingHandler.createReport(ReportRequestFixtures.payments("audit-actions-1"));
+        var fileCreatedAt = Instant.parse("2026-01-05T10:00:00Z");
         ReportRecordFixtures.attachCsvFile(jdbcTemplate, reportId, "file-audit-1", fileCreatedAt);
 
         reportingHandler.cancelReport(new CancelReportRequest(reportId));
 
-        GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(
+        var request = new GeneratePresignedUrlRequest(
                 "file-audit-1"
         );
         request.setRequestedExpiresAt(Instant.now().plus(2, ChronoUnit.HOURS).toString());
         reportingHandler.generatePresignedUrl(request);
 
-        Map<String, Object> cancelAudit = findLatestAudit(reportId, "report_canceled");
+        var cancelAudit = findLatestAudit(reportId, "report_canceled");
         assertThat(cancelAudit.get("actor")).isEqualTo("user-9");
         assertThat(jsonText(reportId, "report_canceled", "{details,state_changed}")).isEqualTo("true");
         assertThat(jsonText(reportId, "report_canceled", "{request,deadline}")).isEqualTo("2026-01-05T10:15:30Z");
 
-        Map<String, Object> presignedAudit = findLatestAudit(reportId, "presigned_url_generated");
+        var presignedAudit = findLatestAudit(reportId, "presigned_url_generated");
         assertThat(presignedAudit.get("actor")).isEqualTo("user-9");
         assertThat(jsonText(reportId, "presigned_url_generated", "{details,fileId}")).isEqualTo("file-audit-1");
         assertThat(jsonText(reportId, "presigned_url_generated", "{details,requestedExpiresAt}")).isNotBlank();

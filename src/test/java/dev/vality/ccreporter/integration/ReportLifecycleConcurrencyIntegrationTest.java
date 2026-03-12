@@ -29,13 +29,13 @@ class ReportLifecycleConcurrencyIntegrationTest extends AbstractReportingIntegra
                 Instant.parse("2026-01-01T10:00:00Z"),
                 Instant.parse("2026-01-01T11:00:00Z")
         );
-        final long reportId = reportingHandler.createReport(ReportRequestFixtures.payments("concurrency-single-1"));
+        final var reportId = reportingHandler.createReport(ReportRequestFixtures.payments("concurrency-single-1"));
 
-        CountDownLatch uploadEntered = new CountDownLatch(1);
-        CountDownLatch releaseUpload = new CountDownLatch(1);
+        var uploadEntered = new CountDownLatch(1);
+        var releaseUpload = new CountDownLatch(1);
         stubFileStorageClient.blockUploads(uploadEntered, releaseUpload);
 
-        ConcurrentWorkers workers = startWorkers(
+        var workers = startWorkers(
                 2,
                 () -> reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"))
         );
@@ -52,7 +52,7 @@ class ReportLifecycleConcurrencyIntegrationTest extends AbstractReportingIntegra
         assertThat(countRows("SELECT count(*) FROM ccr.report_file WHERE report_id = ?", reportId)).isEqualTo(1);
         assertThat(readAttempt(reportId)).isEqualTo(1);
 
-        Report report = reportingHandler.getReport(new GetReportRequest(reportId));
+        var report = reportingHandler.getReport(new GetReportRequest(reportId));
         assertThat(report.getStatus()).isEqualTo(ReportStatus.created);
         assertThat(report.getRowsCount()).isEqualTo(1L);
         assertThat(report.getFile().getFileId()).isNotBlank();
@@ -74,15 +74,15 @@ class ReportLifecycleConcurrencyIntegrationTest extends AbstractReportingIntegra
                 Instant.parse("2026-01-01T10:01:00Z"),
                 Instant.parse("2026-01-01T11:01:00Z")
         );
-        final long firstReportId = reportingHandler.createReport(ReportRequestFixtures.payments("concurrency-multi-1"));
-        final long secondReportId =
+        final var firstReportId = reportingHandler.createReport(ReportRequestFixtures.payments("concurrency-multi-1"));
+        final var secondReportId =
                 reportingHandler.createReport(ReportRequestFixtures.payments("concurrency-multi-2"));
 
-        CountDownLatch uploadEntered = new CountDownLatch(2);
-        CountDownLatch releaseUpload = new CountDownLatch(1);
+        var uploadEntered = new CountDownLatch(2);
+        var releaseUpload = new CountDownLatch(1);
         stubFileStorageClient.blockUploads(uploadEntered, releaseUpload);
 
-        ConcurrentWorkers workers = startWorkers(
+        var workers = startWorkers(
                 2,
                 () -> reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"))
         );
@@ -109,9 +109,9 @@ class ReportLifecycleConcurrencyIntegrationTest extends AbstractReportingIntegra
     }
 
     private ConcurrentWorkers startWorkers(int workers, Callable<Boolean> task) {
-        ExecutorService executor = Executors.newFixedThreadPool(workers);
-        CountDownLatch startLatch = new CountDownLatch(1);
-        List<Future<Boolean>> futures = new ArrayList<>();
+        var executor = Executors.newFixedThreadPool(workers);
+        var startLatch = new CountDownLatch(1);
+        var futures = new ArrayList<Future<Boolean>>();
         for (int i = 0; i < workers; i++) {
             futures.add(executor.submit(() -> {
                 startLatch.await(5, TimeUnit.SECONDS);
@@ -124,7 +124,7 @@ class ReportLifecycleConcurrencyIntegrationTest extends AbstractReportingIntegra
 
     private List<Boolean> awaitResults(List<Future<Boolean>> futures)
             throws InterruptedException, ExecutionException, TimeoutException {
-        List<Boolean> results = new ArrayList<>(futures.size());
+        var results = new ArrayList<Boolean>(futures.size());
         for (Future<Boolean> future : futures) {
             results.add(future.get(10, TimeUnit.SECONDS));
         }
@@ -144,7 +144,7 @@ class ReportLifecycleConcurrencyIntegrationTest extends AbstractReportingIntegra
     }
 
     private void assertCreatedReport(long reportId) throws Exception {
-        Report report = reportingHandler.getReport(new GetReportRequest(reportId));
+        var report = reportingHandler.getReport(new GetReportRequest(reportId));
         assertThat(report.getStatus()).isEqualTo(ReportStatus.created);
         assertThat(report.getRowsCount()).isEqualTo(2L);
         assertThat(report.getFile().getFileId()).isNotBlank();

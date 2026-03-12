@@ -22,7 +22,7 @@ public class WithdrawalCurrentDao {
     public boolean upsert(WithdrawalCurrentUpdate update) {
         var params = params(update);
         if (isTransactionPatchOnly(update)) {
-            int patched = jdbcTemplate.update(
+            var patched = jdbcTemplate.update(
                     """
                             UPDATE ccr.withdrawal_txn_current
                             SET trx_id = COALESCE(:trxId, trx_id),
@@ -37,7 +37,7 @@ public class WithdrawalCurrentDao {
                 return true;
             }
         }
-        int updated = jdbcTemplate.update(
+        var updated = jdbcTemplate.update(
                 """
                         UPDATE ccr.withdrawal_txn_current
                         SET domain_event_id = :domainEventId,
@@ -83,7 +83,7 @@ public class WithdrawalCurrentDao {
         if (!canInsert(update)) {
             return false;
         }
-        int inserted = jdbcTemplate.update(
+        var inserted = jdbcTemplate.update(
                 """
                         INSERT INTO ccr.withdrawal_txn_current (
                             withdrawal_id, domain_event_id, domain_event_created_at,

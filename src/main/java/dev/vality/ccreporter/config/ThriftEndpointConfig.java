@@ -18,8 +18,11 @@ public class ThriftEndpointConfig {
             ReportingSrv.Iface requestHandler,
             CcrApiProperties apiProperties
     ) {
-        ServletRegistrationBean<GenericServlet> registrationBean =
-                new ServletRegistrationBean<>(new ReportingServlet(requestHandler), apiProperties.getPath());
+        var registrationBean =
+                new ServletRegistrationBean<GenericServlet>(
+                        new ReportingServlet(requestHandler),
+                        apiProperties.getPath()
+                );
         registrationBean.setName("ccrReportingThriftServlet");
         registrationBean.setLoadOnStartup(1);
         return registrationBean;

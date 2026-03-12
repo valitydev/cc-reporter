@@ -48,7 +48,7 @@ public class ReportLifecycleService {
     }
 
     public boolean processNextPendingReport(Instant now) {
-        Optional<ClaimedReportJob> claimedReportJob = reportLifecycleDao.claimNextPendingReport(now);
+        var claimedReportJob = reportLifecycleDao.claimNextPendingReport(now);
         if (claimedReportJob.isEmpty()) {
             return false;
         }
@@ -61,7 +61,7 @@ public class ReportLifecycleService {
     }
 
     public int timeoutStaleProcessingReports(Instant now) {
-        Instant staleBefore = now.minusMillis(reportSchedulerProperties.getStaleProcessingTimeoutMs());
+        var staleBefore = now.minusMillis(reportSchedulerProperties.getStaleProcessingTimeoutMs());
         return reportLifecycleDao.timeoutStaleProcessingReports(staleBefore, now);
     }
 
@@ -74,26 +74,26 @@ public class ReportLifecycleService {
     }
 
     private void processClaimedReport(ClaimedReportJob claimedReportJob, Instant processingTime) {
-        GeneratedCsvReport generatedCsvReport = null;
+        var generatedCsvReport = (GeneratedCsvReport) null;
         try {
             generatedCsvReport = reportCsvService.generate(claimedReportJob);
-            Instant expiresAt = processingTime.plusSeconds(reportProperties.getExpirationSec());
-            String fileId = fileStorageService.storeFile(
+            var expiresAt = processingTime.plusSeconds(reportProperties.getExpirationSec());
+            var fileId = fileStorageService.storeFile(
                     generatedCsvReport.fileName(),
                     generatedCsvReport.contentType(),
                     generatedCsvReport.contentPath(),
                     expiresAt
             );
-            Instant finishedAt = Instant.now();
-            ReportFileMetadata fileMetadata = buildFileMetadata(fileId, generatedCsvReport);
-            GeneratedCsvReport completedReport = generatedCsvReport;
+            var finishedAt = Instant.now();
+            var fileMetadata = buildFileMetadata(fileId, generatedCsvReport);
+            var completedReport = generatedCsvReport;
             transactionTemplate.executeWithoutResult(status -> {
-                boolean published = reportLifecycleDao.publishFileRecord(
+                var published = reportLifecycleDao.publishFileRecord(
                         claimedReportJob.id(),
                         fileMetadata,
                         finishedAt
                 );
-                boolean markedCreated = reportLifecycleDao.markCreated(
+                var markedCreated = reportLifecycleDao.markCreated(
                         claimedReportJob.id(),
                         completedReport.dataSnapshotFixedAt(),
                         finishedAt,
@@ -113,8 +113,8 @@ public class ReportLifecycleService {
     }
 
     private void handleProcessingFailure(ClaimedReportJob claimedReportJob, Instant now, Exception ex) {
-        String errorCode = "report_processing_error";
-        String errorMessage = ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage();
+        var errorCode = "report_processing_error";
+        var errorMessage = ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage();
         if (claimedReportJob.attempt() >= reportProperties.getMaxAttempts()) {
             reportLifecycleDao.markFailed(claimedReportJob.id(), now, now, errorCode, errorMessage);
             return;

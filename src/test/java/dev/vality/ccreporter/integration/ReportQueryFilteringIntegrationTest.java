@@ -50,16 +50,16 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
 
         var request = ReportRequestFixtures.payments("payments-filter-1");
         request.getQuery().getPayments().setShopIds(List.of("shop-1"));
-        PaymentsSearchFilter filter = new PaymentsSearchFilter();
+        var filter = new PaymentsSearchFilter();
         filter.setShopTerm("shop one");
         filter.setTrxTerm("trx-1");
         request.getQuery().getPayments().setFilter(filter);
-        long reportId = reportingHandler.createReport(request);
+        var reportId = reportingHandler.createReport(request);
 
-        boolean processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
+        var processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
 
-        Report report = reportingHandler.getReport(new GetReportRequest(reportId));
-        String csv = new String(
+        var report = reportingHandler.getReport(new GetReportRequest(reportId));
+        var csv = new String(
                 stubFileStorageClient.getStoredContent(report.getFile().getFileId()),
                 StandardCharsets.UTF_8
         );
@@ -101,16 +101,16 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
 
         var request = ReportRequestFixtures.withdrawals("withdrawals-filter-1");
         request.getQuery().getWithdrawals().setWalletIds(List.of("wallet-1"));
-        WithdrawalsSearchFilter filter = new WithdrawalsSearchFilter();
+        var filter = new WithdrawalsSearchFilter();
         filter.setWalletTerm("wallet one");
         filter.setTrxTerm("trx-w-1");
         request.getQuery().getWithdrawals().setFilter(filter);
-        long reportId = reportingHandler.createReport(request);
+        var reportId = reportingHandler.createReport(request);
 
-        boolean processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
+        var processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
 
-        Report report = reportingHandler.getReport(new GetReportRequest(reportId));
-        String csv = new String(
+        var report = reportingHandler.getReport(new GetReportRequest(reportId));
+        var csv = new String(
                 stubFileStorageClient.getStoredContent(report.getFile().getFileId()),
                 StandardCharsets.UTF_8
         );

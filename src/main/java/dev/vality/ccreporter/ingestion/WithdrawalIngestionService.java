@@ -34,7 +34,7 @@ public class WithdrawalIngestionService {
     }
 
     private void handleEvent(MachineEvent event) {
-        Event payload = withdrawalEventMachineEventParser.parse(event);
+        var payload = withdrawalEventMachineEventParser.parse(event);
         withdrawalEventProjector.project(event, payload).forEach(withdrawalCurrentDao::upsert);
     }
 }

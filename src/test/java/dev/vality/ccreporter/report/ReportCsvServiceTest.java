@@ -41,13 +41,13 @@ class ReportCsvServiceTest {
 
     @Test
     void paymentsCsvQueryUsesForwardOnlyCursorFetchSize() throws Exception {
-        NamedParameterJdbcTemplate namedParameterJdbcTemplate = mock(NamedParameterJdbcTemplate.class);
-        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
-        PlatformTransactionManager transactionManager = mock(PlatformTransactionManager.class);
-        TransactionStatus transactionStatus = new SimpleTransactionStatus();
-        ObjectMapper objectMapper = new ObjectMapper();
-        ThriftQueryCodec thriftQueryCodec = new ThriftQueryCodec(objectMapper);
-        ReportCsvService reportCsvService =
+        var namedParameterJdbcTemplate = mock(NamedParameterJdbcTemplate.class);
+        var jdbcTemplate = mock(JdbcTemplate.class);
+        var transactionManager = mock(PlatformTransactionManager.class);
+        var transactionStatus = new SimpleTransactionStatus();
+        var objectMapper = new ObjectMapper();
+        var thriftQueryCodec = new ThriftQueryCodec(objectMapper);
+        var reportCsvService =
                 new ReportCsvService(namedParameterJdbcTemplate, thriftQueryCodec, transactionManager);
 
         when(namedParameterJdbcTemplate.getJdbcTemplate()).thenReturn(jdbcTemplate);
@@ -56,9 +56,9 @@ class ReportCsvServiceTest {
         when(jdbcTemplate.queryForObject("SELECT EXTRACT(EPOCH FROM now())", BigDecimal.class))
                 .thenReturn(new BigDecimal("1700000000.123456789"));
 
-        Connection connection = mock(Connection.class);
-        PreparedStatement preparedStatement = mock(PreparedStatement.class);
-        ResultSet resultSet = mock(ResultSet.class);
+        var connection = mock(Connection.class);
+        var preparedStatement = mock(PreparedStatement.class);
+        var resultSet = mock(ResultSet.class);
         when(connection.prepareStatement(
                 any(String.class),
                 eq(ResultSet.TYPE_FORWARD_ONLY),
@@ -67,7 +67,7 @@ class ReportCsvServiceTest {
                 .thenReturn(preparedStatement);
 
         doAnswer(invocation -> {
-            PreparedStatementCreator preparedStatementCreator = invocation.getArgument(0);
+            var preparedStatementCreator = invocation.getArgument(0);
             preparedStatementCreator.createPreparedStatement(connection);
 
             when(resultSet.getTimestamp("created_at"))
@@ -93,12 +93,12 @@ class ReportCsvServiceTest {
             when(resultSet.getString("provider_currency")).thenReturn("EUR");
             when(resultSet.getString("original_currency")).thenReturn("USD");
 
-            RowCallbackHandler rowCallbackHandler = invocation.getArgument(1);
+            var rowCallbackHandler = invocation.getArgument(1);
             rowCallbackHandler.processRow(resultSet);
             return null;
         }).when(jdbcTemplate).query(any(PreparedStatementCreator.class), any(RowCallbackHandler.class));
 
-        GeneratedCsvReport generatedCsvReport = reportCsvService.generate(claimedPaymentsJob(thriftQueryCodec));
+        var generatedCsvReport = reportCsvService.generate(claimedPaymentsJob(thriftQueryCodec));
 
         verify(connection).prepareStatement(
                 any(String.class),
@@ -116,12 +116,12 @@ class ReportCsvServiceTest {
     }
 
     private ClaimedReportJob claimedPaymentsJob(ThriftQueryCodec thriftQueryCodec) {
-        CreateReportRequest request = ReportRequestFixtures.payments(
+        var request = ReportRequestFixtures.payments(
                 "cursor-fetch-size-1",
                 new TimeRange("2025-12-31T00:00:00Z", "2026-01-02T00:00:00Z")
         );
         request.setTimezone("Asia/Krasnoyarsk");
-        ReportQuery reportQuery = request.getQuery();
+        var reportQuery = request.getQuery();
         return new ClaimedReportJob(
                 42L,
                 ReportType.payments,

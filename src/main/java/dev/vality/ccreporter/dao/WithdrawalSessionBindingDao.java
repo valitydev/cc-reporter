@@ -19,7 +19,7 @@ public class WithdrawalSessionBindingDao {
     }
 
     public boolean upsert(WithdrawalSessionBindingUpdate update) {
-        int affected = jdbcTemplate.update(
+        var affected = jdbcTemplate.update(
                 """
                         INSERT INTO ccr.withdrawal_session_binding_current (
                             session_id, withdrawal_id, domain_event_id, domain_event_created_at

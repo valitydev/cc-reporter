@@ -21,7 +21,7 @@ public class PaymentCurrentDao {
 
     public boolean upsert(PaymentCurrentUpdate update) {
         var params = params(update);
-        int updated = jdbcTemplate.update(
+        var updated = jdbcTemplate.update(
                 """
                         UPDATE ccr.payment_txn_current
                         SET domain_event_id = :domainEventId,
@@ -67,7 +67,7 @@ public class PaymentCurrentDao {
         if (!canInsert(update)) {
             return false;
         }
-        int inserted = jdbcTemplate.update(
+        var inserted = jdbcTemplate.update(
                 """
                         INSERT INTO ccr.payment_txn_current (
                             invoice_id, payment_id, domain_event_id, domain_event_created_at,

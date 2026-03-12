@@ -52,9 +52,9 @@ public final class KafkaIntegrationTestSupport {
                 producerProperties(embeddedKafkaBroker)
         )) {
             for (MachineEvent machineEvent : machineEvents) {
-                SinkEvent sinkEvent = new SinkEvent();
+                var sinkEvent = new SinkEvent();
                 sinkEvent.setEvent(machineEvent);
-                byte[] payload = THRIFT_SERIALIZER.serialize("", sinkEvent);
+                var payload = THRIFT_SERIALIZER.serialize("", sinkEvent);
                 producer.send(new ProducerRecord<>(topic, machineEvent.getSourceId(), payload)).get();
             }
             producer.flush();
@@ -68,9 +68,9 @@ public final class KafkaIntegrationTestSupport {
             Predicate<Map<String, Object>> predicate,
             Object... args
     ) throws InterruptedException {
-        Instant deadline = Instant.now().plus(timeout);
+        var deadline = Instant.now().plus(timeout);
         while (Instant.now().isBefore(deadline)) {
-            List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, args);
+            var rows = jdbcTemplate.queryForList(sql, args);
             if (!rows.isEmpty() && predicate.test(rows.getFirst())) {
                 return rows.getFirst();
             }
@@ -84,7 +84,7 @@ public final class KafkaIntegrationTestSupport {
     }
 
     private static Properties producerProperties(EmbeddedKafkaBroker embeddedKafkaBroker) {
-        Properties properties = new Properties();
+        var properties = new Properties();
         properties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, embeddedKafkaBroker.getBrokersAsString());
         properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);

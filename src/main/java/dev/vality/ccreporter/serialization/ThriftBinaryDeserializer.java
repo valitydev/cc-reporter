@@ -8,7 +8,7 @@ public abstract class ThriftBinaryDeserializer<T extends TBase<?, ?>> {
 
     public T deserialize(byte[] bytes) {
         try {
-            T value = newInstance();
+            var value = newInstance();
             new TDeserializer(new TBinaryProtocol.Factory()).deserialize(value, bytes);
             return value;
         } catch (Exception ex) {

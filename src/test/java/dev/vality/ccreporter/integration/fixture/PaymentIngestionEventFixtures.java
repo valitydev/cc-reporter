@@ -83,23 +83,23 @@ public final class PaymentIngestionEventFixtures {
     }
 
     private static EventPayload startedPayload() {
-        PartyConfigRef partyRef = new PartyConfigRef();
+        var partyRef = new PartyConfigRef();
         partyRef.setId("party-serialized");
 
-        ShopConfigRef shopRef = new ShopConfigRef();
+        var shopRef = new ShopConfigRef();
         shopRef.setId("shop-serialized");
 
-        CurrencyRef currency = new CurrencyRef();
+        var currency = new CurrencyRef();
         currency.setSymbolicCode("RUB");
 
-        Cash cost = new Cash();
+        var cost = new Cash();
         cost.setAmount(1000L);
         cost.setCurrency(currency);
 
-        InvoicePaymentStatus status = new InvoicePaymentStatus();
+        var status = new InvoicePaymentStatus();
         status.setPending(new InvoicePaymentPending());
 
-        InvoicePayment payment = new InvoicePayment();
+        var payment = new InvoicePayment();
         payment.setId(PAYMENT_ID);
         payment.setPartyRef(partyRef);
         payment.setShopRef(shopRef);
@@ -111,173 +111,173 @@ public final class PaymentIngestionEventFixtures {
         payment.setFlow(invoicePaymentFlow());
         payment.setPayer(invoicePaymentPayer());
 
-        ProviderRef providerRef = new ProviderRef();
+        var providerRef = new ProviderRef();
         providerRef.setId(100);
 
-        TerminalRef terminalRef = new TerminalRef();
+        var terminalRef = new TerminalRef();
         terminalRef.setId(200);
 
-        PaymentRoute route = new PaymentRoute();
+        var route = new PaymentRoute();
         route.setProvider(providerRef);
         route.setTerminal(terminalRef);
 
-        InvoicePaymentStarted started = new InvoicePaymentStarted();
+        var started = new InvoicePaymentStarted();
         started.setPayment(payment);
         started.setRoute(route);
 
-        InvoicePaymentChangePayload changePayload = new InvoicePaymentChangePayload();
+        var changePayload = new InvoicePaymentChangePayload();
         changePayload.setInvoicePaymentStarted(started);
 
-        InvoicePaymentChange paymentChange = new InvoicePaymentChange();
+        var paymentChange = new InvoicePaymentChange();
         paymentChange.setId(PAYMENT_ID);
         paymentChange.setPayload(changePayload);
 
-        InvoiceChange invoiceChange = new InvoiceChange();
+        var invoiceChange = new InvoiceChange();
         invoiceChange.setInvoicePaymentChange(paymentChange);
 
-        EventPayload eventPayload = new EventPayload();
+        var eventPayload = new EventPayload();
         eventPayload.setInvoiceChanges(List.of(invoiceChange));
         return eventPayload;
     }
 
     private static EventPayload cashFlowChangedPayload() {
-        CashFlowAccount providerAccountType = new CashFlowAccount();
+        var providerAccountType = new CashFlowAccount();
         providerAccountType.setProvider(ProviderCashFlowAccount.settlement);
-        FinalCashFlowAccount providerAccount = new FinalCashFlowAccount();
+        var providerAccount = new FinalCashFlowAccount();
         providerAccount.setAccountType(providerAccountType);
 
-        CashFlowAccount merchantAccountType = new CashFlowAccount();
+        var merchantAccountType = new CashFlowAccount();
         merchantAccountType.setMerchant(MerchantCashFlowAccount.settlement);
-        FinalCashFlowAccount merchantAccount = new FinalCashFlowAccount();
+        var merchantAccount = new FinalCashFlowAccount();
         merchantAccount.setAccountType(merchantAccountType);
 
-        CurrencyRef rub = new CurrencyRef();
+        var rub = new CurrencyRef();
         rub.setSymbolicCode("RUB");
 
-        Cash amountCash = new Cash();
+        var amountCash = new Cash();
         amountCash.setAmount(1000L);
         amountCash.setCurrency(rub);
 
-        FinalCashFlowPosting amountPosting = new FinalCashFlowPosting();
+        var amountPosting = new FinalCashFlowPosting();
         amountPosting.setSource(providerAccount);
         amountPosting.setDestination(merchantAccount);
         amountPosting.setVolume(amountCash);
 
-        CashFlowAccount systemAccountType = new CashFlowAccount();
+        var systemAccountType = new CashFlowAccount();
         systemAccountType.setSystem(SystemCashFlowAccount.settlement);
-        FinalCashFlowAccount systemAccount = new FinalCashFlowAccount();
+        var systemAccount = new FinalCashFlowAccount();
         systemAccount.setAccountType(systemAccountType);
 
-        Cash feeCash = new Cash();
+        var feeCash = new Cash();
         feeCash.setAmount(10L);
         feeCash.setCurrency(rub.deepCopy());
 
-        FinalCashFlowPosting feePosting = new FinalCashFlowPosting();
+        var feePosting = new FinalCashFlowPosting();
         feePosting.setSource(merchantAccount.deepCopy());
         feePosting.setDestination(systemAccount);
         feePosting.setVolume(feeCash);
 
-        InvoicePaymentCashFlowChanged cashFlowChanged = new InvoicePaymentCashFlowChanged();
+        var cashFlowChanged = new InvoicePaymentCashFlowChanged();
         cashFlowChanged.setCashFlow(List.of(amountPosting, feePosting));
 
-        InvoicePaymentChangePayload changePayload = new InvoicePaymentChangePayload();
+        var changePayload = new InvoicePaymentChangePayload();
         changePayload.setInvoicePaymentCashFlowChanged(cashFlowChanged);
 
-        InvoicePaymentChange paymentChange = new InvoicePaymentChange();
+        var paymentChange = new InvoicePaymentChange();
         paymentChange.setId(PAYMENT_ID);
         paymentChange.setPayload(changePayload);
 
-        InvoiceChange invoiceChange = new InvoiceChange();
+        var invoiceChange = new InvoiceChange();
         invoiceChange.setInvoicePaymentChange(paymentChange);
 
-        EventPayload eventPayload = new EventPayload();
+        var eventPayload = new EventPayload();
         eventPayload.setInvoiceChanges(List.of(invoiceChange));
         return eventPayload;
     }
 
     private static EventPayload transactionBoundPayload() {
-        AdditionalTransactionInfo additionalInfo = new AdditionalTransactionInfo();
+        var additionalInfo = new AdditionalTransactionInfo();
         additionalInfo.setRrn("rrn-payment-1");
         additionalInfo.setApprovalCode("approval-payment-1");
 
-        TransactionInfo transactionInfo = new TransactionInfo();
+        var transactionInfo = new TransactionInfo();
         transactionInfo.setId("trx-payment-1");
         transactionInfo.setExtra(Map.of());
         transactionInfo.setAdditionalInfo(additionalInfo);
 
-        SessionTransactionBound transactionBound = new SessionTransactionBound();
+        var transactionBound = new SessionTransactionBound();
         transactionBound.setTrx(transactionInfo);
 
-        SessionChangePayload sessionChangePayload = new SessionChangePayload();
+        var sessionChangePayload = new SessionChangePayload();
         sessionChangePayload.setSessionTransactionBound(transactionBound);
 
-        TargetInvoicePaymentStatus targetStatus = new TargetInvoicePaymentStatus();
+        var targetStatus = new TargetInvoicePaymentStatus();
         targetStatus.setProcessed(new InvoicePaymentProcessed());
 
-        InvoicePaymentSessionChange sessionChange = new InvoicePaymentSessionChange();
+        var sessionChange = new InvoicePaymentSessionChange();
         sessionChange.setTarget(targetStatus);
         sessionChange.setPayload(sessionChangePayload);
 
-        InvoicePaymentChangePayload changePayload = new InvoicePaymentChangePayload();
+        var changePayload = new InvoicePaymentChangePayload();
         changePayload.setInvoicePaymentSessionChange(sessionChange);
 
-        InvoicePaymentChange paymentChange = new InvoicePaymentChange();
+        var paymentChange = new InvoicePaymentChange();
         paymentChange.setId(PAYMENT_ID);
         paymentChange.setPayload(changePayload);
 
-        InvoiceChange invoiceChange = new InvoiceChange();
+        var invoiceChange = new InvoiceChange();
         invoiceChange.setInvoicePaymentChange(paymentChange);
 
-        EventPayload eventPayload = new EventPayload();
+        var eventPayload = new EventPayload();
         eventPayload.setInvoiceChanges(List.of(invoiceChange));
         return eventPayload;
     }
 
     private static EventPayload statusChangedPayload() {
-        InvoicePaymentStatus status = new InvoicePaymentStatus();
+        var status = new InvoicePaymentStatus();
         status.setCaptured(new InvoicePaymentCaptured());
 
-        InvoicePaymentStatusChanged statusChanged = new InvoicePaymentStatusChanged();
+        var statusChanged = new InvoicePaymentStatusChanged();
         statusChanged.setStatus(status);
 
-        InvoicePaymentChangePayload changePayload = new InvoicePaymentChangePayload();
+        var changePayload = new InvoicePaymentChangePayload();
         changePayload.setInvoicePaymentStatusChanged(statusChanged);
 
-        InvoicePaymentChange paymentChange = new InvoicePaymentChange();
+        var paymentChange = new InvoicePaymentChange();
         paymentChange.setId(PAYMENT_ID);
         paymentChange.setPayload(changePayload);
 
-        InvoiceChange invoiceChange = new InvoiceChange();
+        var invoiceChange = new InvoiceChange();
         invoiceChange.setInvoicePaymentChange(paymentChange);
 
-        EventPayload eventPayload = new EventPayload();
+        var eventPayload = new EventPayload();
         eventPayload.setInvoiceChanges(List.of(invoiceChange));
         return eventPayload;
     }
 
     private static InvoicePaymentFlow invoicePaymentFlow() {
-        InvoicePaymentFlow flow = new InvoicePaymentFlow();
+        var flow = new InvoicePaymentFlow();
         flow.setInstant(new InvoicePaymentFlowInstant());
         return flow;
     }
 
     private static Payer invoicePaymentPayer() {
-        BankCard bankCard = new BankCard();
+        var bankCard = new BankCard();
         bankCard.setToken("token-payment");
         bankCard.setBin("411111");
         bankCard.setLastDigits("1111");
 
-        PaymentTool paymentTool = new PaymentTool();
+        var paymentTool = new PaymentTool();
         paymentTool.setBankCard(bankCard);
 
-        DisposablePaymentResource resource = new DisposablePaymentResource();
+        var resource = new DisposablePaymentResource();
         resource.setPaymentTool(paymentTool);
 
-        PaymentResourcePayer paymentResourcePayer = new PaymentResourcePayer();
+        var paymentResourcePayer = new PaymentResourcePayer();
         paymentResourcePayer.setResource(resource);
         paymentResourcePayer.setContactInfo(new ContactInfo());
 
-        Payer payer = new Payer();
+        var payer = new Payer();
         payer.setPaymentResource(paymentResourcePayer);
         return payer;
     }

@@ -23,7 +23,7 @@ import java.util.Optional;
 public class WithdrawalEventProjector {
 
     public List<WithdrawalCurrentUpdate> project(MachineEvent event, Event payload) {
-        List<WithdrawalCurrentUpdate> updates = new ArrayList<>();
+        var updates = new ArrayList<WithdrawalCurrentUpdate>();
         if (payload == null || payload.getChange() == null) {
             return updates;
         }
@@ -32,14 +32,14 @@ public class WithdrawalEventProjector {
     }
 
     private Optional<WithdrawalCurrentUpdate> projectChange(MachineEvent event, Change change, Instant occurredAt) {
-        Instant eventCreatedAt = Instant.parse(event.getCreatedAt());
-        String withdrawalId = event.getSourceId();
+        var eventCreatedAt = Instant.parse(event.getCreatedAt());
+        var withdrawalId = event.getSourceId();
 
         if (change.isSetCreated()) {
             var withdrawal = change.getCreated().getWithdrawal();
-            Cash body = withdrawal.getBody();
-            Route route = withdrawal.getRoute();
-            QuoteState quote = withdrawal.getQuote();
+            var body = withdrawal.getBody();
+            var route = withdrawal.getRoute();
+            var quote = withdrawal.getQuote();
             return Optional.of(new WithdrawalCurrentUpdate(
                     withdrawalId,
                     event.getEventId(),
@@ -74,7 +74,7 @@ public class WithdrawalEventProjector {
         }
 
         if (change.isSetRoute()) {
-            Route route = change.getRoute().getRoute();
+            var route = change.getRoute().getRoute();
             return Optional.of(new WithdrawalCurrentUpdate(
                     withdrawalId, event.getEventId(), eventCreatedAt, null, null,
                     null, // TODO CCR-INGESTION: route change still does not populate display names.
@@ -89,9 +89,9 @@ public class WithdrawalEventProjector {
         }
 
         if (change.isSetStatusChanged()) {
-            Status status = change.getStatusChanged().getStatus();
-            Failure failure = status.isSetFailed() ? status.getFailed().getFailure() : null;
-            SubFailure subFailure = failure != null ? failure.getSub() : null;
+            var status = change.getStatusChanged().getStatus();
+            var failure = status.isSetFailed() ? status.getFailed().getFailure() : null;
+            var subFailure = failure != null ? failure.getSub() : null;
             return Optional.of(new WithdrawalCurrentUpdate(
                     withdrawalId, event.getEventId(), eventCreatedAt, null, null, null, null, null,
                     terminalFinalizedAt(status, eventCreatedAt), status.getSetField().getFieldName(), null, null, null,
@@ -108,7 +108,7 @@ public class WithdrawalEventProjector {
                 && change.getTransfer().getPayload().isSetCreated()
                 && change.getTransfer().getPayload().getCreated().isSetTransfer()
                 && change.getTransfer().getPayload().getCreated().getTransfer().isSetCashflow()) {
-            List<FinalCashFlowPosting> postings =
+            var postings =
                     change.getTransfer().getPayload().getCreated().getTransfer().getCashflow()
                             .getPostings();
             return Optional.of(new WithdrawalCurrentUpdate(

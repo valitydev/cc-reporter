@@ -24,7 +24,7 @@ public class ReportLifecycleDao {
     }
 
     public Optional<ClaimedReportJob> claimNextPendingReport(Instant now) {
-        List<ClaimedReportJob> claimedReports = jdbcTemplate.query(
+        var claimedReports = jdbcTemplate.query(
                 """
                         WITH candidate AS (
                             SELECT id
@@ -55,7 +55,7 @@ public class ReportLifecycleDao {
     }
 
     public boolean rescheduleForRetry(long reportId, Instant nextAttemptAt, String errorCode, String errorMessage) {
-        int updated = jdbcTemplate.update(
+        var updated = jdbcTemplate.update(
                 """
                         UPDATE ccr.report_job
                         SET status = CAST(:pendingStatus AS ccr.report_status),
@@ -85,7 +85,7 @@ public class ReportLifecycleDao {
             Instant expiresAt,
             long rowsCount
     ) {
-        int updated = jdbcTemplate.update(
+        var updated = jdbcTemplate.update(
                 """
                         UPDATE ccr.report_job
                         SET status = CAST(:createdStatus AS ccr.report_status),
@@ -114,7 +114,7 @@ public class ReportLifecycleDao {
     }
 
     public boolean publishFileRecord(long reportId, ReportFileMetadata fileMetadata, Instant createdAt) {
-        int updated = jdbcTemplate.update(
+        var updated = jdbcTemplate.update(
                 """
                         INSERT INTO ccr.report_file (
                             report_id,
@@ -170,7 +170,7 @@ public class ReportLifecycleDao {
     }
 
     public boolean expireReport(long reportId, Instant expiredAt) {
-        int updated = jdbcTemplate.update(
+        var updated = jdbcTemplate.update(
                 """
                         UPDATE ccr.report_job
                         SET status = CAST(:expiredStatus AS ccr.report_status),
@@ -237,7 +237,7 @@ public class ReportLifecycleDao {
             String code,
             String message
     ) {
-        int updated = jdbcTemplate.update(
+        var updated = jdbcTemplate.update(
                 """
                         UPDATE ccr.report_job
                         SET status = CAST(:terminalStatus AS ccr.report_status),

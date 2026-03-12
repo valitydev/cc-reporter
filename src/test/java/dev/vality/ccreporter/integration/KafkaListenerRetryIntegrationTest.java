@@ -51,7 +51,7 @@ class KafkaListenerRetryIntegrationTest extends AbstractReportingIntegrationTest
 
     @Test
     void failedBatchIsRetriedAndCommittedOnlyAfterSuccessfulProcessing() throws Exception {
-        AtomicInteger attempts = new AtomicInteger();
+        var attempts = new AtomicInteger();
         doAnswer(invocation -> {
             if (attempts.getAndIncrement() == 0) {
                 throw new IllegalStateException("synthetic payment batch failure");
@@ -65,7 +65,7 @@ class KafkaListenerRetryIntegrationTest extends AbstractReportingIntegrationTest
                 SerializedIngestionEventFixtures.paymentEvents()
         );
 
-        Map<String, Object> row = KafkaIntegrationTestSupport.waitForRow(
+        var row = KafkaIntegrationTestSupport.waitForRow(
                 jdbcTemplate,
                 LISTENER_TIMEOUT,
                 """
@@ -78,7 +78,7 @@ class KafkaListenerRetryIntegrationTest extends AbstractReportingIntegrationTest
                 SerializedIngestionEventFixtures.PAYMENT_ID
         );
 
-        Integer rowCount = jdbcTemplate.queryForObject(
+        var rowCount = jdbcTemplate.queryForObject(
                 """
                         SELECT count(*)
                         FROM ccr.payment_txn_current

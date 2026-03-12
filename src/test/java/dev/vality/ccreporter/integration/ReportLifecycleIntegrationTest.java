@@ -18,13 +18,13 @@ class ReportLifecycleIntegrationTest extends AbstractReportingIntegrationTest {
 
     @Test
     void reportLifecycleProgressesFromPendingToCreated() throws Exception {
-        long reportId = reportingHandler.createReport(ReportRequestFixtures.payments("lifecycle-created-1"));
-        final Instant startedAt = Instant.parse("2026-01-02T10:00:00Z");
-        final Instant snapshotFixedAt = Instant.parse("2026-01-02T10:05:00Z");
-        final Instant finishedAt = Instant.parse("2026-01-02T10:10:00Z");
-        final Instant expiresAt = Instant.parse("2026-02-01T00:00:00Z");
+        var reportId = reportingHandler.createReport(ReportRequestFixtures.payments("lifecycle-created-1"));
+        final var startedAt = Instant.parse("2026-01-02T10:00:00Z");
+        final var snapshotFixedAt = Instant.parse("2026-01-02T10:05:00Z");
+        final var finishedAt = Instant.parse("2026-01-02T10:10:00Z");
+        final var expiresAt = Instant.parse("2026-02-01T00:00:00Z");
 
-        Report pendingReport = reportingHandler.getReport(new GetReportRequest(reportId));
+        var pendingReport = reportingHandler.getReport(new GetReportRequest(reportId));
         assertThat(pendingReport.getStatus()).isEqualTo(ReportStatus.pending);
         assertThat(pendingReport.isSetStartedAt()).isFalse();
         assertThat(pendingReport.isSetFinishedAt()).isFalse();
@@ -32,7 +32,7 @@ class ReportLifecycleIntegrationTest extends AbstractReportingIntegrationTest {
 
         ReportRecordFixtures.markReportProcessing(jdbcTemplate, reportId, startedAt, snapshotFixedAt);
 
-        Report processingReport = reportingHandler.getReport(new GetReportRequest(reportId));
+        var processingReport = reportingHandler.getReport(new GetReportRequest(reportId));
         assertThat(processingReport.getStatus()).isEqualTo(ReportStatus.processing);
         assertThat(processingReport.getStartedAt()).isEqualTo(startedAt.toString());
         assertThat(processingReport.getDataSnapshotFixedAt()).isEqualTo(snapshotFixedAt.toString());
@@ -49,7 +49,7 @@ class ReportLifecycleIntegrationTest extends AbstractReportingIntegrationTest {
         );
         ReportRecordFixtures.attachCsvFile(jdbcTemplate, reportId, "file-lifecycle-1", finishedAt);
 
-        Report createdReport = reportingHandler.getReport(new GetReportRequest(reportId));
+        var createdReport = reportingHandler.getReport(new GetReportRequest(reportId));
         assertThat(createdReport.getStatus()).isEqualTo(ReportStatus.created);
         assertThat(createdReport.getStartedAt()).isEqualTo(startedAt.toString());
         assertThat(createdReport.getDataSnapshotFixedAt()).isEqualTo(snapshotFixedAt.toString());
@@ -59,25 +59,25 @@ class ReportLifecycleIntegrationTest extends AbstractReportingIntegrationTest {
         assertThat(createdReport.getFile().getFileId()).isEqualTo("file-lifecycle-1");
         assertThat(createdReport.getFile().getFilename()).isEqualTo("payments.csv");
 
-        GetReportsFilter filter = new GetReportsFilter();
+        var filter = new GetReportsFilter();
         filter.setStatuses(List.of(ReportStatus.created));
-        GetReportsResponse response = reportingHandler.getReports(new GetReportsRequest().setFilter(filter));
+        var response = reportingHandler.getReports(new GetReportsRequest().setFilter(filter));
 
         assertThat(response.getReports()).extracting(Report::getReportId).contains(reportId);
     }
 
     @Test
     void processingReportCanBeCanceledAndBecomesTerminal() throws Exception {
-        long reportId = reportingHandler.createReport(ReportRequestFixtures.payments("cancel-processing-1"));
-        Instant startedAt = Instant.parse("2026-01-03T10:00:00Z");
-        Instant snapshotFixedAt = Instant.parse("2026-01-03T10:02:00Z");
+        var reportId = reportingHandler.createReport(ReportRequestFixtures.payments("cancel-processing-1"));
+        var startedAt = Instant.parse("2026-01-03T10:00:00Z");
+        var snapshotFixedAt = Instant.parse("2026-01-03T10:02:00Z");
 
         ReportRecordFixtures.markReportProcessing(jdbcTemplate, reportId, startedAt, snapshotFixedAt);
 
         reportingHandler.cancelReport(new CancelReportRequest(reportId));
         reportingHandler.cancelReport(new CancelReportRequest(reportId));
 
-        Report canceledReport = reportingHandler.getReport(new GetReportRequest(reportId));
+        var canceledReport = reportingHandler.getReport(new GetReportRequest(reportId));
         assertThat(canceledReport.getStatus()).isEqualTo(ReportStatus.canceled);
         assertThat(canceledReport.getStartedAt()).isEqualTo(startedAt.toString());
         assertThat(canceledReport.getDataSnapshotFixedAt()).isEqualTo(snapshotFixedAt.toString());
@@ -86,10 +86,10 @@ class ReportLifecycleIntegrationTest extends AbstractReportingIntegrationTest {
 
     @Test
     void failedReportRemainsFailedWhenCancelIsCalled() throws Exception {
-        long reportId = reportingHandler.createReport(ReportRequestFixtures.payments("failed-1"));
-        Instant startedAt = Instant.parse("2026-01-04T10:00:00Z");
-        Instant snapshotFixedAt = Instant.parse("2026-01-04T10:03:00Z");
-        Instant finishedAt = Instant.parse("2026-01-04T10:07:00Z");
+        var reportId = reportingHandler.createReport(ReportRequestFixtures.payments("failed-1"));
+        var startedAt = Instant.parse("2026-01-04T10:00:00Z");
+        var snapshotFixedAt = Instant.parse("2026-01-04T10:03:00Z");
+        var finishedAt = Instant.parse("2026-01-04T10:07:00Z");
 
         ReportRecordFixtures.markReportFailed(
                 jdbcTemplate,
@@ -103,7 +103,7 @@ class ReportLifecycleIntegrationTest extends AbstractReportingIntegrationTest {
 
         reportingHandler.cancelReport(new CancelReportRequest(reportId));
 
-        Report failedReport = reportingHandler.getReport(new GetReportRequest(reportId));
+        var failedReport = reportingHandler.getReport(new GetReportRequest(reportId));
         assertThat(failedReport.getStatus()).isEqualTo(ReportStatus.failed);
         assertThat(failedReport.getFinishedAt()).isEqualTo(finishedAt.toString());
         assertThat(failedReport.getError().getCode()).isEqualTo("storage_error");

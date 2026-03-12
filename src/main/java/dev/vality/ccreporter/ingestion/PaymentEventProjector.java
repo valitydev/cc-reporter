@@ -17,7 +17,7 @@ import java.util.Optional;
 public class PaymentEventProjector {
 
     public List<PaymentCurrentUpdate> project(MachineEvent event, EventPayload payload) {
-        List<PaymentCurrentUpdate> updates = new ArrayList<>();
+        var updates = new ArrayList<PaymentCurrentUpdate>();
         if (!payload.isSetInvoiceChanges()) {
             return updates;
         }
@@ -30,22 +30,22 @@ public class PaymentEventProjector {
     }
 
     private Optional<PaymentCurrentUpdate> projectPaymentChange(MachineEvent event, InvoiceChange change) {
-        InvoicePaymentChange paymentChange = change.getInvoicePaymentChange();
+        var paymentChange = change.getInvoicePaymentChange();
         if (paymentChange == null || paymentChange.getPayload() == null) {
             return Optional.empty();
         }
 
-        Instant eventCreatedAt = Instant.parse(event.getCreatedAt());
-        String invoiceId = event.getSourceId();
-        String paymentId = paymentChange.getId();
+        var eventCreatedAt = Instant.parse(event.getCreatedAt());
+        var invoiceId = event.getSourceId();
+        var paymentId = paymentChange.getId();
 
         if (paymentChange.getPayload().isSetInvoicePaymentStarted()) {
             var started = paymentChange.getPayload().getInvoicePaymentStarted();
-            InvoicePayment payment = started.getPayment();
-            Cash cost = payment.getCost();
-            PaymentRoute route = started.getRoute();
-            String paymentToolType = payment.isSetPayer() ? payment.getPayer().getSetField().getFieldName() : null;
-            String status = payment.isSetStatus() && payment.getStatus().getSetField() != null
+            var payment = started.getPayment();
+            var cost = payment.getCost();
+            var route = started.getRoute();
+            var paymentToolType = payment.isSetPayer() ? payment.getPayer().getSetField().getFieldName() : null;
+            var status = payment.isSetStatus() && payment.getStatus().getSetField() != null
                     ? payment.getStatus().getSetField().getFieldName()
                     : "pending";
             return Optional.of(new PaymentCurrentUpdate(
@@ -81,7 +81,7 @@ public class PaymentEventProjector {
         }
 
         if (paymentChange.getPayload().isSetInvoicePaymentRouteChanged()) {
-            PaymentRoute route = paymentChange.getPayload().getInvoicePaymentRouteChanged().getRoute();
+            var route = paymentChange.getPayload().getInvoicePaymentRouteChanged().getRoute();
             return Optional.of(new PaymentCurrentUpdate(
                     invoiceId, paymentId, event.getEventId(), eventCreatedAt, null, null,
                     null, // TODO CCR-INGESTION: route change still does not populate display names.
@@ -95,7 +95,7 @@ public class PaymentEventProjector {
         }
 
         if (paymentChange.getPayload().isSetInvoicePaymentCashChanged()) {
-            Cash cash = paymentChange.getPayload().getInvoicePaymentCashChanged().getNewCash();
+            var cash = paymentChange.getPayload().getInvoicePaymentCashChanged().getNewCash();
             return Optional.of(new PaymentCurrentUpdate(
                     invoiceId, paymentId, event.getEventId(), eventCreatedAt, null, null, null,
                     null, null, null, null, null, null, null,
@@ -118,7 +118,7 @@ public class PaymentEventProjector {
         }
 
         if (paymentChange.getPayload().isSetInvoicePaymentStatusChanged()) {
-            InvoicePaymentStatus status = paymentChange.getPayload().getInvoicePaymentStatusChanged().getStatus();
+            var status = paymentChange.getPayload().getInvoicePaymentStatusChanged().getStatus();
             return Optional.of(new PaymentCurrentUpdate(
                     invoiceId, paymentId, event.getEventId(), eventCreatedAt, null, null, null,
                     null, terminalFinalizedAt(status, eventCreatedAt), status.getSetField().getFieldName(),
@@ -130,12 +130,12 @@ public class PaymentEventProjector {
         if (paymentChange.getPayload().isSetInvoicePaymentSessionChange()
                 && paymentChange.getPayload().getInvoicePaymentSessionChange().getPayload()
                 .isSetSessionTransactionBound()) {
-            TransactionInfo trx = paymentChange.getPayload()
+            var trx = paymentChange.getPayload()
                     .getInvoicePaymentSessionChange()
                     .getPayload()
                     .getSessionTransactionBound()
                     .getTrx();
-            AdditionalTransactionInfo info = trx.getAdditionalInfo();
+            var info = trx.getAdditionalInfo();
             return Optional.of(new PaymentCurrentUpdate(
                     invoiceId, paymentId, event.getEventId(), eventCreatedAt, null, null, null,
                     null, null, null, null, null, null, null, null, null, null,

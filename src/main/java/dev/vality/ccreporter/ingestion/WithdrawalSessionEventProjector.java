@@ -15,11 +15,11 @@ import java.util.Optional;
 public class WithdrawalSessionEventProjector {
 
     public List<WithdrawalSessionBindingUpdate> projectBindings(MachineEvent event, Event payload) {
-        List<WithdrawalSessionBindingUpdate> bindings = new ArrayList<>();
+        var bindings = new ArrayList<WithdrawalSessionBindingUpdate>();
         if (payload == null || payload.getChanges() == null) {
             return bindings;
         }
-        Instant eventCreatedAt = Instant.parse(event.getCreatedAt());
+        var eventCreatedAt = Instant.parse(event.getCreatedAt());
         for (Change change : payload.getChanges()) {
             if (change.isSetCreated()) {
                 bindings.add(new WithdrawalSessionBindingUpdate(
@@ -41,10 +41,10 @@ public class WithdrawalSessionEventProjector {
         if (payload == null || payload.getChanges() == null || withdrawalId == null) {
             return Optional.empty();
         }
-        Instant eventCreatedAt = Instant.parse(event.getCreatedAt());
+        var eventCreatedAt = Instant.parse(event.getCreatedAt());
         for (Change change : payload.getChanges()) {
             if (change.isSetTransactionBound()) {
-                TransactionInfo trxInfo = change.getTransactionBound().getTrxInfo();
+                var trxInfo = change.getTransactionBound().getTrxInfo();
                 return Optional.of(new WithdrawalCurrentUpdate(
                         withdrawalId,
                         event.getEventId(),

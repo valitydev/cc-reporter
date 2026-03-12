@@ -61,7 +61,7 @@ class KafkaListenerIntegrationTest extends AbstractReportingIntegrationTest {
                 SerializedIngestionEventFixtures.paymentEvents()
         );
 
-        Map<String, Object> row = KafkaIntegrationTestSupport.waitForRow(
+        var row = KafkaIntegrationTestSupport.waitForRow(
                 jdbcTemplate,
                 LISTENER_TIMEOUT,
                 """
@@ -95,7 +95,7 @@ class KafkaListenerIntegrationTest extends AbstractReportingIntegrationTest {
                 SerializedIngestionEventFixtures.withdrawalSessionEvents()
         );
 
-        Map<String, Object> row = KafkaIntegrationTestSupport.waitForRow(
+        var row = KafkaIntegrationTestSupport.waitForRow(
                 jdbcTemplate,
                 LISTENER_TIMEOUT,
                 """

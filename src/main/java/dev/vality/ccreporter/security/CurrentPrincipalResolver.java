@@ -24,11 +24,11 @@ public class CurrentPrincipalResolver {
     }
 
     public String resolveRequired() throws InvalidRequest {
-        HttpServletRequest request = requestProvider.getIfAvailable();
+        var request = requestProvider.getIfAvailable();
         if (request == null) {
             throw invalidRequest("Missing HTTP request context");
         }
-        String createdBy = request.getHeader(apiProperties.getCreatedByHeader());
+        var createdBy = request.getHeader(apiProperties.getCreatedByHeader());
         if (!StringUtils.hasText(createdBy)) {
             throw invalidRequest("Missing caller header: " + apiProperties.getCreatedByHeader());
         }

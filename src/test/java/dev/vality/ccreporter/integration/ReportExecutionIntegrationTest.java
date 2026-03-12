@@ -30,12 +30,12 @@ class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
         );
         var request = ReportRequestFixtures.payments("exec-payments-1");
         request.setTimezone("Asia/Krasnoyarsk");
-        long reportId = reportingHandler.createReport(request);
+        var reportId = reportingHandler.createReport(request);
 
-        boolean processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
+        var processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
 
-        Report report = reportingHandler.getReport(new GetReportRequest(reportId));
-        List<String> csvLines = readCsvLines(
+        var report = reportingHandler.getReport(new GetReportRequest(reportId));
+        var csvLines = readCsvLines(
                 stubFileStorageClient.getStoredContent(report.getFile().getFileId()),
                 StandardCharsets.UTF_8
         );
@@ -63,12 +63,12 @@ class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
                 Instant.parse("2026-01-01T10:00:00Z"),
                 Instant.parse("2026-01-01T11:00:00Z")
         );
-        long reportId = reportingHandler.createReport(ReportRequestFixtures.withdrawals("exec-withdrawals-1"));
+        var reportId = reportingHandler.createReport(ReportRequestFixtures.withdrawals("exec-withdrawals-1"));
 
-        boolean processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
+        var processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
 
-        Report report = reportingHandler.getReport(new GetReportRequest(reportId));
-        List<String> csvLines = readCsvLines(
+        var report = reportingHandler.getReport(new GetReportRequest(reportId));
+        var csvLines = readCsvLines(
                 stubFileStorageClient.getStoredContent(report.getFile().getFileId()),
                 StandardCharsets.UTF_8
         );
@@ -95,14 +95,14 @@ class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
                 Instant.parse("2026-01-01T10:00:00Z"),
                 Instant.parse("2026-01-01T11:00:00Z")
         );
-        long reportId = reportingHandler.createReport(ReportRequestFixtures.payments("exec-failure-1"));
+        var reportId = reportingHandler.createReport(ReportRequestFixtures.payments("exec-failure-1"));
         stubFileStorageClient.setFailUploads(true);
 
         reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
-        Report pendingAfterRetry = reportingHandler.getReport(new GetReportRequest(reportId));
+        var pendingAfterRetry = reportingHandler.getReport(new GetReportRequest(reportId));
 
         reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:31Z"));
-        Report failedReport = reportingHandler.getReport(new GetReportRequest(reportId));
+        var failedReport = reportingHandler.getReport(new GetReportRequest(reportId));
 
         assertThat(pendingAfterRetry.getStatus()).isEqualTo(ReportStatus.pending);
         assertThat(pendingAfterRetry.getError().getCode()).isEqualTo("report_processing_error");
@@ -115,13 +115,13 @@ class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
 
     @Test
     void staleProcessingReportIsMarkedTimedOut() throws Exception {
-        long reportId = reportingHandler.createReport(ReportRequestFixtures.payments("exec-timeout-1"));
-        Instant startedAt = Instant.parse("2026-01-01T12:00:00Z");
+        var reportId = reportingHandler.createReport(ReportRequestFixtures.payments("exec-timeout-1"));
+        var startedAt = Instant.parse("2026-01-01T12:00:00Z");
 
         reportLifecycleDao.claimNextPendingReport(startedAt).orElseThrow();
-        int updated = reportLifecycleService.timeoutStaleProcessingReports(Instant.parse("2026-01-01T12:01:01Z"));
+        var updated = reportLifecycleService.timeoutStaleProcessingReports(Instant.parse("2026-01-01T12:01:01Z"));
 
-        Report report = reportingHandler.getReport(new GetReportRequest(reportId));
+        var report = reportingHandler.getReport(new GetReportRequest(reportId));
 
         assertThat(updated).isEqualTo(1);
         assertThat(report.getStatus()).isEqualTo(ReportStatus.timed_out);
@@ -137,13 +137,13 @@ class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
                 Instant.parse("2026-01-01T10:00:00Z"),
                 Instant.parse("2026-01-01T11:00:00Z")
         );
-        long reportId = reportingHandler.createReport(ReportRequestFixtures.payments("exec-expire-1"));
-        Instant claimTime = Instant.parse("2026-01-01T12:00:00Z");
+        var reportId = reportingHandler.createReport(ReportRequestFixtures.payments("exec-expire-1"));
+        var claimTime = Instant.parse("2026-01-01T12:00:00Z");
 
         reportLifecycleService.processNextPendingReport(claimTime);
-        int expired = reportLifecycleService.expireReadyReports(claimTime.plusSeconds(601));
+        var expired = reportLifecycleService.expireReadyReports(claimTime.plusSeconds(601));
 
-        Report report = reportingHandler.getReport(new GetReportRequest(reportId));
+        var report = reportingHandler.getReport(new GetReportRequest(reportId));
 
         assertThat(expired).isEqualTo(1);
         assertThat(report.getStatus()).isEqualTo(ReportStatus.expired);

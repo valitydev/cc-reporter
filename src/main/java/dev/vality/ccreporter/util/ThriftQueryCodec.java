@@ -45,8 +45,8 @@ public class ThriftQueryCodec {
 
     public ReportQuery deserialize(String queryJson) {
         try {
-            ReportQuery query = new ReportQuery();
-            JsonNode rootNode = objectMapper.readTree(queryJson);
+            var query = new ReportQuery();
+            var rootNode = objectMapper.readTree(queryJson);
             if (rootNode.has("payments")) {
                 query.setPayments(readPaymentsQuery(rootNode.get("payments")));
             } else if (rootNode.has("withdrawals")) {
@@ -61,8 +61,8 @@ public class ThriftQueryCodec {
     }
 
     public ReportType resolveReportType(ReportQuery query) {
-        boolean payments = query != null && query.isSetPayments();
-        boolean withdrawals = query != null && query.isSetWithdrawals();
+        var payments = query != null && query.isSetPayments();
+        var withdrawals = query != null && query.isSetWithdrawals();
         if (payments == withdrawals) {
             return null;
         }
@@ -75,10 +75,10 @@ public class ThriftQueryCodec {
             throw new IllegalArgumentException("query is required");
         }
         if (query.isSetPayments()) {
-            PaymentsQuery paymentsQuery = query.getPayments();
+            var paymentsQuery = query.getPayments();
             timeRange = paymentsQuery == null ? null : paymentsQuery.getTimeRange();
         } else if (query.isSetWithdrawals()) {
-            WithdrawalsQuery withdrawalsQuery = query.getWithdrawals();
+            var withdrawalsQuery = query.getWithdrawals();
             timeRange = withdrawalsQuery == null ? null : withdrawalsQuery.getTimeRange();
         } else {
             throw new IllegalArgumentException("query must select exactly one branch");
@@ -94,9 +94,9 @@ public class ThriftQueryCodec {
 
     public String hash(String value) {
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hashBytes = digest.digest(value.getBytes(StandardCharsets.UTF_8));
-            StringBuilder stringBuilder = new StringBuilder(hashBytes.length * 2);
+            var digest = MessageDigest.getInstance("SHA-256");
+            var hashBytes = digest.digest(value.getBytes(StandardCharsets.UTF_8));
+            var stringBuilder = new StringBuilder(hashBytes.length * 2);
             for (byte hashByte : hashBytes) {
                 stringBuilder.append(String.format("%02x", hashByte));
             }
@@ -110,7 +110,7 @@ public class ThriftQueryCodec {
     }
 
     private ObjectNode writePaymentsQuery(PaymentsQuery query) {
-        ObjectNode node = objectMapper.createObjectNode();
+        var node = objectMapper.createObjectNode();
         node.set("time_range", writeTimeRange(query.getTimeRange()));
         putArray(node, "party_ids", query.getPartyIds());
         putArray(node, "shop_ids", query.getShopIds());
@@ -120,7 +120,7 @@ public class ThriftQueryCodec {
         putArray(node, "currencies", query.getCurrencies());
         putArray(node, "statuses", query.getStatuses());
         if (query.isSetFilter()) {
-            ObjectNode filterNode = objectMapper.createObjectNode();
+            var filterNode = objectMapper.createObjectNode();
             putText(filterNode, "shop_term", query.getFilter().getShopTerm());
             putText(filterNode, "provider_term", query.getFilter().getProviderTerm());
             putText(filterNode, "terminal_term", query.getFilter().getTerminalTerm());
@@ -131,7 +131,7 @@ public class ThriftQueryCodec {
     }
 
     private PaymentsQuery readPaymentsQuery(JsonNode node) {
-        PaymentsQuery query = new PaymentsQuery();
+        var query = new PaymentsQuery();
         query.setTimeRange(readTimeRange(node.get("time_range")));
         setListIfPresent(node, "party_ids", query::setPartyIds);
         setListIfPresent(node, "shop_ids", query::setShopIds);
@@ -140,9 +140,9 @@ public class ThriftQueryCodec {
         setListIfPresent(node, "trx_ids", query::setTrxIds);
         setListIfPresent(node, "currencies", query::setCurrencies);
         setListIfPresent(node, "statuses", query::setStatuses);
-        JsonNode filterNode = node.get("filter");
+        var filterNode = node.get("filter");
         if (filterNode != null && !filterNode.isNull()) {
-            PaymentsSearchFilter filter = new PaymentsSearchFilter();
+            var filter = new PaymentsSearchFilter();
             setTextIfPresent(filterNode, "shop_term", filter::setShopTerm);
             setTextIfPresent(filterNode, "provider_term", filter::setProviderTerm);
             setTextIfPresent(filterNode, "terminal_term", filter::setTerminalTerm);
@@ -153,7 +153,7 @@ public class ThriftQueryCodec {
     }
 
     private ObjectNode writeWithdrawalsQuery(WithdrawalsQuery query) {
-        ObjectNode node = objectMapper.createObjectNode();
+        var node = objectMapper.createObjectNode();
         node.set("time_range", writeTimeRange(query.getTimeRange()));
         putArray(node, "party_ids", query.getPartyIds());
         putArray(node, "wallet_ids", query.getWalletIds());
@@ -163,7 +163,7 @@ public class ThriftQueryCodec {
         putArray(node, "currencies", query.getCurrencies());
         putArray(node, "statuses", query.getStatuses());
         if (query.isSetFilter()) {
-            ObjectNode filterNode = objectMapper.createObjectNode();
+            var filterNode = objectMapper.createObjectNode();
             putText(filterNode, "wallet_term", query.getFilter().getWalletTerm());
             putText(filterNode, "provider_term", query.getFilter().getProviderTerm());
             putText(filterNode, "terminal_term", query.getFilter().getTerminalTerm());
@@ -174,7 +174,7 @@ public class ThriftQueryCodec {
     }
 
     private WithdrawalsQuery readWithdrawalsQuery(JsonNode node) {
-        WithdrawalsQuery query = new WithdrawalsQuery();
+        var query = new WithdrawalsQuery();
         query.setTimeRange(readTimeRange(node.get("time_range")));
         setListIfPresent(node, "party_ids", query::setPartyIds);
         setListIfPresent(node, "wallet_ids", query::setWalletIds);
@@ -183,9 +183,9 @@ public class ThriftQueryCodec {
         setListIfPresent(node, "trx_ids", query::setTrxIds);
         setListIfPresent(node, "currencies", query::setCurrencies);
         setListIfPresent(node, "statuses", query::setStatuses);
-        JsonNode filterNode = node.get("filter");
+        var filterNode = node.get("filter");
         if (filterNode != null && !filterNode.isNull()) {
-            WithdrawalsSearchFilter filter = new WithdrawalsSearchFilter();
+            var filter = new WithdrawalsSearchFilter();
             setTextIfPresent(filterNode, "wallet_term", filter::setWalletTerm);
             setTextIfPresent(filterNode, "provider_term", filter::setProviderTerm);
             setTextIfPresent(filterNode, "terminal_term", filter::setTerminalTerm);
@@ -196,7 +196,7 @@ public class ThriftQueryCodec {
     }
 
     private ObjectNode writeTimeRange(TimeRange timeRange) {
-        ObjectNode node = objectMapper.createObjectNode();
+        var node = objectMapper.createObjectNode();
         putText(node, "from_time", timeRange.getFromTime());
         putText(node, "to_time", timeRange.getToTime());
         return node;
@@ -210,7 +210,7 @@ public class ThriftQueryCodec {
         if (values == null || values.isEmpty()) {
             return;
         }
-        ArrayNode arrayNode = objectMapper.createArrayNode();
+        var arrayNode = objectMapper.createArrayNode();
         values.forEach(arrayNode::add);
         node.set(fieldName, arrayNode);
     }
@@ -222,7 +222,7 @@ public class ThriftQueryCodec {
     }
 
     private void setListIfPresent(JsonNode node, String fieldName, java.util.function.Consumer<List<String>> consumer) {
-        JsonNode arrayNode = node.get(fieldName);
+        var arrayNode = node.get(fieldName);
         if (arrayNode == null || arrayNode.isNull()) {
             return;
         }
@@ -235,7 +235,7 @@ public class ThriftQueryCodec {
     }
 
     private void setTextIfPresent(JsonNode node, String fieldName, java.util.function.Consumer<String> consumer) {
-        JsonNode valueNode = node.get(fieldName);
+        var valueNode = node.get(fieldName);
         if (valueNode != null && !valueNode.isNull()) {
             consumer.accept(valueNode.asText());
         }

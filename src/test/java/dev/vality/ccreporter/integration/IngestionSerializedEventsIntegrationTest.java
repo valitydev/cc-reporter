@@ -32,7 +32,7 @@ class IngestionSerializedEventsIntegrationTest extends AbstractReportingIntegrat
     void paymentEventsAreParsedFromSerializedPayloadAndProjectedIntoCurrentState() {
         paymentIngestionService.handleEvents(SerializedIngestionEventFixtures.paymentEvents());
 
-        Map<String, Object> row = jdbcTemplate.queryForMap(
+        var row = jdbcTemplate.queryForMap(
                 """
                         SELECT status, provider_id, terminal_id, amount, fee, trx_id, rrn, approval_code, finalized_at
                         FROM ccr.payment_txn_current
@@ -59,7 +59,7 @@ class IngestionSerializedEventsIntegrationTest extends AbstractReportingIntegrat
         withdrawalIngestionService.handleEvents(SerializedIngestionEventFixtures.withdrawalEvents());
         withdrawalSessionIngestionService.handleEvents(SerializedIngestionEventFixtures.withdrawalSessionEvents());
 
-        Map<String, Object> row = jdbcTemplate.queryForMap(
+        var row = jdbcTemplate.queryForMap(
                 """
                         SELECT status, provider_id, terminal_id, amount, fee, trx_id, wallet_id,
                                original_amount, original_currency, converted_amount, provider_amount, provider_currency

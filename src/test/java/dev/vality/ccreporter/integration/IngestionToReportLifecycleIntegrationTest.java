@@ -33,15 +33,15 @@ class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegra
     void paymentsReportLifecycleRunsFromIngestionToPresignedUrl() throws Exception {
         paymentIngestionService.handleEvents(SerializedIngestionEventFixtures.paymentEvents());
 
-        long reportId = reportingHandler.createReport(paymentsLifecycleRequest());
-        boolean processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
+        var reportId = reportingHandler.createReport(paymentsLifecycleRequest());
+        var processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
 
-        Report report = reportingHandler.getReport(new GetReportRequest(reportId));
-        String csv = new String(
+        var report = reportingHandler.getReport(new GetReportRequest(reportId));
+        var csv = new String(
                 stubFileStorageClient.getStoredContent(report.getFile().getFileId()),
                 StandardCharsets.UTF_8
         );
-        String url =
+        var url =
                 reportingHandler.generatePresignedUrl(new GeneratePresignedUrlRequest(report.getFile().getFileId()));
 
         assertThat(processed).isTrue();
@@ -68,15 +68,15 @@ class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegra
         withdrawalIngestionService.handleEvents(SerializedIngestionEventFixtures.withdrawalEvents());
         withdrawalSessionIngestionService.handleEvents(SerializedIngestionEventFixtures.withdrawalSessionEvents());
 
-        long reportId = reportingHandler.createReport(withdrawalsLifecycleRequest());
-        boolean processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
+        var reportId = reportingHandler.createReport(withdrawalsLifecycleRequest());
+        var processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
 
-        Report report = reportingHandler.getReport(new GetReportRequest(reportId));
-        String csv = new String(
+        var report = reportingHandler.getReport(new GetReportRequest(reportId));
+        var csv = new String(
                 stubFileStorageClient.getStoredContent(report.getFile().getFileId()),
                 StandardCharsets.UTF_8
         );
-        String url =
+        var url =
                 reportingHandler.generatePresignedUrl(new GeneratePresignedUrlRequest(report.getFile().getFileId()));
 
         assertThat(processed).isTrue();

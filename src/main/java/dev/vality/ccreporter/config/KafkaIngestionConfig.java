@@ -131,7 +131,7 @@ public class KafkaIngestionConfig {
     }
 
     private DefaultErrorHandler kafkaErrorHandler(CcrKafkaProperties ccrKafkaProperties) {
-        long maxAttempts = ccrKafkaProperties.getConsumer().getErrorMaxAttempts();
+        var maxAttempts = ccrKafkaProperties.getConsumer().getErrorMaxAttempts();
         return new DefaultErrorHandler(new FixedBackOff(
                 ccrKafkaProperties.getConsumer().getErrorBackoffIntervalMs(),
                 maxAttempts < 0 ? FixedBackOff.UNLIMITED_ATTEMPTS : maxAttempts
@@ -139,7 +139,7 @@ public class KafkaIngestionConfig {
     }
 
     private Map<String, Object> consumerConfig(Environment environment) {
-        Map<String, Object> config = new java.util.HashMap<String, Object>();
+        var config = new java.util.HashMap<String, Object>();
         config.put(
                 ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
                 environment.getProperty("spring.kafka.bootstrap-servers", "localhost:9092")

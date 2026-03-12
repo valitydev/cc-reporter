@@ -99,28 +99,28 @@ public class ReportManagementService {
         if (request == null || !request.isSetReportId()) {
             throw invalidRequest("report_id is required");
         }
-        String createdBy = currentPrincipalResolver.resolveRequired();
+        var createdBy = currentPrincipalResolver.resolveRequired();
         return reportDao.getReport(createdBy, request.getReportId())
                 .map(this::toThriftReport)
                 .orElseThrow(ReportNotFound::new);
     }
 
     public GetReportsResponse getReports(GetReportsRequest request) throws InvalidRequest, BadContinuationToken {
-        String createdBy = currentPrincipalResolver.resolveRequired();
-        GetReportsRequest safeRequest = request == null ? new GetReportsRequest() : request;
+        var createdBy = currentPrincipalResolver.resolveRequired();
+        var safeRequest = request == null ? new GetReportsRequest() : request;
         validateGetReportsRequest(safeRequest);
 
-        GetReportsMeta meta = safeRequest.getMeta();
-        int limit = resolveLimit(meta);
-        PageCursor cursor = meta != null && meta.isSetContinuationToken()
+        var meta = safeRequest.getMeta();
+        var limit = resolveLimit(meta);
+        var cursor = meta != null && meta.isSetContinuationToken()
                 ? continuationTokenCodec.decode(meta.getContinuationToken())
                 : null;
-        List<StoredReport> storedReports = reportDao.getReports(createdBy, safeRequest.getFilter(), cursor, limit);
+        var storedReports = reportDao.getReports(createdBy, safeRequest.getFilter(), cursor, limit);
 
-        GetReportsResponse response = new GetReportsResponse();
+        var response = new GetReportsResponse();
         response.setReports(storedReports.stream().map(this::toThriftReport).toList());
         if (storedReports.size() == limit) {
-            StoredReport lastReport = storedReports.get(storedReports.size() - 1);
+            var lastReport = storedReports.get(storedReports.size() - 1);
             response.setContinuationToken(continuationTokenCodec.encode(lastReport.createdAt(), lastReport.id()));
         }
         return response;
@@ -134,7 +134,7 @@ public class ReportManagementService {
         var auditMetadata = requestAuditMetadataResolver.resolve();
         try {
             transactionTemplate.executeWithoutResult(status -> {
-                boolean updated = reportDao.cancelReport(createdBy, request.getReportId(), Instant.now());
+                var updated = reportDao.cancelReport(createdBy, request.getReportId(), Instant.now());
                 if (!updated && !reportDao.reportExists(createdBy, request.getReportId())) {
                     throw new ReportNotFoundRuntimeException();
                 }
@@ -158,20 +158,20 @@ public class ReportManagementService {
         }
         var createdBy = currentPrincipalResolver.resolveRequired();
         var auditMetadata = requestAuditMetadataResolver.resolve();
-        Optional<StoredFileData> fileData = reportDao.getFile(createdBy, request.getFileId());
+        var fileData = reportDao.getFile(createdBy, request.getFileId());
         if (fileData.isEmpty()) {
             throw new FileNotFound();
         }
 
-        Instant now = Instant.now();
-        Instant ttlCap = now.plusSeconds(reportProperties.getPresignedUrlTtlSec());
-        Instant requestedExpiresAt = request.isSetRequestedExpiresAt()
+        var now = Instant.now();
+        var ttlCap = now.plusSeconds(reportProperties.getPresignedUrlTtlSec());
+        var requestedExpiresAt = request.isSetRequestedExpiresAt()
                 ? TimestampUtils.parse(request.getRequestedExpiresAt())
                 : ttlCap;
         if (!requestedExpiresAt.isAfter(now)) {
             throw invalidRequest("requested_expires_at must be in the future");
         }
-        Instant effectiveExpiresAt = requestedExpiresAt.isAfter(ttlCap) ? ttlCap : requestedExpiresAt;
+        var effectiveExpiresAt = requestedExpiresAt.isAfter(ttlCap) ? ttlCap : requestedExpiresAt;
         try {
             var url = fileStorageService.generateDownloadUrl(
                     fileData.get().fileId(),
@@ -237,7 +237,7 @@ public class ReportManagementService {
     }
 
     private void validateCreateRequest(CreateReportRequest request) throws InvalidRequest {
-        List<String> errors = new ArrayList<>();
+        var errors = new ArrayList<String>();
         if (request == null) {
             errors.add("request is required");
         } else {
@@ -266,8 +266,8 @@ public class ReportManagementService {
     }
 
     private void validateQuery(CreateReportRequest request, List<String> errors) {
-        ReportQuery query = request.getQuery();
-        ReportType actualType = thriftQueryCodec.resolveReportType(query);
+        var query = request.getQuery();
+        var actualType = thriftQueryCodec.resolveReportType(query);
         if (actualType == null) {
             errors.add("query must select exactly one branch");
             return;
@@ -282,15 +282,15 @@ public class ReportManagementService {
     }
 
     private void validateGetReportsRequest(GetReportsRequest request) throws InvalidRequest {
-        List<String> errors = new ArrayList<>();
-        GetReportsMeta meta = request.getMeta();
+        var errors = new ArrayList<String>();
+        var meta = request.getMeta();
         if (meta != null && meta.isSetLimit() && meta.getLimit() <= 0) {
             errors.add("meta.limit must be positive");
         }
-        GetReportsFilter filter = request.getFilter();
+        var filter = request.getFilter();
         if (filter != null && filter.isSetCreatedFrom() && filter.isSetCreatedTo()) {
-            Instant createdFrom = TimestampUtils.parse(filter.getCreatedFrom());
-            Instant createdTo = TimestampUtils.parse(filter.getCreatedTo());
+            var createdFrom = TimestampUtils.parse(filter.getCreatedFrom());
+            var createdTo = TimestampUtils.parse(filter.getCreatedTo());
             if (createdFrom.isAfter(createdTo)) {
                 errors.add("filter.created_from must be before or equal to filter.created_to");
             }
@@ -308,7 +308,7 @@ public class ReportManagementService {
     }
 
     private Report toThriftReport(StoredReport storedReport) {
-        Report report = new Report();
+        var report = new Report();
         report.setReportId(storedReport.id());
         report.setReportType(storedReport.reportType());
         report.setFileType(storedReport.fileType());
@@ -343,7 +343,7 @@ public class ReportManagementService {
     }
 
     private FileMeta toThriftFile(StoredFileData fileData) {
-        FileMeta fileMeta = new FileMeta();
+        var fileMeta = new FileMeta();
         fileMeta.setFileId(fileData.fileId());
         fileMeta.setFileType(fileData.fileType());
         fileMeta.setFilename(fileData.filename());

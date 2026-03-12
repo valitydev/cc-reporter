@@ -90,13 +90,13 @@ public abstract class AbstractReportingIntegrationTest {
     }
 
     protected void bindCaller(String callerId) {
-        MockHttpServletRequest request = new MockHttpServletRequest();
+        var request = new MockHttpServletRequest();
         request.addHeader("X-User-Id", callerId);
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
     }
 
     protected void bindCallerWithAuditMetadata(String callerId) {
-        MockHttpServletRequest request = new MockHttpServletRequest();
+        var request = new MockHttpServletRequest();
         request.addHeader("X-User-Id", callerId);
         request.addHeader("woody.meta.user-identity.id", "user-id-42");
         request.addHeader("woody.meta.user-identity.username", "alice");
@@ -136,11 +136,11 @@ public abstract class AbstractReportingIntegrationTest {
             if (failUploads) {
                 throw new IllegalStateException("upload failed");
             }
-            CountDownLatch enteredLatch = uploadEnteredLatch;
+            var enteredLatch = uploadEnteredLatch;
             if (enteredLatch != null) {
                 enteredLatch.countDown();
             }
-            CountDownLatch releaseLatch = releaseUploadLatch;
+            var releaseLatch = releaseUploadLatch;
             if (releaseLatch != null) {
                 try {
                     if (!releaseLatch.await(5, TimeUnit.SECONDS)) {
@@ -151,7 +151,7 @@ public abstract class AbstractReportingIntegrationTest {
                     throw new IllegalStateException("Interrupted while waiting to release stub upload", ex);
                 }
             }
-            String fileId = "stored-file-" + uploadSequence.incrementAndGet();
+            var fileId = "stored-file-" + uploadSequence.incrementAndGet();
             storedContent.put(fileId, content);
             lastFileId.set(fileId);
             lastExpiresAt.set(expiresAt);

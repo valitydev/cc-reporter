@@ -46,16 +46,16 @@ public class FileStorageService {
             throw new IllegalStateException("ccr.storage.file-storage.url is not configured");
         }
         try {
-            NewFileResult newFileResult = fileStorageClient.createNewFile(
+            var newFileResult = fileStorageClient.createNewFile(
                     Collections.emptyMap(),
                     expiresAt.toString()
             );
-            HttpRequest request = HttpRequest.newBuilder()
+            var request = HttpRequest.newBuilder()
                     .uri(URI.create(newFileResult.getUploadUrl()))
                     .header("Content-Type", contentType)
                     .PUT(bodyPublisher)
                     .build();
-            HttpResponse<Void> response = httpClient.send(
+            var response = httpClient.send(
                     request,
                     HttpResponse.BodyHandlers.discarding()
             );

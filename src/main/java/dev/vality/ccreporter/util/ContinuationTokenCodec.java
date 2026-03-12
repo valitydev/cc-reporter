@@ -20,10 +20,10 @@ public class ContinuationTokenCodec {
 
     public String encode(Instant createdAt, long reportId) {
         try {
-            ObjectNode node = objectMapper.createObjectNode();
+            var node = objectMapper.createObjectNode();
             node.put("created_at", createdAt.toString());
             node.put("report_id", reportId);
-            byte[] payload = objectMapper.writeValueAsBytes(node);
+            var payload = objectMapper.writeValueAsBytes(node);
             return Base64.getUrlEncoder().withoutPadding().encodeToString(payload);
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to encode continuation token", ex);
@@ -32,14 +32,14 @@ public class ContinuationTokenCodec {
 
     public PageCursor decode(String token) throws BadContinuationToken {
         try {
-            byte[] decoded = Base64.getUrlDecoder().decode(token.getBytes(StandardCharsets.UTF_8));
+            var decoded = Base64.getUrlDecoder().decode(token.getBytes(StandardCharsets.UTF_8));
             var rootNode = objectMapper.readTree(decoded);
             return new PageCursor(
                     Instant.parse(rootNode.get("created_at").asText()),
                     rootNode.get("report_id").asLong()
             );
         } catch (Exception ex) {
-            BadContinuationToken badContinuationToken = new BadContinuationToken();
+            var badContinuationToken = new BadContinuationToken();
             badContinuationToken.setReason("Malformed continuation token");
             throw badContinuationToken;
         }
