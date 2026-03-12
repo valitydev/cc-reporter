@@ -17,7 +17,9 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
@@ -77,6 +79,7 @@ abstract class AbstractReportingIntegrationTest {
         jdbcTemplate.update("DELETE FROM ccr.report_job");
         jdbcTemplate.update("DELETE FROM ccr.payment_txn_current");
         jdbcTemplate.update("DELETE FROM ccr.withdrawal_txn_current");
+        jdbcTemplate.update("DELETE FROM ccr.withdrawal_session_binding_current");
         stubFileStorageClient.reset();
         bindCaller("user-1");
     }
@@ -344,11 +347,28 @@ abstract class AbstractReportingIntegrationTest {
         private final AtomicReference<Instant> lastExpiresAt = new AtomicReference<>();
         private final Map<String, byte[]> storedContent = new ConcurrentHashMap<>();
         private volatile boolean failUploads;
+        private volatile CountDownLatch uploadEnteredLatch;
+        private volatile CountDownLatch releaseUploadLatch;
 
         @Override
         public String storeFile(String fileName, String contentType, byte[] content, Instant expiresAt) {
             if (failUploads) {
                 throw new IllegalStateException("upload failed");
+            }
+            CountDownLatch enteredLatch = uploadEnteredLatch;
+            if (enteredLatch != null) {
+                enteredLatch.countDown();
+            }
+            CountDownLatch releaseLatch = releaseUploadLatch;
+            if (releaseLatch != null) {
+                try {
+                    if (!releaseLatch.await(5, TimeUnit.SECONDS)) {
+                        throw new IllegalStateException("Timed out waiting to release stub upload");
+                    }
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupted while waiting to release stub upload", ex);
+                }
             }
             String fileId = "stored-file-" + uploadSequence.incrementAndGet();
             storedContent.put(fileId, content);
@@ -370,6 +390,8 @@ abstract class AbstractReportingIntegrationTest {
             lastExpiresAt.set(null);
             storedContent.clear();
             failUploads = false;
+            uploadEnteredLatch = null;
+            releaseUploadLatch = null;
         }
 
         String getLastFileId() {
@@ -386,6 +408,11 @@ abstract class AbstractReportingIntegrationTest {
 
         void setFailUploads(boolean failUploads) {
             this.failUploads = failUploads;
+        }
+
+        void blockUploads(CountDownLatch uploadEnteredLatch, CountDownLatch releaseUploadLatch) {
+            this.uploadEnteredLatch = uploadEnteredLatch;
+            this.releaseUploadLatch = releaseUploadLatch;
         }
     }
 }

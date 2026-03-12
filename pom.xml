@@ -95,12 +95,28 @@
         <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>msgpack-proto</artifactId>
-            <version>1.14-7e44749</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.vality</groupId>
+            <artifactId>kafka-common-lib</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.vality</groupId>
+            <artifactId>machinegun-proto</artifactId>
+            <version>1.43-3decc8f</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.vality</groupId>
+            <artifactId>damsel</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.vality</groupId>
+            <artifactId>fistful-proto</artifactId>
+            <version>1.188-f7ce08e</version>
         </dependency>
         <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
-            <version>3.0.0</version>
         </dependency>
 
         <!-- Test -->
@@ -113,6 +129,11 @@
             <groupId>io.zonky.test</groupId>
             <artifactId>embedded-postgres</artifactId>
             <version>2.0.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

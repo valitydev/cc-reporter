@@ -79,6 +79,9 @@ ccr:
       withdrawals:
         id: ""
         enabled: false
+      withdrawal-sessions:
+        id: ""
+        enabled: false
   scheduler:
     enabled: false
     poll-interval-ms: 10000
