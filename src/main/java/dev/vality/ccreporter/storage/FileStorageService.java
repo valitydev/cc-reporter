@@ -14,6 +14,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Path;
 import java.nio.file.NoSuchFileException;
 import java.time.Instant;
 import java.util.Collections;
@@ -29,6 +30,18 @@ public class FileStorageService {
     }
 
     public String storeFile(String fileName, String contentType, byte[] content, Instant expiresAt) {
+        return uploadFile(contentType, HttpRequest.BodyPublishers.ofByteArray(content), expiresAt);
+    }
+
+    public String storeFile(String fileName, String contentType, Path contentPath, Instant expiresAt) {
+        try {
+            return uploadFile(contentType, HttpRequest.BodyPublishers.ofFile(contentPath), expiresAt);
+        } catch (IOException ex) {
+            throw new IllegalStateException("Failed to stream staged file to file-storage", ex);
+        }
+    }
+
+    private String uploadFile(String contentType, HttpRequest.BodyPublisher bodyPublisher, Instant expiresAt) {
         if (fileStorageClient == null) {
             throw new IllegalStateException("ccr.storage.file-storage.url is not configured");
         }
@@ -40,7 +53,7 @@ public class FileStorageService {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(newFileResult.getUploadUrl()))
                     .header("Content-Type", contentType)
-                    .PUT(HttpRequest.BodyPublishers.ofByteArray(content))
+                    .PUT(bodyPublisher)
                     .build();
             HttpResponse<Void> response = httpClient.send(
                     request,

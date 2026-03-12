@@ -47,9 +47,14 @@ class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegra
         assertThat(processed).isTrue();
         assertThat(report.getStatus()).isEqualTo(ReportStatus.created);
         assertThat(report.getRowsCount()).isEqualTo(1L);
-        assertThat(csv).contains("invoice_id,payment_id");
         assertThat(csv).contains(
-                SerializedIngestionEventFixtures.PAYMENT_INVOICE_ID + "," + SerializedIngestionEventFixtures.PAYMENT_ID
+                "created_date,created_time,finalized_date,finalized_time,invoice_id,payment_id,status,amount,currency"
+        );
+        assertThat(csv).contains(
+                SerializedIngestionEventFixtures.PAYMENT_INVOICE_ID +
+                        "," +
+                        SerializedIngestionEventFixtures.PAYMENT_ID +
+                        ",captured,10.00,RUB"
         );
         assertThat(csv).contains("trx-payment-1");
         assertThat(url).isEqualTo("https://download.example/" + report.getFile().getFileId());
@@ -77,8 +82,10 @@ class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegra
         assertThat(processed).isTrue();
         assertThat(report.getStatus()).isEqualTo(ReportStatus.created);
         assertThat(report.getRowsCount()).isEqualTo(1L);
-        assertThat(csv).contains("withdrawal_id,party_id");
-        assertThat(csv).contains(SerializedIngestionEventFixtures.WITHDRAWAL_ID + ",party-serialized");
+        assertThat(csv).contains(
+                "created_date,created_time,finalized_date,finalized_time,withdrawal_id,status,amount,currency"
+        );
+        assertThat(csv).contains(SerializedIngestionEventFixtures.WITHDRAWAL_ID + ",succeeded,10.00,RUB");
         assertThat(csv).contains("trx-withdrawal-1");
         assertThat(url).isEqualTo("https://download.example/" + report.getFile().getFileId());
         assertThat(reportingHandler.getReports(new GetReportsRequest()).getReports())

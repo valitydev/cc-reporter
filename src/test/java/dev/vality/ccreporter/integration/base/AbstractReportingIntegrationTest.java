@@ -20,6 +20,8 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -139,6 +141,15 @@ public abstract class AbstractReportingIntegrationTest {
             lastFileId.set(fileId);
             lastExpiresAt.set(expiresAt);
             return fileId;
+        }
+
+        @Override
+        public String storeFile(String fileName, String contentType, Path contentPath, Instant expiresAt) {
+            try {
+                return storeFile(fileName, contentType, Files.readAllBytes(contentPath), expiresAt);
+            } catch (IOException ex) {
+                throw new IllegalStateException("Failed to read staged file from stub storage", ex);
+            }
         }
 
         @Override

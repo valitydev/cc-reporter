@@ -118,7 +118,7 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
         assertThat(processed).isTrue();
         assertThat(report.getStatus()).isEqualTo(ReportStatus.created);
         assertThat(report.getRowsCount()).isEqualTo(1L);
-        assertThat(csv).contains("withdrawal-filter-1,party-1");
-        assertThat(csv).doesNotContain("withdrawal-filter-2,party-1");
+        assertThat(csv).contains("withdrawal-filter-1,succeeded,20.00,RUB,trx-w-1");
+        assertThat(csv).doesNotContain("withdrawal-filter-2,succeeded,20.00,RUB,trx-w-2");
     }
 }

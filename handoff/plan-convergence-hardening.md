@@ -15,16 +15,7 @@
   main architecture.
 
 ## Open work
-- Replace the current in-memory report build path with the plan-aligned large-report path:
-  cursor-driven DB reads inside `READ ONLY REPEATABLE READ`, temp-file or equivalent staged output, and publication only after the
-  final artifact is complete.
-- Align the generated CSV contract with the business plan:
-  separate date/time columns if that contract still stands, reconcile `finalized_time` naming expectations, and render monetary
-  values with currency-exponent awareness instead of plain numeric serialization.
-- Decide whether the planned fallback for missing `payments.trx_id` must now be implemented:
-  only as a separate repair/reconciliation path for observed terminal gaps, never on the Kafka hot path.
-- Add explicit negative-path Kafka batch proof if required:
-  demonstrate that listener error handling preserves the intended batch ack/retry semantics, not only the happy path.
+- None for the bounded track scope.
 
 ## Verified constraints
 - Do not reintroduce Hellgate or any other external synchronous reads on the Kafka ingestion hot path.
@@ -33,12 +24,23 @@
 - Preserve the already working status machine, API contract, and monotonic upsert semantics while hardening the remaining gaps.
 
 ## Next step
-- Start with the large-report build path in `ReportCsvService` / worker execution, because it is the biggest remaining divergence
-  from both `PLAN.md` and the raw brainstorm implementation plan.
+- Keep this track in maintenance mode only. Reopen it only if real data disproves the current `trx_id` assumptions or if the CSV
+  contract changes again.
 
 ## Done when
-- Report generation no longer materializes the full query result set and full CSV payload in memory.
-- CSV output and formatting converge with the accepted contract for date/time and amount representation.
-- Any implemented `trx_id` fallback remains isolated to a separate repair path and is covered by tests.
-- Kafka listener hardening coverage proves the intended batch ack/retry behavior if this semantics is required beyond the current
-  happy-path transport test.
+- Done at the current baseline.
+
+## Progress update
+- `ReportCsvService` now renders inside `READ ONLY REPEATABLE READ` directly into a staged temp file while streaming JDBC rows
+  through the writer instead of materializing the full result set and CSV payload in memory.
+- `ReportLifecycleService` now uploads from the staged file, publishes file metadata from the staged artifact, and removes the
+  temporary file after processing.
+- CSV output now matches the accepted contract in `docs/CSV_REPORT_FORMAT.md`: split `created_*` / `finalized_*` date-time
+  columns, fixed column order, and exponent-aware formatting for amount fields.
+- Kafka transport hardening now has explicit negative-path proof: a synthetic first-attempt listener failure is retried and the
+  batch is committed only after a successful reprocessing pass.
+- The `payments.trx_id` fallback item is closed by decision: current primary truth shows `SessionTransactionBound` is sufficient,
+  so no separate reconciler is implemented unless production streams show terminal rows that still miss `trx_id`.
+- Scoped verification passed with Java 25 via
+  `mvn -q -Dtest=ReportExecutionIntegrationTest,ReportQueryFilteringIntegrationTest,IngestionToReportLifecycleIntegrationTest,`
+  `KafkaListenerIntegrationTest,KafkaListenerRetryIntegrationTest,ReportLifecycleWorkerIntegrationTest test`.

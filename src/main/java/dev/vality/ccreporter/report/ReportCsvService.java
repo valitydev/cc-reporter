@@ -3,6 +3,12 @@ package dev.vality.ccreporter.report;
 import dev.vality.ccreporter.*;
 import dev.vality.ccreporter.dao.ClaimedReportJob;
 import dev.vality.ccreporter.util.ThriftQueryCodec;
+import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.core.PreparedStatementCreatorFactory;
+import org.springframework.jdbc.core.PreparedStatementSetter;
+import org.springframework.jdbc.core.SqlParameter;
+import org.springframework.jdbc.core.namedparam.NamedParameterUtils;
+import org.springframework.jdbc.core.namedparam.ParsedSql;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -10,83 +16,80 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
+import java.util.Currency;
+import java.util.HexFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 @Service
 public class ReportCsvService {
 
-    private static final DateTimeFormatter CSV_TIMESTAMP_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+    private static final DateTimeFormatter CSV_DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
+    private static final DateTimeFormatter CSV_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
+    private static final int CSV_QUERY_FETCH_SIZE = 1_000;
 
     private static final List<String> PAYMENT_COLUMNS = List.of(
+            "created_date",
+            "created_time",
+            "finalized_date",
+            "finalized_time",
             "invoice_id",
             "payment_id",
-            "party_id",
-            "shop_id",
-            "shop_name",
-            "created_at",
-            "finalized_at",
             "status",
-            "provider_id",
-            "provider_name",
-            "terminal_id",
-            "terminal_name",
             "amount",
-            "fee",
             "currency",
             "trx_id",
-            "external_id",
-            "rrn",
-            "approval_code",
-            "payment_tool_type",
-            "original_amount",
-            "original_currency",
-            "converted_amount",
+            "provider_id",
+            "terminal_id",
+            "shop_id",
             "exchange_rate_internal",
             "provider_amount",
-            "provider_currency"
+            "provider_currency",
+            "original_amount",
+            "original_currency",
+            "converted_amount"
     );
 
     private static final List<String> WITHDRAWAL_COLUMNS = List.of(
+            "created_date",
+            "created_time",
+            "finalized_date",
+            "finalized_time",
             "withdrawal_id",
-            "party_id",
-            "wallet_id",
-            "wallet_name",
-            "destination_id",
-            "created_at",
-            "finalized_at",
             "status",
-            "provider_id",
-            "provider_name",
-            "terminal_id",
-            "terminal_name",
             "amount",
-            "fee",
             "currency",
             "trx_id",
-            "external_id",
-            "error_code",
-            "error_reason",
-            "error_sub_failure",
-            "original_amount",
-            "original_currency",
-            "converted_amount",
+            "provider_id",
+            "terminal_id",
+            "wallet_id",
             "exchange_rate_internal",
             "provider_amount",
-            "provider_currency"
+            "provider_currency",
+            "original_amount",
+            "original_currency",
+            "converted_amount"
     );
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
@@ -111,29 +114,43 @@ public class ReportCsvService {
             ReportQuery reportQuery = thriftQueryCodec.deserialize(claimedReportJob.queryJson());
             ZoneId zoneId = ZoneId.of(claimedReportJob.timezone());
             String fileName = claimedReportJob.reportType().name() + "-report-" + claimedReportJob.id() + ".csv";
+            Path stagedFile = createTempFile(claimedReportJob.id());
             try {
-                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                BufferedWriter writer = new BufferedWriter(
-                        new OutputStreamWriter(outputStream, StandardCharsets.UTF_8)
-                );
+                MessageDigest md5 = createDigest("MD5");
+                MessageDigest sha256 = createDigest("SHA-256");
                 long rowsCount;
-                if (reportQuery.isSetPayments()) {
-                    rowsCount = writePaymentsCsv(writer, reportQuery.getPayments(), zoneId);
-                } else if (reportQuery.isSetWithdrawals()) {
-                    rowsCount = writeWithdrawalsCsv(writer, reportQuery.getWithdrawals(), zoneId);
-                } else {
-                    throw new IllegalArgumentException("Stored report query must contain a known branch");
+                try (var fileOutputStream = Files.newOutputStream(stagedFile);
+                        var bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
+                        var md5OutputStream = new DigestOutputStream(bufferedOutputStream, md5);
+                        var sha256OutputStream = new DigestOutputStream(md5OutputStream, sha256);
+                        var writer = new BufferedWriter(
+                                new OutputStreamWriter(sha256OutputStream, StandardCharsets.UTF_8)
+                        )) {
+                    if (reportQuery.isSetPayments()) {
+                        rowsCount = writePaymentsCsv(writer, reportQuery.getPayments(), zoneId);
+                    } else if (reportQuery.isSetWithdrawals()) {
+                        rowsCount = writeWithdrawalsCsv(writer, reportQuery.getWithdrawals(), zoneId);
+                    } else {
+                        throw new IllegalArgumentException("Stored report query must contain a known branch");
+                    }
+                    writer.flush();
                 }
-                writer.flush();
                 return new GeneratedCsvReport(
                         fileName,
                         "text/csv",
-                        outputStream.toByteArray(),
+                        stagedFile,
+                        Files.size(stagedFile),
+                        HexFormat.of().formatHex(md5.digest()),
+                        HexFormat.of().formatHex(sha256.digest()),
                         rowsCount,
                         snapshotFixedAt
                 );
             } catch (IOException ex) {
+                deleteIfExists(stagedFile);
                 throw new IllegalStateException("Failed to render CSV report", ex);
+            } catch (RuntimeException ex) {
+                deleteIfExists(stagedFile);
+                throw ex;
             }
         }));
     }
@@ -143,10 +160,10 @@ public class ReportCsvService {
         writer.newLine();
         StringBuilder sql = new StringBuilder(
                 """
-                        SELECT invoice_id, payment_id, party_id, shop_id, shop_name, created_at, finalized_at, status,
-                               provider_id, provider_name, terminal_id, terminal_name, amount, fee, currency, trx_id,
-                               external_id, rrn, approval_code, payment_tool_type, original_amount, original_currency,
-                               converted_amount, exchange_rate_internal, provider_amount, provider_currency
+                        SELECT created_at, finalized_at, invoice_id, payment_id, status,
+                               amount, currency, trx_id, provider_id, terminal_id, shop_id,
+                               exchange_rate_internal, provider_amount, provider_currency,
+                               original_amount, original_currency, converted_amount
                         FROM ccr.payment_txn_current
                         WHERE created_at >= :fromTime
                           AND created_at < :toTime
@@ -175,12 +192,10 @@ public class ReportCsvService {
         writer.newLine();
         StringBuilder sql = new StringBuilder(
                 """
-                        SELECT withdrawal_id, party_id, wallet_id, wallet_name, destination_id,
-                               created_at, finalized_at,
-                               status, provider_id, provider_name, terminal_id, terminal_name, amount, fee, currency,
-                               trx_id, external_id, error_code, error_reason, error_sub_failure, original_amount,
-                               original_currency, converted_amount, exchange_rate_internal, provider_amount,
-                               provider_currency
+                        SELECT created_at, finalized_at, withdrawal_id, status, amount, currency,
+                               trx_id, provider_id, terminal_id, wallet_id, exchange_rate_internal,
+                               provider_amount, provider_currency, original_amount, original_currency,
+                               converted_amount
                         FROM ccr.withdrawal_txn_current
                         WHERE created_at >= :fromTime
                           AND created_at < :toTime
@@ -209,38 +224,147 @@ public class ReportCsvService {
             List<String> columns,
             ZoneId zoneId
     ) {
-        List<List<String>> rows =
-                jdbcTemplate.query(sql, parameters, (resultSet, rowNum) -> mapRow(resultSet, columns, zoneId));
+        long[] rowCount = {0L};
         try {
-            for (List<String> row : rows) {
-                writer.write(String.join(",", row));
-                writer.newLine();
-            }
-        } catch (IOException ex) {
+            PreparedStatementCreator preparedStatementCreator = buildCursorPreparedStatement(sql, parameters);
+            jdbcTemplate.getJdbcTemplate().query(preparedStatementCreator, resultSet -> {
+                try {
+                    writeRow(writer, resultSet, columns, zoneId);
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
+                }
+                rowCount[0]++;
+            });
+        } catch (UncheckedIOException ex) {
             throw new IllegalStateException("Failed to write CSV rows", ex);
         }
-        return rows.size();
+        return rowCount[0];
     }
 
-    private List<String> mapRow(ResultSet resultSet, List<String> columns, ZoneId zoneId) throws SQLException {
-        List<String> row = new ArrayList<>(columns.size());
-        for (String column : columns) {
-            row.add(escapeCsv(renderValue(resultSet.getObject(column), zoneId)));
+    private PreparedStatementCreator buildCursorPreparedStatement(String sql, MapSqlParameterSource parameters) {
+        ParsedSql parsedSql = NamedParameterUtils.parseSqlStatement(sql);
+        String expandedSql = NamedParameterUtils.substituteNamedParameters(parsedSql, parameters);
+        List<SqlParameter> sqlParameters = NamedParameterUtils.buildSqlParameterList(parsedSql, parameters);
+        Object[] values = NamedParameterUtils.buildValueArray(parsedSql, parameters, null);
+        PreparedStatementCreatorFactory preparedStatementCreatorFactory =
+                new PreparedStatementCreatorFactory(expandedSql, sqlParameters);
+        PreparedStatementSetter preparedStatementSetter =
+                preparedStatementCreatorFactory.newPreparedStatementSetter(values);
+        return connection -> prepareCursorStatement(connection, expandedSql, preparedStatementSetter);
+    }
+
+    private PreparedStatement prepareCursorStatement(
+            Connection connection,
+            String sql,
+            PreparedStatementSetter preparedStatementSetter
+    ) throws SQLException {
+        PreparedStatement preparedStatement = connection.prepareStatement(
+                sql,
+                ResultSet.TYPE_FORWARD_ONLY,
+                ResultSet.CONCUR_READ_ONLY
+        );
+        preparedStatement.setFetchSize(CSV_QUERY_FETCH_SIZE);
+        preparedStatementSetter.setValues(preparedStatement);
+        return preparedStatement;
+    }
+
+    private void writeRow(
+            BufferedWriter writer,
+            ResultSet resultSet,
+            List<String> columns,
+            ZoneId zoneId
+    ) throws SQLException, IOException {
+        for (int i = 0; i < columns.size(); i++) {
+            if (i > 0) {
+                writer.write(',');
+            }
+            String column = columns.get(i);
+            writer.write(escapeCsv(renderValue(resultSet, column, zoneId)));
         }
-        return row;
+        writer.newLine();
     }
 
-    private String renderValue(Object value, ZoneId zoneId) {
+    private String renderValue(ResultSet resultSet, String column, ZoneId zoneId) throws SQLException {
+        return switch (column) {
+            case "created_date" -> renderTimestampDate(resultSet.getTimestamp("created_at"), zoneId);
+            case "created_time" -> renderTimestampTime(resultSet.getTimestamp("created_at"), zoneId);
+            case "finalized_date" -> renderTimestampDate(resultSet.getTimestamp("finalized_at"), zoneId);
+            case "finalized_time" -> renderTimestampTime(resultSet.getTimestamp("finalized_at"), zoneId);
+            case "amount" -> renderMinorUnits(resultSet.getObject("amount"), resultSet.getString("currency"));
+            case "provider_amount" -> renderMinorUnits(
+                    resultSet.getObject("provider_amount"),
+                    firstNonBlank(resultSet.getString("provider_currency"), resultSet.getString("currency"))
+            );
+            case "original_amount" -> renderMinorUnits(
+                    resultSet.getObject("original_amount"),
+                    resultSet.getString("original_currency")
+            );
+            case "converted_amount" -> renderMinorUnits(
+                    resultSet.getObject("converted_amount"),
+                    resultSet.getString("currency")
+            );
+            default -> renderScalarValue(resultSet.getObject(column));
+        };
+    }
+
+    private String renderScalarValue(Object value) {
         if (value == null) {
             return "";
-        }
-        if (value instanceof Timestamp timestamp) {
-            return CSV_TIMESTAMP_FORMATTER.format(timestamp.toInstant().atZone(zoneId));
         }
         if (value instanceof BigDecimal bigDecimal) {
             return bigDecimal.toPlainString();
         }
         return value.toString();
+    }
+
+    private String renderTimestampDate(Timestamp timestamp, ZoneId zoneId) {
+        if (timestamp == null) {
+            return "";
+        }
+        LocalDateTime localDateTime = timestamp.toInstant().atZone(zoneId).toLocalDateTime();
+        return CSV_DATE_FORMATTER.format(localDateTime.toLocalDate());
+    }
+
+    private String renderTimestampTime(Timestamp timestamp, ZoneId zoneId) {
+        if (timestamp == null) {
+            return "";
+        }
+        LocalDateTime localDateTime = timestamp.toInstant().atZone(zoneId).toLocalDateTime();
+        return CSV_TIME_FORMATTER.format(localDateTime.toLocalTime());
+    }
+
+    private String renderMinorUnits(Object value, String currencyCode) {
+        if (value == null) {
+            return "";
+        }
+        if (!(value instanceof Number number)) {
+            throw new IllegalStateException("Expected numeric minor units for currency-formatted CSV column");
+        }
+        if (currencyCode == null || currencyCode.isBlank()) {
+            return Long.toString(number.longValue());
+        }
+        int exponent = currencyExponent(currencyCode);
+        return BigDecimal.valueOf(number.longValue(), exponent).toPlainString();
+    }
+
+    private int currencyExponent(String currencyCode) {
+        try {
+            Currency currency = Currency.getInstance(currencyCode.toUpperCase(Locale.ROOT));
+            int exponent = currency.getDefaultFractionDigits();
+            if (exponent < 0) {
+                throw new IllegalStateException("Unsupported currency exponent for " + currencyCode);
+            }
+            return exponent;
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalStateException("Unknown currency code for CSV formatting: " + currencyCode, ex);
+        }
+    }
+
+    private String firstNonBlank(String first, String second) {
+        if (first != null && !first.isBlank()) {
+            return first;
+        }
+        return second;
     }
 
     private String escapeCsv(String value) {
@@ -322,5 +446,29 @@ public class ReportCsvService {
                 .movePointRight(9)
                 .longValue();
         return Instant.ofEpochSecond(seconds, nanos);
+    }
+
+    private Path createTempFile(long reportId) {
+        try {
+            return Files.createTempFile("ccr-report-" + reportId + "-", ".csv");
+        } catch (IOException ex) {
+            throw new IllegalStateException("Failed to allocate temp file for report " + reportId, ex);
+        }
+    }
+
+    private MessageDigest createDigest(String algorithm) {
+        try {
+            return MessageDigest.getInstance(algorithm);
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to initialize " + algorithm + " digest", ex);
+        }
+    }
+
+    private void deleteIfExists(Path stagedFile) {
+        try {
+            Files.deleteIfExists(stagedFile);
+        } catch (IOException ignored) {
+            // Best-effort cleanup for abandoned staged files.
+        }
     }
 }

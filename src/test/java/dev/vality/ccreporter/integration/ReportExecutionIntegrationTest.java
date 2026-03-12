@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -27,12 +28,14 @@ class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
                 Instant.parse("2026-01-01T10:00:00Z"),
                 Instant.parse("2026-01-01T11:00:00Z")
         );
-        long reportId = reportingHandler.createReport(ReportRequestFixtures.payments("exec-payments-1"));
+        var request = ReportRequestFixtures.payments("exec-payments-1");
+        request.setTimezone("Asia/Krasnoyarsk");
+        long reportId = reportingHandler.createReport(request);
 
         boolean processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
 
         Report report = reportingHandler.getReport(new GetReportRequest(reportId));
-        String csv = new String(
+        List<String> csvLines = readCsvLines(
                 stubFileStorageClient.getStoredContent(report.getFile().getFileId()),
                 StandardCharsets.UTF_8
         );
@@ -43,8 +46,13 @@ class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
         assertThat(report.getFile().getFilename()).isEqualTo("payments-report-" + reportId + ".csv");
         assertThat(report.getFile().getContentType()).isEqualTo("text/csv");
         assertThat(report.getDataSnapshotFixedAt()).isNotBlank();
-        assertThat(csv).contains("invoice_id,payment_id");
-        assertThat(csv).contains("invoice-1,payment-1");
+        assertThat(csvLines).containsExactly(
+                "created_date,created_time,finalized_date,finalized_time,invoice_id,payment_id,status," +
+                        "amount,currency,trx_id,provider_id,terminal_id,shop_id,exchange_rate_internal," +
+                        "provider_amount,provider_currency,original_amount,original_currency,converted_amount",
+                "2026-01-01,17:00:00,2026-01-01,18:00:00,invoice-1,payment-1,captured,10.00,RUB,trx-1," +
+                        "provider-1,terminal-1,shop-1,1.1000000000,9.90,EUR,11.00,USD,10.00"
+        );
     }
 
     @Test
@@ -60,7 +68,7 @@ class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
         boolean processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
 
         Report report = reportingHandler.getReport(new GetReportRequest(reportId));
-        String csv = new String(
+        List<String> csvLines = readCsvLines(
                 stubFileStorageClient.getStoredContent(report.getFile().getFileId()),
                 StandardCharsets.UTF_8
         );
@@ -69,8 +77,13 @@ class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
         assertThat(report.getStatus()).isEqualTo(ReportStatus.created);
         assertThat(report.getRowsCount()).isEqualTo(1L);
         assertThat(report.getFile().getFilename()).isEqualTo("withdrawals-report-" + reportId + ".csv");
-        assertThat(csv).contains("withdrawal_id,party_id");
-        assertThat(csv).contains("withdrawal-1,party-1");
+        assertThat(csvLines).containsExactly(
+                "created_date,created_time,finalized_date,finalized_time,withdrawal_id,status,amount,currency," +
+                        "trx_id,provider_id,terminal_id,wallet_id,exchange_rate_internal,provider_amount," +
+                        "provider_currency,original_amount,original_currency,converted_amount",
+                "2026-01-01,10:00:00,2026-01-01,11:00:00,withdrawal-1,succeeded,20.00,RUB,trx-w-1," +
+                        "provider-1,terminal-1,wallet-1,1.0500000000,19.90,EUR,21.00,USD,20.00"
+        );
     }
 
     @Test
@@ -135,5 +148,9 @@ class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
         assertThat(expired).isEqualTo(1);
         assertThat(report.getStatus()).isEqualTo(ReportStatus.expired);
         assertThat(report.getExpiresAt()).isEqualTo(claimTime.plusSeconds(600).toString());
+    }
+
+    private List<String> readCsvLines(byte[] bytes, java.nio.charset.Charset charset) {
+        return new String(bytes, charset).lines().toList();
     }
 }

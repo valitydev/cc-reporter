@@ -9,10 +9,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.security.MessageDigest;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HexFormat;
 import java.util.Optional;
 
 @Service
@@ -74,22 +74,19 @@ public class ReportLifecycleService {
     }
 
     private void processClaimedReport(ClaimedReportJob claimedReportJob, Instant processingTime) {
+        GeneratedCsvReport generatedCsvReport = null;
         try {
-            GeneratedCsvReport generatedCsvReport = reportCsvService.generate(claimedReportJob);
+            generatedCsvReport = reportCsvService.generate(claimedReportJob);
             Instant expiresAt = processingTime.plusSeconds(reportProperties.getExpirationSec());
             String fileId = fileStorageService.storeFile(
                     generatedCsvReport.fileName(),
                     generatedCsvReport.contentType(),
-                    generatedCsvReport.content(),
+                    generatedCsvReport.contentPath(),
                     expiresAt
             );
             Instant finishedAt = Instant.now();
-            ReportFileMetadata fileMetadata = buildFileMetadata(
-                    fileId,
-                    generatedCsvReport.fileName(),
-                    generatedCsvReport.contentType(),
-                    generatedCsvReport.content()
-            );
+            ReportFileMetadata fileMetadata = buildFileMetadata(fileId, generatedCsvReport);
+            GeneratedCsvReport completedReport = generatedCsvReport;
             transactionTemplate.executeWithoutResult(status -> {
                 boolean published = reportLifecycleDao.publishFileRecord(
                         claimedReportJob.id(),
@@ -98,10 +95,10 @@ public class ReportLifecycleService {
                 );
                 boolean markedCreated = reportLifecycleDao.markCreated(
                         claimedReportJob.id(),
-                        generatedCsvReport.dataSnapshotFixedAt(),
+                        completedReport.dataSnapshotFixedAt(),
                         finishedAt,
                         expiresAt,
-                        generatedCsvReport.rowsCount()
+                        completedReport.rowsCount()
                 );
                 if (!published || !markedCreated) {
                     status.setRollbackOnly();
@@ -110,6 +107,8 @@ public class ReportLifecycleService {
             });
         } catch (Exception ex) {
             handleProcessingFailure(claimedReportJob, processingTime, ex);
+        } finally {
+            deleteStagedFile(generatedCsvReport);
         }
     }
 
@@ -125,28 +124,28 @@ public class ReportLifecycleService {
 
     private ReportFileMetadata buildFileMetadata(
             String fileId,
-            String fileName,
-            String contentType,
-            byte[] content
+            GeneratedCsvReport generatedCsvReport
     ) {
         return new ReportFileMetadata(
                 fileId,
-                fileName,
-                contentType,
-                content.length,
-                digest("MD5", content),
-                digest("SHA-256", content),
+                generatedCsvReport.fileName(),
+                generatedCsvReport.contentType(),
+                generatedCsvReport.sizeBytes(),
+                generatedCsvReport.md5(),
+                generatedCsvReport.sha256(),
                 "file-storage",
                 fileId
         );
     }
 
-    private String digest(String algorithm, byte[] content) {
+    private void deleteStagedFile(GeneratedCsvReport generatedCsvReport) {
+        if (generatedCsvReport == null) {
+            return;
+        }
         try {
-            MessageDigest messageDigest = MessageDigest.getInstance(algorithm);
-            return HexFormat.of().formatHex(messageDigest.digest(content));
-        } catch (Exception ex) {
-            throw new IllegalStateException("Failed to calculate " + algorithm + " digest", ex);
+            Files.deleteIfExists(generatedCsvReport.contentPath());
+        } catch (IOException ignored) {
+            // Best-effort cleanup for staged files after upload/publication.
         }
     }
 }
