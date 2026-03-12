@@ -2,6 +2,8 @@
 
 ## Active tracks
 - `kafka-to-db-ingestion`
+
+## Completed tracks
 - `thrift-api-implementation`
 - `report-lifecycle-subsystem`
 
@@ -10,5 +12,4 @@
 
 ## Cross-track dependencies
 - `kafka-to-db-ingestion` defines the read-model columns used by CSV generation and report filters.
-- `thrift-api-implementation` and `report-lifecycle-subsystem` must use the same `report_job` / `report_file` status model.
-- `report-lifecycle-subsystem` depends on stable read-model schema and storage integration.
+- `kafka-to-db-ingestion` must keep `payment_txn_current` / `withdrawal_txn_current` compatible with the completed report execution and Thrift tracks.

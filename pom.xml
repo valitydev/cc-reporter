@@ -93,6 +93,11 @@
             <version>1.49-f01d2d9</version>
         </dependency>
         <dependency>
+            <groupId>dev.vality</groupId>
+            <artifactId>msgpack-proto</artifactId>
+            <version>1.14-7e44749</version>
+        </dependency>
+        <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
             <version>3.0.0</version>
