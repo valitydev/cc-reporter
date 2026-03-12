@@ -90,7 +90,7 @@ public class PaymentEventProjector {
                     null, // TODO CCR-INGESTION: confirm provider_name source for route updates.
                     String.valueOf(route.getTerminal().getId()),
                     null, // TODO CCR-INGESTION: confirm terminal_name source for route updates.
-                    null, null, null, null, null, null, null, null, null, null, null, null, null, null, null
+                    null, null, null, null, null, null, null, null, null, null, null, null, null, null
             ));
         }
 

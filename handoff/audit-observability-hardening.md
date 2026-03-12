@@ -21,8 +21,10 @@
 - If continuity becomes uncertain after pause/resume/compaction, re-read the files above before changing scope or implementation.
 
 ## Current state
-- The main DDL already defines `ccr.report_audit_event`, but the runtime code has no DAO/service path that writes into it.
-- `cc-reporter` currently resolves only `X-User-Id` for business ownership via `CurrentPrincipalResolver`.
+- `ReportManagementService` now resolves bounded request audit metadata and writes `report_audit_event` rows for successful
+  `CreateReport`, `CancelReport`, and `GeneratePresignedUrl` calls through `ReportAuditDao`.
+- `cc-reporter` still resolves `X-User-Id` for business ownership via `CurrentPrincipalResolver`, and now also reads trusted
+  forwarded Woody identity/request headers plus `traceparent` / `tracestate` for audit payloads.
 - `Wachter` and `woody-http-bridge` already normalize and forward richer identity/tracing headers downstream:
   `woody.meta.user-identity.id`,
   `woody.meta.user-identity.username`,
@@ -34,11 +36,11 @@
   `tracestate`.
 - Because files are downloaded via presigned URL from storage, `cc-reporter` can truthfully audit URL generation or download intent,
   but not the final object fetch itself.
+- `ReportAuditIntegrationTest` now covers audit writes for create/cancel/presigned-url, and the targeted Java 25 Maven validation
+  passes for the audit + related API/lifecycle scenarios.
 
 ## Remaining drift
-- `report_audit_event` is a primary-truth model that is currently provisioned but unused.
-- There is no dedicated request-metadata resolver for enriched audit identity/tracing context.
-- There are no tests proving audit writes for `CreateReport`, `CancelReport`, or `GeneratePresignedUrl`.
+- No open drift remains inside this track.
 
 ## Constraints
 - Do not add local JWT parsing to `cc-reporter`; trust `Wachter` as the auth boundary and consume forwarded headers only.
@@ -48,9 +50,7 @@
   already-supported user actions.
 
 ## Next step
-- Add a bounded audit subsystem:
-  request metadata resolver -> `ReportAuditDao` -> writes on successful `CreateReport`, `CancelReport`, and
-  `GeneratePresignedUrl`, with payload fields that preserve actor, request identity, and trace context.
+- None. This track is complete unless broader reviewer feedback asks for different audit payload fields.
 
 ## Done when
 - `report_audit_event` is written by runtime code for the chosen report actions, not just defined in SQL.

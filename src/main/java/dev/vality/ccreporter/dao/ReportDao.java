@@ -265,7 +265,8 @@ public class ReportDao {
     public Optional<StoredFileData> getFile(String createdBy, String fileId) {
         List<StoredFileData> files = jdbcTemplate.query(
                 """
-                        SELECT rf.file_id,
+                        SELECT rf.report_id,
+                               rf.file_id,
                                rf.file_type,
                                rf.filename,
                                rf.content_type,
@@ -305,6 +306,7 @@ public class ReportDao {
                 rs.getString("error_code"),
                 rs.getString("error_message"),
                 rs.getString("file_id") == null ? null : new StoredFileData(
+                        null,
                         rs.getString("file_id"),
                         FileType.valueOf(rs.getString("report_file_type")),
                         rs.getString("filename"),
@@ -321,6 +323,7 @@ public class ReportDao {
 
     private static StoredFileData mapFile(ResultSet rs, int rowNum) throws SQLException {
         return new StoredFileData(
+                rs.getLong("report_id"),
                 rs.getString("file_id"),
                 FileType.valueOf(rs.getString("file_type")),
                 rs.getString("filename"),

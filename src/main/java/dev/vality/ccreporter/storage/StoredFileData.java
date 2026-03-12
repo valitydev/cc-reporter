@@ -5,6 +5,7 @@ import dev.vality.ccreporter.FileType;
 import java.time.Instant;
 
 public record StoredFileData(
+        Long reportId,
         String fileId,
         FileType fileType,
         String filename,

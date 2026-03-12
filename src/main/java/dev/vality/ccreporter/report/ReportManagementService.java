@@ -3,8 +3,11 @@ package dev.vality.ccreporter.report;
 import dev.vality.ccreporter.*;
 import dev.vality.ccreporter.config.properties.CcrApiProperties;
 import dev.vality.ccreporter.config.properties.ReportProperties;
+import dev.vality.ccreporter.dao.ReportAuditDao;
 import dev.vality.ccreporter.dao.ReportDao;
 import dev.vality.ccreporter.security.CurrentPrincipalResolver;
+import dev.vality.ccreporter.security.RequestAuditMetadata;
+import dev.vality.ccreporter.security.RequestAuditMetadataResolver;
 import dev.vality.ccreporter.storage.FileStorageService;
 import dev.vality.ccreporter.storage.StoredFileData;
 import dev.vality.ccreporter.util.ContinuationTokenCodec;
@@ -14,6 +17,8 @@ import dev.vality.ccreporter.util.TimestampUtils;
 import org.apache.thrift.TException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 
 import java.nio.file.NoSuchFileException;
@@ -21,43 +26,58 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
 public class ReportManagementService {
 
+    private static final String REPORT_CREATED_EVENT = "report_created";
+    private static final String REPORT_CANCELED_EVENT = "report_canceled";
+    private static final String PRESIGNED_URL_GENERATED_EVENT = "presigned_url_generated";
+
     private final ReportDao reportDao;
+    private final ReportAuditDao reportAuditDao;
     private final ThriftQueryCodec thriftQueryCodec;
     private final ContinuationTokenCodec continuationTokenCodec;
     private final CurrentPrincipalResolver currentPrincipalResolver;
+    private final RequestAuditMetadataResolver requestAuditMetadataResolver;
     private final CcrApiProperties apiProperties;
     private final ReportProperties reportProperties;
     private final FileStorageService fileStorageService;
+    private final TransactionTemplate transactionTemplate;
 
     public ReportManagementService(
             ReportDao reportDao,
+            ReportAuditDao reportAuditDao,
             ThriftQueryCodec thriftQueryCodec,
             ContinuationTokenCodec continuationTokenCodec,
             CurrentPrincipalResolver currentPrincipalResolver,
+            RequestAuditMetadataResolver requestAuditMetadataResolver,
             CcrApiProperties apiProperties,
             ReportProperties reportProperties,
-            FileStorageService fileStorageService
+            FileStorageService fileStorageService,
+            PlatformTransactionManager transactionManager
     ) {
         this.reportDao = reportDao;
+        this.reportAuditDao = reportAuditDao;
         this.thriftQueryCodec = thriftQueryCodec;
         this.continuationTokenCodec = continuationTokenCodec;
         this.currentPrincipalResolver = currentPrincipalResolver;
+        this.requestAuditMetadataResolver = requestAuditMetadataResolver;
         this.apiProperties = apiProperties;
         this.reportProperties = reportProperties;
         this.fileStorageService = fileStorageService;
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
     public long createReport(CreateReportRequest request) throws InvalidRequest {
-        String createdBy = currentPrincipalResolver.resolveRequired();
         validateCreateRequest(request);
-        String timezone = StringUtils.hasText(request.getTimezone()) ? request.getTimezone() : "UTC";
+        var createdBy = currentPrincipalResolver.resolveRequired();
+        var auditMetadata = requestAuditMetadataResolver.resolve();
+        var timezone = StringUtils.hasText(request.getTimezone()) ? request.getTimezone() : "UTC";
         try {
-            return reportDao.createReport(
+            var reportId = reportDao.createReport(
                     createdBy,
                     request.getReportType(),
                     request.getFileType(),
@@ -65,9 +85,13 @@ public class ReportManagementService {
                     timezone,
                     request.getIdempotencyKey()
             );
+            writeCreateAuditEvent(reportId, createdBy, auditMetadata, request, timezone, false);
+            return reportId;
         } catch (DuplicateKeyException ex) {
-            return reportDao.findByIdempotencyKey(createdBy, request.getIdempotencyKey())
+            var reportId = reportDao.findByIdempotencyKey(createdBy, request.getIdempotencyKey())
                     .orElseThrow(() -> ex);
+            writeCreateAuditEvent(reportId, createdBy, auditMetadata, request, timezone, true);
+            return reportId;
         }
     }
 
@@ -106,9 +130,23 @@ public class ReportManagementService {
         if (request == null || !request.isSetReportId()) {
             throw invalidRequest("report_id is required");
         }
-        String createdBy = currentPrincipalResolver.resolveRequired();
-        boolean updated = reportDao.cancelReport(createdBy, request.getReportId(), Instant.now());
-        if (!updated && !reportDao.reportExists(createdBy, request.getReportId())) {
+        var createdBy = currentPrincipalResolver.resolveRequired();
+        var auditMetadata = requestAuditMetadataResolver.resolve();
+        try {
+            transactionTemplate.executeWithoutResult(status -> {
+                boolean updated = reportDao.cancelReport(createdBy, request.getReportId(), Instant.now());
+                if (!updated && !reportDao.reportExists(createdBy, request.getReportId())) {
+                    throw new ReportNotFoundRuntimeException();
+                }
+                reportAuditDao.insertEvent(
+                        request.getReportId(),
+                        REPORT_CANCELED_EVENT,
+                        createdBy,
+                        auditMetadata,
+                        Map.of("state_changed", updated)
+                );
+            });
+        } catch (ReportNotFoundRuntimeException ex) {
             throw new ReportNotFound();
         }
     }
@@ -118,7 +156,8 @@ public class ReportManagementService {
         if (request == null || !StringUtils.hasText(request.getFileId())) {
             throw invalidRequest("file_id is required");
         }
-        String createdBy = currentPrincipalResolver.resolveRequired();
+        var createdBy = currentPrincipalResolver.resolveRequired();
+        var auditMetadata = requestAuditMetadataResolver.resolve();
         Optional<StoredFileData> fileData = reportDao.getFile(createdBy, request.getFileId());
         if (fileData.isEmpty()) {
             throw new FileNotFound();
@@ -134,13 +173,67 @@ public class ReportManagementService {
         }
         Instant effectiveExpiresAt = requestedExpiresAt.isAfter(ttlCap) ? ttlCap : requestedExpiresAt;
         try {
-            return fileStorageService.generateDownloadUrl(
+            var url = fileStorageService.generateDownloadUrl(
                     fileData.get().fileId(),
                     effectiveExpiresAt
             );
+            reportAuditDao.insertEvent(
+                    fileData.get().reportId(),
+                    PRESIGNED_URL_GENERATED_EVENT,
+                    createdBy,
+                    auditMetadata,
+                    buildPresignedUrlDetails(request, effectiveExpiresAt, fileData.get().fileId())
+            );
+            return url;
         } catch (NoSuchFileException ex) {
             throw new FileNotFound();
         }
+    }
+
+    private void writeCreateAuditEvent(
+            long reportId,
+            String createdBy,
+            RequestAuditMetadata auditMetadata,
+            CreateReportRequest request,
+            String timezone,
+            boolean idempotentReplay
+    ) {
+        reportAuditDao.insertEvent(
+                reportId,
+                REPORT_CREATED_EVENT,
+                createdBy,
+                auditMetadata,
+                buildCreateDetails(request, timezone, idempotentReplay)
+        );
+    }
+
+    private Map<String, Object> buildCreateDetails(
+            CreateReportRequest request,
+            String timezone,
+            boolean idempotentReplay
+    ) {
+        var details = new java.util.LinkedHashMap<String, Object>();
+        details.put("reportType", request.getReportType().name());
+        details.put("fileType", request.getFileType().name());
+        details.put("idempotencyKey", request.getIdempotencyKey());
+        details.put("idempotentReplay", idempotentReplay);
+        details.put("timezone", timezone);
+        return details;
+    }
+
+    private Map<String, Object> buildPresignedUrlDetails(
+            GeneratePresignedUrlRequest request,
+            Instant effectiveExpiresAt,
+            String fileId
+    ) {
+        var details = new java.util.LinkedHashMap<String, Object>();
+        details.put("fileId", fileId);
+        details.put("requestedExpiresAt", request.isSetRequestedExpiresAt() ? request.getRequestedExpiresAt() : null);
+        details.put("effectiveExpiresAt", effectiveExpiresAt.toString());
+        return details;
+    }
+
+    private static final class ReportNotFoundRuntimeException extends RuntimeException {
     }
 
     private void validateCreateRequest(CreateReportRequest request) throws InvalidRequest {

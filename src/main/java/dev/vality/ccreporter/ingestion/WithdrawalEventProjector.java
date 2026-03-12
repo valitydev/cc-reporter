@@ -46,7 +46,8 @@ public class WithdrawalEventProjector {
                     eventCreatedAt,
                     withdrawal.getPartyId(),
                     withdrawal.getWalletId(),
-                    null, // TODO CCR-INGESTION: confirm event-native source for wallet_name/current-state display names.
+                    null, // TODO CCR-INGESTION: confirm event-native source
+                    // for wallet_name/current-state display names.
                     withdrawal.getDestinationId(),
                     Instant.parse(withdrawal.getCreatedAt()),
                     null,

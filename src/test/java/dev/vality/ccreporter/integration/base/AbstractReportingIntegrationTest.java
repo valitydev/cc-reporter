@@ -74,6 +74,7 @@ public abstract class AbstractReportingIntegrationTest {
 
     @BeforeEach
     void setUpBaseState() {
+        jdbcTemplate.update("DELETE FROM ccr.report_audit_event");
         jdbcTemplate.update("DELETE FROM ccr.report_file");
         jdbcTemplate.update("DELETE FROM ccr.report_job");
         jdbcTemplate.update("DELETE FROM ccr.payment_txn_current");
@@ -91,6 +92,20 @@ public abstract class AbstractReportingIntegrationTest {
     protected void bindCaller(String callerId) {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("X-User-Id", callerId);
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+    }
+
+    protected void bindCallerWithAuditMetadata(String callerId) {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("X-User-Id", callerId);
+        request.addHeader("woody.meta.user-identity.id", "user-id-42");
+        request.addHeader("woody.meta.user-identity.username", "alice");
+        request.addHeader("woody.meta.user-identity.email", "alice@example.com");
+        request.addHeader("woody.meta.user-identity.realm", "external");
+        request.addHeader("woody.meta.user-identity.X-Request-ID", "req-123");
+        request.addHeader("woody.meta.user-identity.X-Request-Deadline", "2026-01-05T10:15:30Z");
+        request.addHeader("traceparent", "00-4bf92f3577b34da6a3ce929d0e0e4736-00aa0ba902b7-01");
+        request.addHeader("tracestate", "rojo=00f067aa0ba902b7");
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
     }
 
