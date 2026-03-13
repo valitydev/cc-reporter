@@ -11,8 +11,11 @@ public final class SerializedIngestionEventFixtures {
 
     public static final String PAYMENT_INVOICE_ID = PaymentIngestionEventFixtures.PAYMENT_INVOICE_ID;
     public static final String PAYMENT_ID = PaymentIngestionEventFixtures.PAYMENT_ID;
+    public static final String REAL_PAYMENT_INVOICE_ID = RealPaymentIngestionEventFixtures.PAYMENT_INVOICE_ID;
+    public static final String REAL_PAYMENT_ID = RealPaymentIngestionEventFixtures.PAYMENT_ID;
     public static final String WITHDRAWAL_ID = WithdrawalIngestionEventFixtures.WITHDRAWAL_ID;
     public static final String WITHDRAWAL_SESSION_ID = WithdrawalIngestionEventFixtures.WITHDRAWAL_SESSION_ID;
+    public static final String REAL_WITHDRAWAL_ID = RealWithdrawalIngestionEventFixtures.WITHDRAWAL_ID;
 
     private SerializedIngestionEventFixtures() {
     }
@@ -21,8 +24,16 @@ public final class SerializedIngestionEventFixtures {
         return PaymentIngestionEventFixtures.paymentEvents();
     }
 
+    public static List<MachineEvent> realPaymentEvents() {
+        return RealPaymentIngestionEventFixtures.paymentEvents();
+    }
+
     public static List<MachineEvent> withdrawalEvents() {
         return WithdrawalIngestionEventFixtures.withdrawalEvents();
+    }
+
+    public static List<MachineEvent> realWithdrawalEvents() {
+        return RealWithdrawalIngestionEventFixtures.withdrawalEvents();
     }
 
     public static List<MachineEvent> withdrawalSessionEvents() {

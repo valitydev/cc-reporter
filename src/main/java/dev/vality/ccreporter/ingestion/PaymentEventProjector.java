@@ -46,7 +46,7 @@ public class PaymentEventProjector {
             var payment = started.getPayment();
             var cost = payment.getCost();
             var route = started.getRoute();
-            var paymentToolType = payment.isSetPayer() ? payment.getPayer().getSetField().getFieldName() : null;
+            var paymentToolType = paymentToolType(payment);
             var status = payment.isSetStatus() && payment.getStatus().getSetField() != null
                     ? payment.getStatus().getSetField().getFieldName()
                     : "pending";
@@ -210,6 +210,20 @@ public class PaymentEventProjector {
 
     private LocalDateTime toLocalDateTime(Instant value) {
         return value == null ? null : TimestampUtils.toLocalDateTime(value);
+    }
+
+    private String paymentToolType(dev.vality.damsel.domain.InvoicePayment payment) {
+        if (payment == null || !payment.isSetPayer()) {
+            return null;
+        }
+        var payer = payment.getPayer();
+        if (payer.isSetPaymentResource()
+                && payer.getPaymentResource().isSetResource()
+                && payer.getPaymentResource().getResource().isSetPaymentTool()
+                && payer.getPaymentResource().getResource().getPaymentTool().getSetField() != null) {
+            return payer.getPaymentResource().getResource().getPaymentTool().getSetField().getFieldName();
+        }
+        return payer.getSetField() != null ? payer.getSetField().getFieldName() : null;
     }
 
     private Instant terminalFinalizedAt(InvoicePaymentStatus status, Instant eventCreatedAt) {
