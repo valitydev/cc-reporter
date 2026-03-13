@@ -53,17 +53,17 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
         jdbcTemplate.update(
                 """
                         UPDATE ccr.payment_txn_current
-                        SET shop_id = ?, shop_name = ?, shop_search = ?, trx_id = ?, trx_search = ?
+                        SET shop_id = ?, trx_id = ?, trx_search = ?
                         WHERE invoice_id = ? AND payment_id = ?
                         """,
                 "shop-2",
-                "Other Shop",
-                "other shop",
                 "trx-2",
                 "trx-2",
                 "invoice-filter-2",
                 "payment-filter-2"
         );
+        displayNameLookupDao.upsertShop("shop-1", "Shop One");
+        displayNameLookupDao.upsertShop("shop-2", "Other Shop");
 
         var request = ReportRequestFixtures.payments("payments-filter-1");
         request.getQuery().getPayments().setShopIds(List.of("shop-1"));
@@ -105,16 +105,16 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
         jdbcTemplate.update(
                 """
                         UPDATE ccr.withdrawal_txn_current
-                        SET wallet_id = ?, wallet_name = ?, wallet_search = ?, trx_id = ?, trx_search = ?
+                        SET wallet_id = ?, trx_id = ?, trx_search = ?
                         WHERE withdrawal_id = ?
                         """,
                 "wallet-2",
-                "Other Wallet",
-                "other wallet",
                 "trx-w-2",
                 "trx-w-2",
                 "withdrawal-filter-2"
         );
+        displayNameLookupDao.upsertWallet("wallet-1", "Wallet One");
+        displayNameLookupDao.upsertWallet("wallet-2", "Other Wallet");
 
         var request = ReportRequestFixtures.withdrawals("withdrawals-filter-1");
         request.getQuery().getWithdrawals().setWalletIds(List.of("wallet-1"));
@@ -147,16 +147,6 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
                 "payment-lookup-1",
                 Instant.parse("2026-01-01T10:00:00Z"),
                 Instant.parse("2026-01-01T11:00:00Z")
-        );
-        jdbcTemplate.update(
-                """
-                        UPDATE ccr.payment_txn_current
-                        SET shop_name = NULL, provider_name = NULL, terminal_name = NULL,
-                            shop_search = NULL, provider_search = NULL, terminal_search = NULL
-                        WHERE invoice_id = ? AND payment_id = ?
-                        """,
-                "invoice-lookup-1",
-                "payment-lookup-1"
         );
         displayNameLookupDao.upsertShop("shop-1", "Lookup Shop");
         displayNameLookupDao.upsertProvider("provider-1", "Lookup Provider");
@@ -191,15 +181,6 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
                 "withdrawal-lookup-1",
                 Instant.parse("2026-01-01T10:00:00Z"),
                 Instant.parse("2026-01-01T11:00:00Z")
-        );
-        jdbcTemplate.update(
-                """
-                        UPDATE ccr.withdrawal_txn_current
-                        SET wallet_name = NULL, provider_name = NULL, terminal_name = NULL,
-                            wallet_search = NULL, provider_search = NULL, terminal_search = NULL
-                        WHERE withdrawal_id = ?
-                        """,
-                "withdrawal-lookup-1"
         );
         displayNameLookupDao.upsertWallet("wallet-1", "Lookup Wallet");
         displayNameLookupDao.upsertProvider("provider-1", "Lookup Provider");

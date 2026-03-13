@@ -427,21 +427,21 @@ public class ReportCsvService {
         appendSearchFilter(
                 sql,
                 parameters,
-                localLookupSearchExpr("p.shop_id", "sl.deleted", "sl.shop_name", "p.shop_name"),
+                "lower(coalesce(sl.shop_search, ''))",
                 "shopTerm",
                 filter.getShopTerm()
         );
         appendSearchFilter(
                 sql,
                 parameters,
-                localLookupSearchExpr("p.provider_id", "pl.deleted", "pl.provider_name", "p.provider_name"),
+                "lower(coalesce(pl.provider_search, ''))",
                 "providerTerm",
                 filter.getProviderTerm()
         );
         appendSearchFilter(
                 sql,
                 parameters,
-                localLookupSearchExpr("p.terminal_id", "tl.deleted", "tl.terminal_name", "p.terminal_name"),
+                "lower(coalesce(tl.terminal_search, ''))",
                 "terminalTerm",
                 filter.getTerminalTerm()
         );
@@ -459,21 +459,21 @@ public class ReportCsvService {
         appendSearchFilter(
                 sql,
                 parameters,
-                localLookupSearchExpr("w.wallet_id", "wl.deleted", "wl.wallet_name", "w.wallet_name"),
+                "lower(coalesce(wl.wallet_search, ''))",
                 "walletTerm",
                 filter.getWalletTerm()
         );
         appendSearchFilter(
                 sql,
                 parameters,
-                localLookupSearchExpr("w.provider_id", "pl.deleted", "pl.provider_name", "w.provider_name"),
+                "lower(coalesce(pl.provider_search, ''))",
                 "providerTerm",
                 filter.getProviderTerm()
         );
         appendSearchFilter(
                 sql,
                 parameters,
-                localLookupSearchExpr("w.terminal_id", "tl.deleted", "tl.terminal_name", "w.terminal_name"),
+                "lower(coalesce(tl.terminal_search, ''))",
                 "terminalTerm",
                 filter.getTerminalTerm()
         );
@@ -492,18 +492,6 @@ public class ReportCsvService {
         }
         sql.append(" AND ").append(column).append(" LIKE :").append(parameterName);
         parameters.addValue(parameterName, "%" + value.toLowerCase() + "%");
-    }
-
-    private String localLookupSearchExpr(
-            String idExpression,
-            String deletedExpression,
-            String lookupNameExpression,
-            String currentStateNameExpression
-    ) {
-        return "lower(case when coalesce(" + deletedExpression + ", false) " +
-                "then coalesce(" + idExpression + ", '') " +
-                "else concat_ws(' ', " + idExpression + ", coalesce(" + lookupNameExpression + ", " +
-                currentStateNameExpression + ")) end)";
     }
 
     private Instant currentSnapshot() {

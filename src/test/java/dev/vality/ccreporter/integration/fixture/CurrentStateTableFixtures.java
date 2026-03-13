@@ -25,17 +25,16 @@ public final class CurrentStateTableFixtures {
                 """
                         INSERT INTO ccr.payment_txn_current (
                             invoice_id, payment_id, domain_event_id, domain_event_created_at,
-                            party_id, shop_id, shop_name, created_at, finalized_at, status,
-                            provider_id, provider_name, terminal_id, terminal_name, amount,
+                            party_id, shop_id, created_at, finalized_at, status,
+                            provider_id, terminal_id, amount,
                             fee, currency, trx_id, external_id, rrn, approval_code,
                             payment_tool_type, original_amount, original_currency,
-                            converted_amount, exchange_rate_internal,
-                            provider_amount, provider_currency, shop_search,
-                            provider_search, terminal_search, trx_search
+                            converted_amount, exchange_rate_internal, provider_amount,
+                            provider_currency, trx_search
                         )
                         VALUES (
                             ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
                         )
                         """,
                 invoiceId,
@@ -44,14 +43,11 @@ public final class CurrentStateTableFixtures {
                 Timestamp.from(createdAt),
                 "party-1",
                 "shop-1",
-                "Shop One",
                 Timestamp.from(createdAt),
                 finalizedAt == null ? null : Timestamp.from(finalizedAt),
                 "captured",
                 "provider-1",
-                "Provider One",
                 "terminal-1",
-                "Terminal One",
                 1000L,
                 10L,
                 "RUB",
@@ -66,9 +62,6 @@ public final class CurrentStateTableFixtures {
                 new BigDecimal("1.1000000000"),
                 990L,
                 "EUR",
-                "shop one",
-                "provider one",
-                "terminal one",
                 "trx-1"
         );
     }
@@ -83,17 +76,15 @@ public final class CurrentStateTableFixtures {
                 """
                         INSERT INTO ccr.withdrawal_txn_current (
                             withdrawal_id, domain_event_id, domain_event_created_at,
-                            party_id, wallet_id, wallet_name, destination_id, created_at,
-                            finalized_at, status, provider_id, provider_name, terminal_id,
-                            terminal_name, amount, fee, currency, trx_id, external_id,
+                            party_id, wallet_id, destination_id, created_at,
+                            finalized_at, status, provider_id, terminal_id, amount, fee, currency, trx_id, external_id,
                             error_code, error_reason, error_sub_failure, original_amount,
                             original_currency, converted_amount, exchange_rate_internal,
-                            provider_amount, provider_currency, wallet_search,
-                            provider_search, terminal_search, trx_search
+                            provider_amount, provider_currency, trx_search
                         )
                         VALUES (
                             ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
                         )
                         """,
                 withdrawalId,
@@ -101,15 +92,12 @@ public final class CurrentStateTableFixtures {
                 Timestamp.from(createdAt),
                 "party-1",
                 "wallet-1",
-                "Wallet One",
                 "destination-1",
                 Timestamp.from(createdAt),
                 finalizedAt == null ? null : Timestamp.from(finalizedAt),
                 "succeeded",
                 "provider-1",
-                "Provider One",
                 "terminal-1",
-                "Terminal One",
                 2000L,
                 20L,
                 "RUB",
@@ -124,9 +112,6 @@ public final class CurrentStateTableFixtures {
                 new BigDecimal("1.0500000000"),
                 1990L,
                 "EUR",
-                "wallet one",
-                "provider one",
-                "terminal one",
                 "trx-w-1"
         );
     }

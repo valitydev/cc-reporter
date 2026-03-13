@@ -72,14 +72,11 @@ public class PaymentEventProjector {
                     eventCreatedAt,
                     payment.isSetPartyRef() ? payment.getPartyRef().getId() : null,
                     payment.isSetShopRef() ? payment.getShopRef().getId() : null,
-                    null,
                     Instant.parse(payment.getCreatedAt()),
                     terminalFinalizedAt(payment.getStatus(), eventCreatedAt),
                     status,
                     route != null ? String.valueOf(route.getProvider().getId()) : null,
-                    null,
                     route != null ? String.valueOf(route.getTerminal().getId()) : null,
-                    null,
                     cost.getAmount(),
                     null,
                     cost.getCurrency().getSymbolicCode(),
@@ -101,20 +98,41 @@ public class PaymentEventProjector {
         if (paymentChange.getPayload().isSetInvoicePaymentRouteChanged()) {
             var route = paymentChange.getPayload().getInvoicePaymentRouteChanged().getRoute();
             return Optional.of(paymentUpdate(
-                    invoiceId, paymentId, event.getEventId(), eventCreatedAt, null, null, null,
-                    null, null, null, String.valueOf(route.getProvider().getId()), null,
-                    String.valueOf(route.getTerminal().getId()), null, null, null, null, null, null, null, null,
-                    null, null, null, null, null, null, null, null
+                    invoiceId,
+                    paymentId,
+                    event.getEventId(),
+                    eventCreatedAt,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    String.valueOf(route.getProvider().getId()),
+                    String.valueOf(route.getTerminal().getId()),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
             ));
         }
 
         if (paymentChange.getPayload().isSetInvoicePaymentCashChanged()) {
             var cash = paymentChange.getPayload().getInvoicePaymentCashChanged().getNewCash();
             return Optional.of(paymentUpdate(
-                    invoiceId, paymentId, event.getEventId(), eventCreatedAt, null, null, null,
-                    null, null, null, null, null, null, null,
-                    cash.getAmount(), null, cash.getCurrency().getSymbolicCode(), null, null, null, null, null,
-                    null,
+                    invoiceId, paymentId, event.getEventId(), eventCreatedAt, null, null,
+                    null, null, null, null, null, cash.getAmount(), null, cash.getCurrency().getSymbolicCode(),
+                    null, null, null, null, null, null,
                     cash.getAmount(),
                     cash.getCurrency().getSymbolicCode(),
                     null,
@@ -126,12 +144,10 @@ public class PaymentEventProjector {
         if (paymentChange.getPayload().isSetInvoicePaymentCashFlowChanged()) {
             var postings = paymentChange.getPayload().getInvoicePaymentCashFlowChanged().getCashFlow();
             return Optional.of(paymentUpdate(
-                    invoiceId, paymentId, event.getEventId(), eventCreatedAt, null, null, null,
-                    null, null, null, null, null, null, null,
-                    PaymentCashFlowExtractor.extractAmount(postings),
-                    PaymentCashFlowExtractor.extractFee(postings),
-                    null, null, null, null, null, null,
-                    null, null, null, null, null, null, null
+                    invoiceId, paymentId, event.getEventId(), eventCreatedAt, null, null,
+                    null, null, null, null, null, PaymentCashFlowExtractor.extractAmount(postings),
+                    PaymentCashFlowExtractor.extractFee(postings), null, null, null, null, null, null, null,
+                    null, null, null, null, null, null
             ));
         }
 
@@ -139,11 +155,26 @@ public class PaymentEventProjector {
             var status = paymentChange.getPayload().getInvoicePaymentStatusChanged().getStatus();
             var capturedCost = capturedCost(status);
             return Optional.of(paymentUpdate(
-                    invoiceId, paymentId, event.getEventId(), eventCreatedAt, null, null, null,
-                    null, terminalFinalizedAt(status, eventCreatedAt), status.getSetField().getFieldName(),
-                    null, null, null, null, null, null, null, null, null, null, null,
+                    invoiceId,
+                    paymentId,
+                    event.getEventId(),
+                    eventCreatedAt,
+                    null,
+                    null,
+                    null,
+                    terminalFinalizedAt(status, eventCreatedAt),
+                    status.getSetField().getFieldName(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
                     null,
                     paymentErrorSummary(status),
+                    null,
                     null,
                     null,
                     null,
@@ -163,8 +194,8 @@ public class PaymentEventProjector {
                     .getTrx();
             var info = trx.getAdditionalInfo();
             return Optional.of(paymentUpdate(
-                    invoiceId, paymentId, event.getEventId(), eventCreatedAt, null, null, null,
-                    null, null, null, null, null, null, null, null, null, null,
+                    invoiceId, paymentId, event.getEventId(), eventCreatedAt, null, null,
+                    null, null, null, null, null, null, null, null,
                     trx.getId(), null, info != null ? info.getRrn() : null,
                     info != null ? info.getApprovalCode() : null,
                     null,
@@ -186,8 +217,8 @@ public class PaymentEventProjector {
                 return Optional.empty();
             }
             return Optional.of(paymentUpdate(
-                    invoiceId, paymentId, event.getEventId(), eventCreatedAt, null, null, null,
-                    null, null, null, null, null, null, null, null, null, null,
+                    invoiceId, paymentId, event.getEventId(), eventCreatedAt, null, null,
+                    null, null, null, null, null, null, null, null,
                     trxId, null, null, null, null, null, null, null, null, null, null, null
             ));
         }
@@ -202,14 +233,11 @@ public class PaymentEventProjector {
             Instant domainEventCreatedAt,
             String partyId,
             String shopId,
-            String shopName,
             Instant createdAt,
             Instant finalizedAt,
             String status,
             String providerId,
-            String providerName,
             String terminalId,
-            String terminalName,
             Long amount,
             Long fee,
             String currency,
@@ -233,14 +261,11 @@ public class PaymentEventProjector {
         update.setDomainEventCreatedAt(toLocalDateTime(domainEventCreatedAt));
         update.setPartyId(partyId);
         update.setShopId(shopId);
-        update.setShopName(shopName);
         update.setCreatedAt(toLocalDateTime(createdAt));
         update.setFinalizedAt(toLocalDateTime(finalizedAt));
         update.setStatus(status);
         update.setProviderId(providerId);
-        update.setProviderName(providerName);
         update.setTerminalId(terminalId);
-        update.setTerminalName(terminalName);
         update.setAmount(amount);
         update.setFee(fee);
         update.setCurrency(currency);

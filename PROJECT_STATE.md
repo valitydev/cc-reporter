@@ -18,9 +18,8 @@
 - `payments` FX handling remains a temporary exception: keep the contract, allow mock+`TODO`, and do not silently degrade it to permanent `null` behavior.
 
 ## Shared residual gaps
-- Display-name enrichment is now CCR-owned through local dominant lookups rather than event-native population of current-state name
-  columns; denormalized `shop_name` / `wallet_name` / `provider_name` / `terminal_name` fields remain compatibility fallbacks, not
-  the authoritative source.
+- Display-name enrichment is now CCR-owned through local dominant lookups. Current-state payment/withdrawal rows keep stable ids plus
+  transaction-native search only; dominant-backed name and name-search data live exclusively in CCR lookup tables.
 - `payments` `trx_id` remains event-first from `SessionTransactionBound`; a separate repair/reconciliation worker is not required by
   the current primary truth and should only be revived if real ingestion streams demonstrate terminal rows that still miss `trx_id`.
 - Current-state replay semantics are still optimized for duplicate tolerance rather than projection rebuildability; newly added

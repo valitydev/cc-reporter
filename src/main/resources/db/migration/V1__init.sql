@@ -89,6 +89,7 @@ CREATE TABLE ccr.report_audit_event (
 CREATE TABLE ccr.shop_lookup (
   shop_id VARCHAR PRIMARY KEY,
   shop_name VARCHAR,
+  shop_search VARCHAR,
   dominant_version_id BIGINT NOT NULL DEFAULT 0,
   deleted BOOLEAN NOT NULL DEFAULT FALSE,
   updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
@@ -97,6 +98,7 @@ CREATE TABLE ccr.shop_lookup (
 CREATE TABLE ccr.provider_lookup (
   provider_id VARCHAR PRIMARY KEY,
   provider_name VARCHAR,
+  provider_search VARCHAR,
   dominant_version_id BIGINT NOT NULL DEFAULT 0,
   deleted BOOLEAN NOT NULL DEFAULT FALSE,
   updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
@@ -105,6 +107,7 @@ CREATE TABLE ccr.provider_lookup (
 CREATE TABLE ccr.terminal_lookup (
   terminal_id VARCHAR PRIMARY KEY,
   terminal_name VARCHAR,
+  terminal_search VARCHAR,
   dominant_version_id BIGINT NOT NULL DEFAULT 0,
   deleted BOOLEAN NOT NULL DEFAULT FALSE,
   updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
@@ -113,6 +116,7 @@ CREATE TABLE ccr.terminal_lookup (
 CREATE TABLE ccr.wallet_lookup (
   wallet_id VARCHAR PRIMARY KEY,
   wallet_name VARCHAR,
+  wallet_search VARCHAR,
   dominant_version_id BIGINT NOT NULL DEFAULT 0,
   deleted BOOLEAN NOT NULL DEFAULT FALSE,
   updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
@@ -130,16 +134,13 @@ CREATE TABLE ccr.payment_txn_current (
 
   party_id VARCHAR NOT NULL,
   shop_id VARCHAR,
-  shop_name VARCHAR,
 
   created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   finalized_at TIMESTAMP WITHOUT TIME ZONE,
   status VARCHAR NOT NULL,
 
   provider_id VARCHAR,
-  provider_name VARCHAR,
   terminal_id VARCHAR,
-  terminal_name VARCHAR,
 
   amount BIGINT NOT NULL,
   fee BIGINT,
@@ -159,9 +160,6 @@ CREATE TABLE ccr.payment_txn_current (
   provider_amount BIGINT,
   provider_currency VARCHAR,
 
-  shop_search VARCHAR,
-  provider_search VARCHAR,
-  terminal_search VARCHAR,
   trx_search VARCHAR,
 
   updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
@@ -181,7 +179,6 @@ CREATE TABLE ccr.withdrawal_txn_current (
 
   party_id VARCHAR NOT NULL,
   wallet_id VARCHAR,
-  wallet_name VARCHAR,
   destination_id VARCHAR,
 
   created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
@@ -189,9 +186,7 @@ CREATE TABLE ccr.withdrawal_txn_current (
   status VARCHAR NOT NULL,
 
   provider_id VARCHAR,
-  provider_name VARCHAR,
   terminal_id VARCHAR,
-  terminal_name VARCHAR,
 
   amount BIGINT NOT NULL,
   fee BIGINT,
@@ -210,9 +205,6 @@ CREATE TABLE ccr.withdrawal_txn_current (
   provider_amount BIGINT,
   provider_currency VARCHAR,
 
-  wallet_search VARCHAR,
-  provider_search VARCHAR,
-  terminal_search VARCHAR,
   trx_search VARCHAR,
 
   updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
@@ -249,17 +241,17 @@ CREATE UNIQUE INDEX report_job_idempotency_key_uniq
 CREATE INDEX report_audit_event_report_id_idx
   ON ccr.report_audit_event (report_id, created_at DESC, id DESC);
 
-CREATE INDEX shop_lookup_name_trgm_idx
-  ON ccr.shop_lookup USING gin (shop_name gin_trgm_ops);
+CREATE INDEX shop_lookup_search_trgm_idx
+  ON ccr.shop_lookup USING gin (shop_search gin_trgm_ops);
 
-CREATE INDEX provider_lookup_name_trgm_idx
-  ON ccr.provider_lookup USING gin (provider_name gin_trgm_ops);
+CREATE INDEX provider_lookup_search_trgm_idx
+  ON ccr.provider_lookup USING gin (provider_search gin_trgm_ops);
 
-CREATE INDEX terminal_lookup_name_trgm_idx
-  ON ccr.terminal_lookup USING gin (terminal_name gin_trgm_ops);
+CREATE INDEX terminal_lookup_search_trgm_idx
+  ON ccr.terminal_lookup USING gin (terminal_search gin_trgm_ops);
 
-CREATE INDEX wallet_lookup_name_trgm_idx
-  ON ccr.wallet_lookup USING gin (wallet_name gin_trgm_ops);
+CREATE INDEX wallet_lookup_search_trgm_idx
+  ON ccr.wallet_lookup USING gin (wallet_search gin_trgm_ops);
 
 CREATE INDEX payment_txn_created_at_idx
   ON ccr.payment_txn_current (created_at DESC, id DESC);
@@ -282,15 +274,6 @@ CREATE INDEX payment_txn_filters_idx
 
 CREATE INDEX payment_txn_trx_idx
   ON ccr.payment_txn_current (trx_id);
-
-CREATE INDEX payment_txn_shop_trgm_idx
-  ON ccr.payment_txn_current USING gin (shop_search gin_trgm_ops);
-
-CREATE INDEX payment_txn_provider_trgm_idx
-  ON ccr.payment_txn_current USING gin (provider_search gin_trgm_ops);
-
-CREATE INDEX payment_txn_terminal_trgm_idx
-  ON ccr.payment_txn_current USING gin (terminal_search gin_trgm_ops);
 
 CREATE INDEX payment_txn_trx_trgm_idx
   ON ccr.payment_txn_current USING gin (trx_search gin_trgm_ops);
@@ -316,15 +299,6 @@ CREATE INDEX withdrawal_txn_filters_idx
 
 CREATE INDEX withdrawal_txn_trx_idx
   ON ccr.withdrawal_txn_current (trx_id);
-
-CREATE INDEX withdrawal_txn_wallet_trgm_idx
-  ON ccr.withdrawal_txn_current USING gin (wallet_search gin_trgm_ops);
-
-CREATE INDEX withdrawal_txn_provider_trgm_idx
-  ON ccr.withdrawal_txn_current USING gin (provider_search gin_trgm_ops);
-
-CREATE INDEX withdrawal_txn_terminal_trgm_idx
-  ON ccr.withdrawal_txn_current USING gin (terminal_search gin_trgm_ops);
 
 CREATE INDEX withdrawal_txn_trx_trgm_idx
   ON ccr.withdrawal_txn_current USING gin (trx_search gin_trgm_ops);

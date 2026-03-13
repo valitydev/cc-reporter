@@ -30,7 +30,6 @@ public class PaymentCurrentDao {
                 .set(PAYMENT_TXN_CURRENT.DOMAIN_EVENT_CREATED_AT, update.getDomainEventCreatedAt())
                 .set(PAYMENT_TXN_CURRENT.PARTY_ID, patchValue(update.getPartyId(), PAYMENT_TXN_CURRENT.PARTY_ID))
                 .set(PAYMENT_TXN_CURRENT.SHOP_ID, patchValue(update.getShopId(), PAYMENT_TXN_CURRENT.SHOP_ID))
-                .set(PAYMENT_TXN_CURRENT.SHOP_NAME, patchValue(update.getShopName(), PAYMENT_TXN_CURRENT.SHOP_NAME))
                 .set(
                         PAYMENT_TXN_CURRENT.CREATED_AT,
                         patchValue(update.getCreatedAt(), PAYMENT_TXN_CURRENT.CREATED_AT)
@@ -45,16 +44,8 @@ public class PaymentCurrentDao {
                         patchValue(update.getProviderId(), PAYMENT_TXN_CURRENT.PROVIDER_ID)
                 )
                 .set(
-                        PAYMENT_TXN_CURRENT.PROVIDER_NAME,
-                        patchValue(update.getProviderName(), PAYMENT_TXN_CURRENT.PROVIDER_NAME)
-                )
-                .set(
                         PAYMENT_TXN_CURRENT.TERMINAL_ID,
                         patchValue(update.getTerminalId(), PAYMENT_TXN_CURRENT.TERMINAL_ID)
-                )
-                .set(
-                        PAYMENT_TXN_CURRENT.TERMINAL_NAME,
-                        patchValue(update.getTerminalName(), PAYMENT_TXN_CURRENT.TERMINAL_NAME)
                 )
                 .set(PAYMENT_TXN_CURRENT.AMOUNT, patchValue(update.getAmount(), PAYMENT_TXN_CURRENT.AMOUNT))
                 .set(PAYMENT_TXN_CURRENT.FEE, patchValue(update.getFee(), PAYMENT_TXN_CURRENT.FEE))
@@ -101,15 +92,6 @@ public class PaymentCurrentDao {
                         PAYMENT_TXN_CURRENT.PROVIDER_CURRENCY,
                         patchValue(update.getProviderCurrency(), PAYMENT_TXN_CURRENT.PROVIDER_CURRENCY)
                 )
-                .set(PAYMENT_TXN_CURRENT.SHOP_SEARCH, patchValue(shopSearch(update), PAYMENT_TXN_CURRENT.SHOP_SEARCH))
-                .set(
-                        PAYMENT_TXN_CURRENT.PROVIDER_SEARCH,
-                        patchValue(providerSearch(update), PAYMENT_TXN_CURRENT.PROVIDER_SEARCH)
-                )
-                .set(
-                        PAYMENT_TXN_CURRENT.TERMINAL_SEARCH,
-                        patchValue(terminalSearch(update), PAYMENT_TXN_CURRENT.TERMINAL_SEARCH)
-                )
                 .set(PAYMENT_TXN_CURRENT.TRX_SEARCH, patchValue(trxSearch(update), PAYMENT_TXN_CURRENT.TRX_SEARCH))
                 .set(PAYMENT_TXN_CURRENT.UPDATED_AT, UTC_NOW)
                 .where(PAYMENT_TXN_CURRENT.INVOICE_ID.eq(update.getInvoiceId()))
@@ -122,9 +104,6 @@ public class PaymentCurrentDao {
         if (!canInsert(update)) {
             return;
         }
-        update.setShopSearch(shopSearch(update));
-        update.setProviderSearch(providerSearch(update));
-        update.setTerminalSearch(terminalSearch(update));
         update.setTrxSearch(trxSearch(update));
         var record = dslContext.newRecord(PAYMENT_TXN_CURRENT, update);
         record.changed(PAYMENT_TXN_CURRENT.ID, false);
@@ -134,18 +113,6 @@ public class PaymentCurrentDao {
                 .onConflict(PAYMENT_TXN_CURRENT.INVOICE_ID, PAYMENT_TXN_CURRENT.PAYMENT_ID)
                 .doNothing()
                 .execute();
-    }
-
-    private String shopSearch(PaymentTxnCurrent update) {
-        return SearchValueNormalizer.normalize(update.getShopId(), update.getShopName());
-    }
-
-    private String providerSearch(PaymentTxnCurrent update) {
-        return SearchValueNormalizer.normalize(update.getProviderId(), update.getProviderName());
-    }
-
-    private String terminalSearch(PaymentTxnCurrent update) {
-        return SearchValueNormalizer.normalize(update.getTerminalId(), update.getTerminalName());
     }
 
     private String trxSearch(PaymentTxnCurrent update) {

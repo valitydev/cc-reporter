@@ -1,5 +1,6 @@
 package dev.vality.ccreporter.dao;
 
+import dev.vality.ccreporter.ingestion.SearchValueNormalizer;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record;
@@ -41,6 +42,7 @@ public class DisplayNameLookupDao {
                 shopId,
                 SHOP_LOOKUP.SHOP_NAME,
                 shopName,
+                SHOP_LOOKUP.SHOP_SEARCH,
                 SHOP_LOOKUP.DOMINANT_VERSION_ID,
                 SHOP_LOOKUP.DELETED,
                 dominantVersionId
@@ -53,6 +55,7 @@ public class DisplayNameLookupDao {
                 SHOP_LOOKUP.SHOP_ID,
                 shopId,
                 SHOP_LOOKUP.SHOP_NAME,
+                SHOP_LOOKUP.SHOP_SEARCH,
                 SHOP_LOOKUP.DOMINANT_VERSION_ID,
                 SHOP_LOOKUP.DELETED,
                 dominantVersionId
@@ -73,6 +76,7 @@ public class DisplayNameLookupDao {
                 providerId,
                 PROVIDER_LOOKUP.PROVIDER_NAME,
                 providerName,
+                PROVIDER_LOOKUP.PROVIDER_SEARCH,
                 PROVIDER_LOOKUP.DOMINANT_VERSION_ID,
                 PROVIDER_LOOKUP.DELETED,
                 dominantVersionId
@@ -85,6 +89,7 @@ public class DisplayNameLookupDao {
                 PROVIDER_LOOKUP.PROVIDER_ID,
                 providerId,
                 PROVIDER_LOOKUP.PROVIDER_NAME,
+                PROVIDER_LOOKUP.PROVIDER_SEARCH,
                 PROVIDER_LOOKUP.DOMINANT_VERSION_ID,
                 PROVIDER_LOOKUP.DELETED,
                 dominantVersionId
@@ -105,6 +110,7 @@ public class DisplayNameLookupDao {
                 terminalId,
                 TERMINAL_LOOKUP.TERMINAL_NAME,
                 terminalName,
+                TERMINAL_LOOKUP.TERMINAL_SEARCH,
                 TERMINAL_LOOKUP.DOMINANT_VERSION_ID,
                 TERMINAL_LOOKUP.DELETED,
                 dominantVersionId
@@ -117,6 +123,7 @@ public class DisplayNameLookupDao {
                 TERMINAL_LOOKUP.TERMINAL_ID,
                 terminalId,
                 TERMINAL_LOOKUP.TERMINAL_NAME,
+                TERMINAL_LOOKUP.TERMINAL_SEARCH,
                 TERMINAL_LOOKUP.DOMINANT_VERSION_ID,
                 TERMINAL_LOOKUP.DELETED,
                 dominantVersionId
@@ -137,6 +144,7 @@ public class DisplayNameLookupDao {
                 walletId,
                 WALLET_LOOKUP.WALLET_NAME,
                 walletName,
+                WALLET_LOOKUP.WALLET_SEARCH,
                 WALLET_LOOKUP.DOMINANT_VERSION_ID,
                 WALLET_LOOKUP.DELETED,
                 dominantVersionId
@@ -149,6 +157,7 @@ public class DisplayNameLookupDao {
                 WALLET_LOOKUP.WALLET_ID,
                 walletId,
                 WALLET_LOOKUP.WALLET_NAME,
+                WALLET_LOOKUP.WALLET_SEARCH,
                 WALLET_LOOKUP.DOMINANT_VERSION_ID,
                 WALLET_LOOKUP.DELETED,
                 dominantVersionId
@@ -165,6 +174,7 @@ public class DisplayNameLookupDao {
             String id,
             TableField<R, String> nameField,
             String name,
+            TableField<R, String> searchField,
             TableField<R, Long> versionField,
             TableField<R, Boolean> deletedField,
             long dominantVersionId
@@ -172,11 +182,13 @@ public class DisplayNameLookupDao {
         dslContext.insertInto(table)
                 .set(idField, id)
                 .set(nameField, name)
+                .set(searchField, SearchValueNormalizer.normalize(id, name))
                 .set(versionField, dominantVersionId)
                 .set(deletedField, false)
                 .onConflict(idField)
                 .doUpdate()
                 .set(nameField, name)
+                .set(searchField, SearchValueNormalizer.normalize(id, name))
                 .set(versionField, dominantVersionId)
                 .set(deletedField, false)
                 .set(updatedAtField(table), UTC_NOW)
@@ -189,6 +201,7 @@ public class DisplayNameLookupDao {
             TableField<R, String> idField,
             String id,
             TableField<R, String> nameField,
+            TableField<R, String> searchField,
             TableField<R, Long> versionField,
             TableField<R, Boolean> deletedField,
             long dominantVersionId
@@ -199,11 +212,13 @@ public class DisplayNameLookupDao {
         dslContext.insertInto(table)
                 .set(idField, id)
                 .set(nameField, DSL.castNull(nameField.getDataType()))
+                .set(searchField, SearchValueNormalizer.normalize(id))
                 .set(versionField, dominantVersionId)
                 .set(deletedField, true)
                 .onConflict(idField)
                 .doUpdate()
                 .set(nameField, DSL.castNull(nameField.getDataType()))
+                .set(searchField, SearchValueNormalizer.normalize(id))
                 .set(versionField, dominantVersionId)
                 .set(deletedField, true)
                 .set(updatedAtField(table), UTC_NOW)

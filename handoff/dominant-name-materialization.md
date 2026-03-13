@@ -32,11 +32,10 @@
   `ccr.provider_lookup`,
   `ccr.terminal_lookup`,
   `ccr.wallet_lookup`.
-- `ReportCsvService` now resolves payment/withdrawal name search terms through local `LEFT JOIN` lookups with `COALESCE` fallback
-  to existing denormalized current-state columns, so report filtering no longer depends only on `*_search` values stored during
-  event projection.
-- A dedicated `DisplayNameLookupDao` now provides local upsert points for lookup rows; integration coverage verifies overwrite
-  semantics plus report filtering from lookup rows when current-state names/search fields are missing.
+- `ReportCsvService` now resolves payment/withdrawal name search terms through local lookup `*_search` columns only; current-state
+  rows no longer carry dominant-backed `*_name` or name-based `*_search` fields.
+- A dedicated `DisplayNameLookupDao` now provides local upsert points for lookup rows, including normalized `*_search` values;
+  integration coverage verifies overwrite semantics plus report filtering from lookup-backed search data.
 - CCR now also owns a dedicated dominant ingestion path:
   `HistoricalCommitDeserializer` ->
   `dominantKafkaListenerContainerFactory` ->
@@ -100,10 +99,10 @@
   `ccr.terminal_lookup`,
   `ccr.wallet_lookup`
   or an equivalent naming scheme chosen in `V1__init.sql`.
-- `payment_txn_current` and `withdrawal_txn_current` remain id-based current-state tables and do not become the primary storage for
-  authoritative names.
+- `payment_txn_current` and `withdrawal_txn_current` remain id-based current-state tables and do not store dominant-backed names or
+  name-search denormalization.
 - Report-building and read/query paths resolve names locally by joining current-state ids to the CCR lookup tables.
-- Search/filter behavior that currently relies on `*_name` or `*_search` must remain local to CCR after the join/enrichment step.
+- Search/filter behavior for dominant-backed entities must remain local to CCR lookup tables after the join/enrichment step.
 
 ## Lookup-table intent
 - `shop` lookup should map the payment/withdrawal `shop_id` key to the dominant-backed shop display name.
@@ -136,8 +135,8 @@
 ## Open work
 - None for this track under the current bounded scope.
 - Compatibility note:
-  denormalized `*_name` / `*_search` columns in current-state remain as optional fallback fields, but authoritative enrichment now
-  lives in CCR local dominant lookups.
+  current-state fallback `*_name` / name-based `*_search` columns were removed; authoritative enrichment and normalized name search
+  now live only in CCR local dominant lookups.
 
 ## Recommended implementation order
 1. Inspect `daway` dominant handlers and identify the exact dominant entities / event shapes that populate shop, provider, and terminal
@@ -148,9 +147,8 @@
    `terminal_id -> terminal_name`,
    `wallet_id -> wallet_name`.
 3. Add a CCR-owned dominant ingestion path that materializes those lookup rows locally.
-4. Extend local enrichment beyond CSV/report filtering if any user-facing read path still depends on stale denormalized names.
-5. Only after local joins work, decide whether denormalized `*_name` copies are still worth keeping in current-state rows for search or
-   export convenience.
+4. Extend local enrichment beyond CSV/report filtering if any user-facing read path still depends on display-name resolution.
+5. Keep current-state rows id-centric; do not reintroduce dominant-backed denormalization unless a proven CCR-local requirement appears.
 
 ## How withdrawals should use the lookup data
 - `WithdrawalEventProjector` should continue to project stable ids from withdrawal events:
@@ -162,11 +160,9 @@
   `wallet_name` by `wallet_id`,
   `provider_name` by `provider_id`,
   `terminal_name` by `terminal_id`.
-- If CCR later decides to denormalize names into `withdrawal_txn_current`, that should happen only after the lookup contract is proven,
-  and the source of those denormalized fields must still be the local lookup tables rather than raw withdrawal events.
+- Do not denormalize lookup names back into `withdrawal_txn_current` under the current track outcome.
 - The same rule applies to projector-side search columns:
-  if `wallet_search` / `provider_search` / `terminal_search` need display-name content, derive that from CCR local lookups, not from
-  ad hoc event payloads.
+  keep dominant-backed search in CCR local lookup tables, not in event projectors or current-state rows.
 
 ## Discovery checklist before implementation
 - Identify the dominant topic names and message envelope used by `daway`.

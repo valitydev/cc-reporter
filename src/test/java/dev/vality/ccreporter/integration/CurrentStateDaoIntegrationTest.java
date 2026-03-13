@@ -116,16 +116,32 @@ class CurrentStateDaoIntegrationTest extends AbstractReportingIntegrationTest {
                 String.class
         )).isEqualTo("Shop Uno");
         assertThat(jdbcTemplate.queryForObject(
+                "SELECT shop_search FROM ccr.shop_lookup WHERE shop_id = 'shop-1'",
+                String.class
+        )).isEqualTo("shop-1 shop uno");
+        assertThat(jdbcTemplate.queryForObject(
                 "SELECT provider_name FROM ccr.provider_lookup WHERE provider_id = 'provider-1'",
                 String.class
         )).isEqualTo("Provider One");
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT provider_search FROM ccr.provider_lookup WHERE provider_id = 'provider-1'",
+                String.class
+        )).isEqualTo("provider-1 provider one");
         assertThat(jdbcTemplate.queryForObject(
                 "SELECT terminal_name FROM ccr.terminal_lookup WHERE terminal_id = 'terminal-1'",
                 String.class
         )).isEqualTo("Terminal One");
         assertThat(jdbcTemplate.queryForObject(
+                "SELECT terminal_search FROM ccr.terminal_lookup WHERE terminal_id = 'terminal-1'",
+                String.class
+        )).isEqualTo("terminal-1 terminal one");
+        assertThat(jdbcTemplate.queryForObject(
                 "SELECT wallet_name FROM ccr.wallet_lookup WHERE wallet_id = 'wallet-1'",
                 String.class
         )).isEqualTo("Wallet One");
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT wallet_search FROM ccr.wallet_lookup WHERE wallet_id = 'wallet-1'",
+                String.class
+        )).isEqualTo("wallet-1 wallet one");
     }
 }

@@ -44,15 +44,12 @@ public class WithdrawalEventProjector {
                     eventCreatedAt,
                     withdrawal.getPartyId(),
                     withdrawal.getWalletId(),
-                    null,
                     withdrawal.getDestinationId(),
                     Instant.parse(withdrawal.getCreatedAt()),
                     null,
                     "pending",
                     route != null ? String.valueOf(route.getProviderId()) : null,
-                    null,
                     route != null ? String.valueOf(route.getTerminalId()) : null,
-                    null,
                     body.getAmount(),
                     null,
                     body.getCurrency().getSymbolicCode(),
@@ -73,15 +70,31 @@ public class WithdrawalEventProjector {
         if (change.isSetRoute()) {
             var route = change.getRoute().getRoute();
             return Optional.of(withdrawalUpdate(
-                    withdrawalId, event.getEventId(), eventCreatedAt, null, null,
+                    withdrawalId,
+                    event.getEventId(),
+                    eventCreatedAt,
                     null,
-                    null, null, null,
+                    null,
+                    null,
+                    null,
+                    null,
                     null,
                     String.valueOf(route.getProviderId()),
-                    null,
                     String.valueOf(route.getTerminalId()),
                     null,
-                    null, null, null, null, null, null, null, null, null, null, null, null, null, null
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
             ));
         }
 
@@ -90,13 +103,31 @@ public class WithdrawalEventProjector {
             var failure = status.isSetFailed() ? status.getFailed().getFailure() : null;
             var subFailure = failure != null ? failure.getSub() : null;
             return Optional.of(withdrawalUpdate(
-                    withdrawalId, event.getEventId(), eventCreatedAt, null, null, null, null, null,
-                    terminalFinalizedAt(status, eventCreatedAt), status.getSetField().getFieldName(), null, null, null,
-                    null, null, null, null, null, null,
+                    withdrawalId,
+                    event.getEventId(),
+                    eventCreatedAt,
+                    null,
+                    null,
+                    null,
+                    null,
+                    terminalFinalizedAt(status, eventCreatedAt),
+                    status.getSetField().getFieldName(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
                     failure != null ? failure.getCode() : null,
                     failure != null ? failure.getReason() : null,
                     subFailure != null ? subFailure.getCode() : null,
-                    null, null, null, null, null, null
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
             ));
         }
 
@@ -112,9 +143,6 @@ public class WithdrawalEventProjector {
                     withdrawalId,
                     event.getEventId(),
                     eventCreatedAt,
-                    null,
-                    null,
-                    null,
                     null,
                     null,
                     null,
@@ -149,15 +177,12 @@ public class WithdrawalEventProjector {
             Instant domainEventCreatedAt,
             String partyId,
             String walletId,
-            String walletName,
             String destinationId,
             Instant createdAt,
             Instant finalizedAt,
             String status,
             String providerId,
-            String providerName,
             String terminalId,
-            String terminalName,
             Long amount,
             Long fee,
             String currency,
@@ -179,15 +204,12 @@ public class WithdrawalEventProjector {
         update.setDomainEventCreatedAt(toLocalDateTime(domainEventCreatedAt));
         update.setPartyId(partyId);
         update.setWalletId(walletId);
-        update.setWalletName(walletName);
         update.setDestinationId(destinationId);
         update.setCreatedAt(toLocalDateTime(createdAt));
         update.setFinalizedAt(toLocalDateTime(finalizedAt));
         update.setStatus(status);
         update.setProviderId(providerId);
-        update.setProviderName(providerName);
         update.setTerminalId(terminalId);
-        update.setTerminalName(terminalName);
         update.setAmount(amount);
         update.setFee(fee);
         update.setCurrency(currency);

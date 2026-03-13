@@ -27,7 +27,6 @@ public final class CurrentStateUpdateFixtures {
         ));
         update.setPartyId("party-1");
         update.setShopId("shop-1");
-        update.setShopName("Shop One");
         update.setCreatedAt(toLocalDateTime(Instant.parse("2026-01-01T10:00:00Z")));
         update.setFinalizedAt(toLocalDateTime(finalizedAt));
         update.setStatus(status);
@@ -64,7 +63,6 @@ public final class CurrentStateUpdateFixtures {
         ));
         update.setPartyId("party-1");
         update.setWalletId("wallet-1");
-        update.setWalletName("Wallet One");
         update.setDestinationId("destination-1");
         update.setCreatedAt(toLocalDateTime(Instant.parse("2026-01-01T11:00:00Z")));
         update.setFinalizedAt(toLocalDateTime(finalizedAt));

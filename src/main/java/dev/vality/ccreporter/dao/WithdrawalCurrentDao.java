@@ -56,10 +56,6 @@ public class WithdrawalCurrentDao {
                         patchValue(update.getWalletId(), WITHDRAWAL_TXN_CURRENT.WALLET_ID)
                 )
                 .set(
-                        WITHDRAWAL_TXN_CURRENT.WALLET_NAME,
-                        patchValue(update.getWalletName(), WITHDRAWAL_TXN_CURRENT.WALLET_NAME)
-                )
-                .set(
                         WITHDRAWAL_TXN_CURRENT.DESTINATION_ID,
                         patchValue(update.getDestinationId(), WITHDRAWAL_TXN_CURRENT.DESTINATION_ID)
                 )
@@ -77,16 +73,8 @@ public class WithdrawalCurrentDao {
                         patchValue(update.getProviderId(), WITHDRAWAL_TXN_CURRENT.PROVIDER_ID)
                 )
                 .set(
-                        WITHDRAWAL_TXN_CURRENT.PROVIDER_NAME,
-                        patchValue(update.getProviderName(), WITHDRAWAL_TXN_CURRENT.PROVIDER_NAME)
-                )
-                .set(
                         WITHDRAWAL_TXN_CURRENT.TERMINAL_ID,
                         patchValue(update.getTerminalId(), WITHDRAWAL_TXN_CURRENT.TERMINAL_ID)
-                )
-                .set(
-                        WITHDRAWAL_TXN_CURRENT.TERMINAL_NAME,
-                        patchValue(update.getTerminalName(), WITHDRAWAL_TXN_CURRENT.TERMINAL_NAME)
                 )
                 .set(WITHDRAWAL_TXN_CURRENT.AMOUNT, patchValue(update.getAmount(), WITHDRAWAL_TXN_CURRENT.AMOUNT))
                 .set(WITHDRAWAL_TXN_CURRENT.FEE, patchValue(update.getFee(), WITHDRAWAL_TXN_CURRENT.FEE))
@@ -136,18 +124,6 @@ public class WithdrawalCurrentDao {
                         patchValue(update.getProviderCurrency(), WITHDRAWAL_TXN_CURRENT.PROVIDER_CURRENCY)
                 )
                 .set(
-                        WITHDRAWAL_TXN_CURRENT.WALLET_SEARCH,
-                        patchValue(walletSearch(update), WITHDRAWAL_TXN_CURRENT.WALLET_SEARCH)
-                )
-                .set(
-                        WITHDRAWAL_TXN_CURRENT.PROVIDER_SEARCH,
-                        patchValue(providerSearch(update), WITHDRAWAL_TXN_CURRENT.PROVIDER_SEARCH)
-                )
-                .set(
-                        WITHDRAWAL_TXN_CURRENT.TERMINAL_SEARCH,
-                        patchValue(terminalSearch(update), WITHDRAWAL_TXN_CURRENT.TERMINAL_SEARCH)
-                )
-                .set(
                         WITHDRAWAL_TXN_CURRENT.TRX_SEARCH,
                         patchValue(trxSearch(update), WITHDRAWAL_TXN_CURRENT.TRX_SEARCH)
                 )
@@ -161,9 +137,6 @@ public class WithdrawalCurrentDao {
         if (!canInsert(update)) {
             return;
         }
-        update.setWalletSearch(walletSearch(update));
-        update.setProviderSearch(providerSearch(update));
-        update.setTerminalSearch(terminalSearch(update));
         update.setTrxSearch(trxSearch(update));
         var record = dslContext.newRecord(WITHDRAWAL_TXN_CURRENT, update);
         record.changed(WITHDRAWAL_TXN_CURRENT.ID, false);
@@ -173,18 +146,6 @@ public class WithdrawalCurrentDao {
                 .onConflict(WITHDRAWAL_TXN_CURRENT.WITHDRAWAL_ID)
                 .doNothing()
                 .execute();
-    }
-
-    private String walletSearch(WithdrawalTxnCurrent update) {
-        return SearchValueNormalizer.normalize(update.getWalletId(), update.getWalletName());
-    }
-
-    private String providerSearch(WithdrawalTxnCurrent update) {
-        return SearchValueNormalizer.normalize(update.getProviderId(), update.getProviderName());
-    }
-
-    private String terminalSearch(WithdrawalTxnCurrent update) {
-        return SearchValueNormalizer.normalize(update.getTerminalId(), update.getTerminalName());
     }
 
     private String trxSearch(WithdrawalTxnCurrent update) {
@@ -203,15 +164,12 @@ public class WithdrawalCurrentDao {
         return update.getTrxId() != null
                 && update.getPartyId() == null
                 && update.getWalletId() == null
-                && update.getWalletName() == null
                 && update.getDestinationId() == null
                 && update.getCreatedAt() == null
                 && update.getFinalizedAt() == null
                 && update.getStatus() == null
                 && update.getProviderId() == null
-                && update.getProviderName() == null
                 && update.getTerminalId() == null
-                && update.getTerminalName() == null
                 && update.getAmount() == null
                 && update.getFee() == null
                 && update.getCurrency() == null
