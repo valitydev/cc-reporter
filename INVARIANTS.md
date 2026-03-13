@@ -5,3 +5,5 @@
 - Current-state updates are monotonic by business key plus `domain_event_id`; older or duplicate events must not move state backward.
 - `finalized_at` is fixed on the first terminal status and must not be overwritten later.
 - Do not put Hellgate reads on the ingestion hot path.
+- If DAO methods move from `NamedParameterJdbcTemplate` to `jOOQ`, preserve the existing SQL semantics, PostgreSQL-specific
+  behavior, transaction boundaries, and domain DTO boundaries.

@@ -1,7 +1,7 @@
 # PROJECT_STATE.md
 
 ## Active tracks
-- none
+- `jooq-dsl-dao-transition`
 
 ## Completed tracks
 - `kafka-to-db-ingestion`
@@ -30,3 +30,12 @@
   semantics, ingestion mappings, or lifecycle state machine.
 - `audit-observability-hardening` closed with runtime writes to `report_audit_event` for report create/cancel/presigned-url actions,
   consuming trusted forwarded identity/tracing headers without adding local JWT parsing.
+- `jooq-dsl-dao-transition` must preserve the completed ingestion, Thrift, lifecycle, CSV, and audit tracks while changing only the
+  persistence API used inside DAO implementations.
+
+## Active track snapshot
+- `jooq-dsl-dao-transition` is in planning mode. Current DAO code is fully `NamedParameterJdbcTemplate`-based; generated `jOOQ`
+  classes exist only as build artifacts and are not used by runtime code.
+- The preferred transition shape is SQL-first, not ORM-first: keep existing domain DTOs and service boundaries, introduce
+  `DSLContext` in DAO implementations, and migrate DAO classes incrementally rather than rewriting the service around
+  `Hibernate` / JPA.

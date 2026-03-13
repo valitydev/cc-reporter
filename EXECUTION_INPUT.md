@@ -7,7 +7,9 @@
 - builds CSV reports asynchronously from its own read model and stores files via `file-storage`/S3-compatible storage.
 
 ## Chosen approach
-- Use three durable workstreams: `kafka-to-db-ingestion`, `thrift-api-implementation`, `report-lifecycle-subsystem`.
+- Use three durable delivery workstreams: `kafka-to-db-ingestion`, `thrift-api-implementation`, `report-lifecycle-subsystem`.
+- Keep a separate modernization track `jooq-dsl-dao-transition` for DAO-layer persistence API changes without reopening the service
+  contract or report architecture.
 - Build current-state projections in PostgreSQL, not on-demand reads from `magista` / `fistful-magista`.
 - Kafka consumption must be batch-based, manual-ack, and commit offsets only after successful DB transaction commit.
 - Use DB-level idempotency with monotonic `domain_event_id` updates on business keys.
@@ -63,6 +65,8 @@ Last known baseline:
 - Do not replace payments FX placeholder behavior with permanent nullable-only behavior.
 - Do not depend on browser-side CSV assembly or query-time `magista` / `fistful-magista` pagination.
 - Internal auth is out of scope; `Wachter` remains responsible.
+- If the DAO layer is modernized, preserve the current SQL-first posture and PostgreSQL semantics; do not turn `cc-reporter`
+  into an ORM-first service.
 
 ## Known risks
 - Exact authoritative source for full `payments` FX block is still unresolved.
@@ -76,9 +80,11 @@ Last known baseline:
 - `kafka-to-db-ingestion`
 - `thrift-api-implementation`
 - `report-lifecycle-subsystem`
+- `jooq-dsl-dao-transition`
 
 ## Project-specific facts
-- language / stack: Java, Spring Boot, Spring Kafka, JDBC, jOOQ, Flyway, PostgreSQL, Thrift, Woody, S3-compatible storage via `file-storage`
+- language / stack: Java, Spring Boot, Spring Kafka, JDBC, jOOQ code generation, Flyway, PostgreSQL, Thrift, Woody,
+  S3-compatible storage via `file-storage`
 - package manager: Maven
 - dev command: unknown
 - build command: unknown
@@ -91,3 +97,5 @@ Last known baseline:
 - Exact command conventions for running build/test/lint in this repo.
 - Exact final mapping for `provider_amount/provider_currency` in withdrawals if cashflow interpretation differs from current assumptions.
 - Exact retry policy values and worker concurrency sizing for production behavior.
+- Exact target boundary for `jooq-dsl-dao-transition`: schema-guardrail-only use of generated models versus full DAO rewrite to
+  `DSLContext`.
