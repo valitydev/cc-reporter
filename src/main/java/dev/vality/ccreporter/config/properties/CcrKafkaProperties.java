@@ -25,10 +25,19 @@ public class CcrKafkaProperties {
     }
 
     public static class Consumer {
+        private int dominantConcurrency = 1;
         private int paymentsConcurrency = 1;
         private int withdrawalsConcurrency = 1;
         private long errorBackoffIntervalMs = 30000L;
         private long errorMaxAttempts = -1L;
+
+        public int getDominantConcurrency() {
+            return dominantConcurrency;
+        }
+
+        public void setDominantConcurrency(int dominantConcurrency) {
+            this.dominantConcurrency = dominantConcurrency;
+        }
 
         public int getPaymentsConcurrency() {
             return paymentsConcurrency;
@@ -64,9 +73,18 @@ public class CcrKafkaProperties {
     }
 
     public static class Topics {
+        private Topic dominant = new Topic();
         private Topic payments = new Topic();
         private Topic withdrawals = new Topic();
         private Topic withdrawalSessions = new Topic();
+
+        public Topic getDominant() {
+            return dominant;
+        }
+
+        public void setDominant(Topic dominant) {
+            this.dominant = dominant;
+        }
 
         public Topic getPayments() {
             return payments;

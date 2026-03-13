@@ -151,26 +151,42 @@ public class ReportCsvService {
         writer.newLine();
         var sql = new StringBuilder(
                 """
-                        SELECT created_at, finalized_at, invoice_id, payment_id, status,
-                               amount, currency, trx_id, provider_id, terminal_id, shop_id,
-                               exchange_rate_internal, provider_amount, provider_currency,
-                               original_amount, original_currency, converted_amount
-                        FROM ccr.payment_txn_current
-                        WHERE created_at >= :fromTime
-                          AND created_at < :toTime
+                        SELECT p.created_at AS created_at,
+                               p.finalized_at AS finalized_at,
+                               p.invoice_id AS invoice_id,
+                               p.payment_id AS payment_id,
+                               p.status AS status,
+                               p.amount AS amount,
+                               p.currency AS currency,
+                               p.trx_id AS trx_id,
+                               p.provider_id AS provider_id,
+                               p.terminal_id AS terminal_id,
+                               p.shop_id AS shop_id,
+                               p.exchange_rate_internal AS exchange_rate_internal,
+                               p.provider_amount AS provider_amount,
+                               p.provider_currency AS provider_currency,
+                               p.original_amount AS original_amount,
+                               p.original_currency AS original_currency,
+                               p.converted_amount AS converted_amount
+                        FROM ccr.payment_txn_current p
+                        LEFT JOIN ccr.shop_lookup sl ON sl.shop_id = p.shop_id
+                        LEFT JOIN ccr.provider_lookup pl ON pl.provider_id = p.provider_id
+                        LEFT JOIN ccr.terminal_lookup tl ON tl.terminal_id = p.terminal_id
+                        WHERE p.created_at >= :fromTime
+                          AND p.created_at < :toTime
                         """
         );
         var parameters =
                 baseTimeRange(query.getTimeRange().getFromTime(), query.getTimeRange().getToTime());
-        appendCommonFilters(sql, parameters, "party_id", "partyIds", query.getPartyIds());
-        appendCommonFilters(sql, parameters, "shop_id", "shopIds", query.getShopIds());
-        appendCommonFilters(sql, parameters, "provider_id", "providerIds", query.getProviderIds());
-        appendCommonFilters(sql, parameters, "terminal_id", "terminalIds", query.getTerminalIds());
-        appendCommonFilters(sql, parameters, "trx_id", "trxIds", query.getTrxIds());
-        appendCommonFilters(sql, parameters, "currency", "currencies", query.getCurrencies());
-        appendCommonFilters(sql, parameters, "status", "statuses", query.getStatuses());
+        appendCommonFilters(sql, parameters, "p.party_id", "partyIds", query.getPartyIds());
+        appendCommonFilters(sql, parameters, "p.shop_id", "shopIds", query.getShopIds());
+        appendCommonFilters(sql, parameters, "p.provider_id", "providerIds", query.getProviderIds());
+        appendCommonFilters(sql, parameters, "p.terminal_id", "terminalIds", query.getTerminalIds());
+        appendCommonFilters(sql, parameters, "p.trx_id", "trxIds", query.getTrxIds());
+        appendCommonFilters(sql, parameters, "p.currency", "currencies", query.getCurrencies());
+        appendCommonFilters(sql, parameters, "p.status", "statuses", query.getStatuses());
         appendPaymentsSearchFilters(sql, parameters, query.getFilter());
-        sql.append(" ORDER BY created_at ASC, invoice_id ASC, payment_id ASC");
+        sql.append(" ORDER BY p.created_at ASC, p.invoice_id ASC, p.payment_id ASC");
         return writeRows(writer, sql.toString(), parameters, PAYMENT_COLUMNS, zoneId);
     }
 
@@ -183,28 +199,43 @@ public class ReportCsvService {
         writer.newLine();
         var sql = new StringBuilder(
                 """
-                        SELECT created_at, finalized_at, withdrawal_id, status, amount, currency,
-                               trx_id, provider_id, terminal_id, wallet_id, exchange_rate_internal,
-                               provider_amount, provider_currency, original_amount, original_currency,
-                               converted_amount
-                        FROM ccr.withdrawal_txn_current
-                        WHERE created_at >= :fromTime
-                          AND created_at < :toTime
+                        SELECT w.created_at AS created_at,
+                               w.finalized_at AS finalized_at,
+                               w.withdrawal_id AS withdrawal_id,
+                               w.status AS status,
+                               w.amount AS amount,
+                               w.currency AS currency,
+                               w.trx_id AS trx_id,
+                               w.provider_id AS provider_id,
+                               w.terminal_id AS terminal_id,
+                               w.wallet_id AS wallet_id,
+                               w.exchange_rate_internal AS exchange_rate_internal,
+                               w.provider_amount AS provider_amount,
+                               w.provider_currency AS provider_currency,
+                               w.original_amount AS original_amount,
+                               w.original_currency AS original_currency,
+                               w.converted_amount AS converted_amount
+                        FROM ccr.withdrawal_txn_current w
+                        LEFT JOIN ccr.wallet_lookup wl ON wl.wallet_id = w.wallet_id
+                        LEFT JOIN ccr.provider_lookup pl ON pl.provider_id = w.provider_id
+                        LEFT JOIN ccr.terminal_lookup tl ON tl.terminal_id = w.terminal_id
+                        WHERE w.created_at >= :fromTime
+                          AND w.created_at < :toTime
                         """
         );
         var parameters = baseTimeRange(
                 query.getTimeRange().getFromTime(),
                 query.getTimeRange().getToTime()
         );
-        appendCommonFilters(sql, parameters, "party_id", "partyIds", query.getPartyIds());
-        appendCommonFilters(sql, parameters, "wallet_id", "walletIds", query.getWalletIds());
-        appendCommonFilters(sql, parameters, "provider_id", "providerIds", query.getProviderIds());
-        appendCommonFilters(sql, parameters, "terminal_id", "terminalIds", query.getTerminalIds());
-        appendCommonFilters(sql, parameters, "trx_id", "trxIds", query.getTrxIds());
-        appendCommonFilters(sql, parameters, "currency", "currencies", query.getCurrencies());
-        appendCommonFilters(sql, parameters, "status", "statuses", query.getStatuses());
+        appendCommonFilters(sql, parameters, "w.party_id", "partyIds", query.getPartyIds());
+        appendCommonFilters(sql, parameters, "w.wallet_id", "walletIds", query.getWalletIds());
+        appendCommonFilters(sql, parameters, "w.provider_id", "providerIds", query.getProviderIds());
+        appendCommonFilters(sql, parameters, "w.terminal_id", "terminalIds", query.getTerminalIds());
+        appendCommonFilters(sql, parameters, "w.trx_id", "trxIds", query.getTrxIds());
+        appendCommonFilters(sql, parameters, "w.currency", "currencies", query.getCurrencies());
+        appendCommonFilters(sql, parameters, "w.status", "statuses", query.getStatuses());
         appendWithdrawalsSearchFilters(sql, parameters, query.getFilter());
-        sql.append(" ORDER BY created_at ASC, withdrawal_id ASC");
+        sql.append(" ORDER BY w.created_at ASC, w.withdrawal_id ASC");
         return writeRows(writer, sql.toString(), parameters, WITHDRAWAL_COLUMNS, zoneId);
     }
 
@@ -393,10 +424,28 @@ public class ReportCsvService {
         if (filter == null) {
             return;
         }
-        appendSearchFilter(sql, parameters, "shop_search", "shopTerm", filter.getShopTerm());
-        appendSearchFilter(sql, parameters, "provider_search", "providerTerm", filter.getProviderTerm());
-        appendSearchFilter(sql, parameters, "terminal_search", "terminalTerm", filter.getTerminalTerm());
-        appendSearchFilter(sql, parameters, "trx_search", "trxTerm", filter.getTrxTerm());
+        appendSearchFilter(
+                sql,
+                parameters,
+                localLookupSearchExpr("p.shop_id", "sl.deleted", "sl.shop_name", "p.shop_name"),
+                "shopTerm",
+                filter.getShopTerm()
+        );
+        appendSearchFilter(
+                sql,
+                parameters,
+                localLookupSearchExpr("p.provider_id", "pl.deleted", "pl.provider_name", "p.provider_name"),
+                "providerTerm",
+                filter.getProviderTerm()
+        );
+        appendSearchFilter(
+                sql,
+                parameters,
+                localLookupSearchExpr("p.terminal_id", "tl.deleted", "tl.terminal_name", "p.terminal_name"),
+                "terminalTerm",
+                filter.getTerminalTerm()
+        );
+        appendSearchFilter(sql, parameters, "lower(coalesce(p.trx_search, ''))", "trxTerm", filter.getTrxTerm());
     }
 
     private void appendWithdrawalsSearchFilters(
@@ -407,10 +456,28 @@ public class ReportCsvService {
         if (filter == null) {
             return;
         }
-        appendSearchFilter(sql, parameters, "wallet_search", "walletTerm", filter.getWalletTerm());
-        appendSearchFilter(sql, parameters, "provider_search", "providerTerm", filter.getProviderTerm());
-        appendSearchFilter(sql, parameters, "terminal_search", "terminalTerm", filter.getTerminalTerm());
-        appendSearchFilter(sql, parameters, "trx_search", "trxTerm", filter.getTrxTerm());
+        appendSearchFilter(
+                sql,
+                parameters,
+                localLookupSearchExpr("w.wallet_id", "wl.deleted", "wl.wallet_name", "w.wallet_name"),
+                "walletTerm",
+                filter.getWalletTerm()
+        );
+        appendSearchFilter(
+                sql,
+                parameters,
+                localLookupSearchExpr("w.provider_id", "pl.deleted", "pl.provider_name", "w.provider_name"),
+                "providerTerm",
+                filter.getProviderTerm()
+        );
+        appendSearchFilter(
+                sql,
+                parameters,
+                localLookupSearchExpr("w.terminal_id", "tl.deleted", "tl.terminal_name", "w.terminal_name"),
+                "terminalTerm",
+                filter.getTerminalTerm()
+        );
+        appendSearchFilter(sql, parameters, "lower(coalesce(w.trx_search, ''))", "trxTerm", filter.getTrxTerm());
     }
 
     private void appendSearchFilter(
@@ -423,8 +490,20 @@ public class ReportCsvService {
         if (value == null || value.isBlank()) {
             return;
         }
-        sql.append(" AND lower(coalesce(").append(column).append(", '')) LIKE :").append(parameterName);
+        sql.append(" AND ").append(column).append(" LIKE :").append(parameterName);
         parameters.addValue(parameterName, "%" + value.toLowerCase() + "%");
+    }
+
+    private String localLookupSearchExpr(
+            String idExpression,
+            String deletedExpression,
+            String lookupNameExpression,
+            String currentStateNameExpression
+    ) {
+        return "lower(case when coalesce(" + deletedExpression + ", false) " +
+                "then coalesce(" + idExpression + ", '') " +
+                "else concat_ws(' ', " + idExpression + ", coalesce(" + lookupNameExpression + ", " +
+                currentStateNameExpression + ")) end)";
     }
 
     private Instant currentSnapshot() {

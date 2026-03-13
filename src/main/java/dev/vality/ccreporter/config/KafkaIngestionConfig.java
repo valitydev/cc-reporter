@@ -1,7 +1,9 @@
 package dev.vality.ccreporter.config;
 
 import dev.vality.ccreporter.config.properties.CcrKafkaProperties;
+import dev.vality.ccreporter.kafka.serde.HistoricalCommitDeserializer;
 import dev.vality.ccreporter.kafka.serde.SinkEventDeserializer;
+import dev.vality.damsel.domain_config_v2.HistoricalCommit;
 import dev.vality.ccreporter.serialization.MachineEventPayloadParser;
 import dev.vality.ccreporter.serialization.ThriftBinaryDeserializer;
 import dev.vality.damsel.payment_processing.EventPayload;
@@ -104,6 +106,18 @@ public class KafkaIngestionConfig {
     }
 
     @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, HistoricalCommit> dominantKafkaListenerContainerFactory(
+            Environment environment,
+            CcrKafkaProperties ccrKafkaProperties
+    ) {
+        return dominantListenerContainerFactory(
+                environment,
+                ccrKafkaProperties.getConsumer().getDominantConcurrency(),
+                ccrKafkaProperties
+        );
+    }
+
+    @Bean
     public ConcurrentKafkaListenerContainerFactory<String, SinkEvent> withdrawalSessionsKafkaListenerContainerFactory(
             Environment environment,
             CcrKafkaProperties ccrKafkaProperties
@@ -122,6 +136,20 @@ public class KafkaIngestionConfig {
     ) {
         var factory = new ConcurrentKafkaListenerContainerFactory<String, SinkEvent>();
         factory.setConsumerFactory(new DefaultKafkaConsumerFactory<>(consumerConfig(environment)));
+        factory.setBatchListener(true);
+        factory.setConcurrency(concurrency);
+        factory.setCommonErrorHandler(kafkaErrorHandler(ccrKafkaProperties));
+        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
+        return factory;
+    }
+
+    private ConcurrentKafkaListenerContainerFactory<String, HistoricalCommit> dominantListenerContainerFactory(
+            Environment environment,
+            int concurrency,
+            CcrKafkaProperties ccrKafkaProperties
+    ) {
+        var factory = new ConcurrentKafkaListenerContainerFactory<String, HistoricalCommit>();
+        factory.setConsumerFactory(new DefaultKafkaConsumerFactory<>(dominantConsumerConfig(environment)));
         factory.setBatchListener(true);
         factory.setConcurrency(concurrency);
         factory.setCommonErrorHandler(kafkaErrorHandler(ccrKafkaProperties));
@@ -172,6 +200,12 @@ public class KafkaIngestionConfig {
         );
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, SinkEventDeserializer.class);
+        return config;
+    }
+
+    private Map<String, Object> dominantConsumerConfig(Environment environment) {
+        var config = new java.util.HashMap<>(consumerConfig(environment));
+        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, HistoricalCommitDeserializer.class);
         return config;
     }
 }

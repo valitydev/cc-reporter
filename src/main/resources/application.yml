@@ -68,11 +68,15 @@ ccr:
       max-poll-interval-ms: 30000
       session-timeout-ms: 30000
       poll-timeout-ms: 3000
+      dominant-concurrency: 1
       payments-concurrency: 1
       withdrawals-concurrency: 1
       error-backoff-interval-ms: 30000
       error-max-attempts: -1
     topics:
+      dominant:
+        id: ""
+        enabled: false
       payments:
         id: ""
         enabled: false

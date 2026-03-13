@@ -44,16 +44,15 @@ public class WithdrawalEventProjector {
                     eventCreatedAt,
                     withdrawal.getPartyId(),
                     withdrawal.getWalletId(),
-                    null, // TODO CCR-INGESTION: confirm event-native source
-                    // for wallet_name/current-state display names.
+                    null,
                     withdrawal.getDestinationId(),
                     Instant.parse(withdrawal.getCreatedAt()),
                     null,
                     "pending",
                     route != null ? String.valueOf(route.getProviderId()) : null,
-                    null, // TODO CCR-INGESTION: confirm event-native source for provider_name in current-state.
+                    null,
                     route != null ? String.valueOf(route.getTerminalId()) : null,
-                    null, // TODO CCR-INGESTION: confirm event-native source for terminal_name in current-state.
+                    null,
                     body.getAmount(),
                     null,
                     body.getCurrency().getSymbolicCode(),
@@ -75,13 +74,13 @@ public class WithdrawalEventProjector {
             var route = change.getRoute().getRoute();
             return Optional.of(withdrawalUpdate(
                     withdrawalId, event.getEventId(), eventCreatedAt, null, null,
-                    null, // TODO CCR-INGESTION: route change still does not populate display names.
+                    null,
                     null, null, null,
                     null,
                     String.valueOf(route.getProviderId()),
-                    null, // TODO CCR-INGESTION: confirm provider_name source for route updates.
+                    null,
                     String.valueOf(route.getTerminalId()),
-                    null, // TODO CCR-INGESTION: confirm terminal_name source for route updates.
+                    null,
                     null, null, null, null, null, null, null, null, null, null, null, null, null, null
             ));
         }

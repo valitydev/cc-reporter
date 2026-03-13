@@ -22,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Проверяет, что Kafka listeners подхватывают сообщения из тестовых топиков и обновляют current-state таблицы.
  */
 @EmbeddedKafka(partitions = 1, topics = {
+        "ccr-dominant-test",
         "ccr-payments-test",
         "ccr-withdrawals-test",
         "ccr-withdrawal-sessions-test"
@@ -30,6 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestPropertySource(properties = {
         "spring.kafka.bootstrap-servers=${spring.embedded.kafka.brokers}",
         "spring.kafka.consumer.group-id=ccr-kafka-it",
+        "ccr.kafka.topics.dominant.id=ccr-dominant-test",
+        "ccr.kafka.topics.dominant.enabled=true",
         "ccr.kafka.topics.payments.id=ccr-payments-test",
         "ccr.kafka.topics.payments.enabled=true",
         "ccr.kafka.topics.withdrawals.id=ccr-withdrawals-test",
@@ -79,6 +82,41 @@ class KafkaListenerIntegrationTest extends AbstractReportingIntegrationTest {
         assertThat(row.get("trx_id")).isEqualTo("trx-payment-1");
         assertThat(((Timestamp) row.get("finalized_at")).toLocalDateTime())
                 .isEqualTo(LocalDateTime.parse("2026-01-01T00:04:00"));
+    }
+
+    @Test
+    void dominantTopicMessageIsConsumedAndPersisted() throws Exception {
+        jdbcTemplate.update(
+                """
+                        INSERT INTO ccr.shop_lookup (shop_id, shop_name, dominant_version_id, deleted)
+                        VALUES (?, ?, ?, ?)
+                        """,
+                "shop-lookup",
+                "Lookup Shop",
+                0L,
+                false
+        );
+        KafkaIntegrationTestSupport.sendDominantBatch(
+                embeddedKafkaBroker,
+                "ccr-dominant-test",
+                java.util.List.of(dev.vality.ccreporter.integration.fixture.DominantCommitFixtures.removeShopCommit(1L))
+        );
+
+        var row = KafkaIntegrationTestSupport.waitForRow(
+                jdbcTemplate,
+                LISTENER_TIMEOUT,
+                """
+                        SELECT shop_name, dominant_version_id, deleted
+                        FROM ccr.shop_lookup
+                        WHERE shop_id = ?
+                        """,
+                current -> Boolean.TRUE.equals(current.get("deleted")),
+                "shop-lookup"
+        );
+
+        assertThat(row.get("shop_name")).isNull();
+        assertThat(row.get("dominant_version_id")).isEqualTo(1L);
+        assertThat(row.get("deleted")).isEqualTo(true);
     }
 
     @Test

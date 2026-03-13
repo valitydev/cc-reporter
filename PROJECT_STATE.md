@@ -2,7 +2,6 @@
 
 ## Active tracks
 - `replayable-current-state-projections`
-- `dominant-name-materialization`
 - `projector-builder-refactor`
 
 ## Completed tracks
@@ -13,14 +12,15 @@
 - `csv-cursor-hardening`
 - `audit-observability-hardening`
 - `jooq-dsl-dao-transition`
+- `dominant-name-materialization`
 
 ## Temporary cross-track exception
 - `payments` FX handling remains a temporary exception: keep the contract, allow mock+`TODO`, and do not silently degrade it to permanent `null` behavior.
 
 ## Shared residual gaps
-- `shop_name`, `wallet_name`, `provider_name`, and `terminal_name` remain only partially converged current-state fields: the schema,
-  DAO merge logic, and search normalization support them, but ingestion still lacks confirmed event-native sources for reliably
-  populating those display-name columns and currently leaves explicit `TODO` markers at the projector gap points.
+- Display-name enrichment is now CCR-owned through local dominant lookups rather than event-native population of current-state name
+  columns; denormalized `shop_name` / `wallet_name` / `provider_name` / `terminal_name` fields remain compatibility fallbacks, not
+  the authoritative source.
 - `payments` `trx_id` remains event-first from `SessionTransactionBound`; a separate repair/reconciliation worker is not required by
   the current primary truth and should only be revived if real ingestion streams demonstrate terminal rows that still miss `trx_id`.
 - Current-state replay semantics are still optimized for duplicate tolerance rather than projection rebuildability; newly added
@@ -47,14 +47,14 @@
 ## Active track snapshot
 - `replayable-current-state-projections`
   is a follow-up design/implementation track for deterministic current-state rebuilds under Kafka replay and projector evolution.
-- `dominant-name-materialization`
-  is a follow-up design/implementation track for CCR-owned local lookup tables that restore `shop_name` / `provider_name` /
-  `terminal_name` and similar display-name fields without foreign DB joins.
 - `projector-builder-refactor`
   is a follow-up design/implementation track for Lombok/builder-based projector assembly and decomposition of large current-state
   projectors, starting with payments and extending generic improvements to withdrawals.
 
 ## Latest completed track snapshot
+- `dominant-name-materialization` is complete. CCR now owns local `shop` / `provider` / `terminal` / `wallet` lookup tables,
+  resolves report name filters through local joins, and ingests dominant `HistoricalCommit` batches into version-aware,
+  tombstone-aware lookup state without depending on `daway` DB at runtime.
 - `jooq-dsl-dao-transition` is complete. Runtime DAO code now uses a Spring-managed `DSLContext` plus generated `jOOQ` schema
   models in `WithdrawalSessionBindingDao`, `ReportAuditDao`, `ReportLifecycleDao`, `PaymentCurrentDao`,
   `WithdrawalCurrentDao`, and `ReportDao`.

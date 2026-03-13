@@ -86,6 +86,38 @@ CREATE TABLE ccr.report_audit_event (
   created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
 );
 
+CREATE TABLE ccr.shop_lookup (
+  shop_id VARCHAR PRIMARY KEY,
+  shop_name VARCHAR,
+  dominant_version_id BIGINT NOT NULL DEFAULT 0,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
+);
+
+CREATE TABLE ccr.provider_lookup (
+  provider_id VARCHAR PRIMARY KEY,
+  provider_name VARCHAR,
+  dominant_version_id BIGINT NOT NULL DEFAULT 0,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
+);
+
+CREATE TABLE ccr.terminal_lookup (
+  terminal_id VARCHAR PRIMARY KEY,
+  terminal_name VARCHAR,
+  dominant_version_id BIGINT NOT NULL DEFAULT 0,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
+);
+
+CREATE TABLE ccr.wallet_lookup (
+  wallet_id VARCHAR PRIMARY KEY,
+  wallet_name VARCHAR,
+  dominant_version_id BIGINT NOT NULL DEFAULT 0,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
+);
+
 CREATE TABLE ccr.payment_txn_current (
   id BIGSERIAL PRIMARY KEY,
 
@@ -216,6 +248,18 @@ CREATE UNIQUE INDEX report_job_idempotency_key_uniq
 
 CREATE INDEX report_audit_event_report_id_idx
   ON ccr.report_audit_event (report_id, created_at DESC, id DESC);
+
+CREATE INDEX shop_lookup_name_trgm_idx
+  ON ccr.shop_lookup USING gin (shop_name gin_trgm_ops);
+
+CREATE INDEX provider_lookup_name_trgm_idx
+  ON ccr.provider_lookup USING gin (provider_name gin_trgm_ops);
+
+CREATE INDEX terminal_lookup_name_trgm_idx
+  ON ccr.terminal_lookup USING gin (terminal_name gin_trgm_ops);
+
+CREATE INDEX wallet_lookup_name_trgm_idx
+  ON ccr.wallet_lookup USING gin (wallet_name gin_trgm_ops);
 
 CREATE INDEX payment_txn_created_at_idx
   ON ccr.payment_txn_current (created_at DESC, id DESC);

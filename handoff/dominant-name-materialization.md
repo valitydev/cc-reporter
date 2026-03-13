@@ -25,7 +25,26 @@
 ## Current state
 - CCR schemas already contain `shop_name`, `provider_name`, and `terminal_name` fields in current-state tables.
 - Real payment events do not provide a trustworthy event-native source for those names.
-- CCR currently leaves explicit projector `TODO`s and stores ids without reliable display-name enrichment.
+- CCR no longer depends on event-native display-name extraction for this track; current-state projectors keep stable ids, and
+  authoritative display names are now resolved through CCR-owned dominant lookup state.
+- CCR now also owns local lookup tables in `V1__init.sql`:
+  `ccr.shop_lookup`,
+  `ccr.provider_lookup`,
+  `ccr.terminal_lookup`,
+  `ccr.wallet_lookup`.
+- `ReportCsvService` now resolves payment/withdrawal name search terms through local `LEFT JOIN` lookups with `COALESCE` fallback
+  to existing denormalized current-state columns, so report filtering no longer depends only on `*_search` values stored during
+  event projection.
+- A dedicated `DisplayNameLookupDao` now provides local upsert points for lookup rows; integration coverage verifies overwrite
+  semantics plus report filtering from lookup rows when current-state names/search fields are missing.
+- CCR now also owns a dedicated dominant ingestion path:
+  `HistoricalCommitDeserializer` ->
+  `dominantKafkaListenerContainerFactory` ->
+  `DominantEventListener` ->
+  `DominantLookupIngestionService`.
+- Lookup rows are version-aware and tombstone-aware:
+  `dominant_version_id` prevents stale rewrites during replay/out-of-order delivery,
+  and `deleted` tombstones prevent removed dominant objects from being silently resurrected by older commits.
 - Reference truth from `daway` shows those names are locally materialized from dominant snapshots:
   `dw.shop.details_name`, `dw.provider.name`, `dw.terminal.name`.
 - Withdrawal-side review against `daway` also shows that `wallet_name` is dominant-backed:
@@ -115,17 +134,10 @@
   materialize `wallet_id -> wallet_name` locally and use it to enrich `withdrawal_txn_current` consumers.
 
 ## Open work
-- Decide the minimal lookup table set and keys:
-  at least `shop`, `provider`, `terminal`, `wallet`;
-  add more withdrawal-side tables only if CSV/API later proves it.
-- Add the lookup tables to the base schema and generate `jOOQ` models for them.
-- Define the ingestion source:
-  dominant topic consumer is preferred;
-  ad hoc direct reads from `daway` DB are allowed only as a temporary bootstrap tool, not as steady-state runtime behavior.
-- Decide whether names should be copied into `payment_txn_current` / `withdrawal_txn_current` during write time or joined at read
-  time from lookup tables. Current preference: keep lookup tables independent and join when reading reports.
-- Update CSV/report query paths and current-state search behavior so name filters remain local to CCR.
-- Apply the same design to withdrawals for non-payment-specific name enrichment.
+- None for this track under the current bounded scope.
+- Compatibility note:
+  denormalized `*_name` / `*_search` columns in current-state remain as optional fallback fields, but authoritative enrichment now
+  lives in CCR local dominant lookups.
 
 ## Recommended implementation order
 1. Inspect `daway` dominant handlers and identify the exact dominant entities / event shapes that populate shop, provider, and terminal
@@ -136,8 +148,7 @@
    `terminal_id -> terminal_name`,
    `wallet_id -> wallet_name`.
 3. Add a CCR-owned dominant ingestion path that materializes those lookup rows locally.
-4. Update CCR read/report SQL so names are resolved through local joins, not through duplicated write-time copies in payment/withdrawal
-   current-state projectors.
+4. Extend local enrichment beyond CSV/report filtering if any user-facing read path still depends on stale denormalized names.
 5. Only after local joins work, decide whether denormalized `*_name` copies are still worth keeping in current-state rows for search or
    export convenience.
 
@@ -184,10 +195,21 @@
 - Keep the enrichment model local to CCR and compatible with current CSV / Thrift contracts.
 
 ## Next step
-- Inspect `daway` dominant event handlers first and write down the concrete CCR lookup schema plus the expected dominant input types
-  before implementing any CCR-side tables or consumers.
+- Track complete.
 
 ## Done when
 - CCR owns local lookup tables for required dominant-driven display names.
 - Payment and withdrawal reports can resolve `*_name` fields locally without depending on foreign databases.
-- The previous projector `TODO`s around missing name sources are closed by a documented local enrichment path.
+- The previous projector `TODO`s around missing name sources are closed by a documented local enrichment path, including actual
+  lookup-table population rather than test-only/manual upserts.
+
+## Completion snapshot
+- Implemented local lookup tables plus `jOOQ`-backed upsert/delete API in CCR.
+- Implemented dominant Kafka ingestion for `dev.vality.damsel.domain_config_v2.HistoricalCommit` from the pinned `damsel`
+  artifact version `1.685-5c25c2e`.
+- Implemented monotonic dominant version handling and tombstones for removed objects.
+- Verified with integration coverage for:
+  direct dominant ingestion service behavior,
+  dominant Kafka listener wiring,
+  report filtering through lookup-backed names,
+  and lookup DAO overwrite semantics.

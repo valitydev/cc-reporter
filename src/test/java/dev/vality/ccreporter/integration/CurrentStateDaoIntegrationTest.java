@@ -1,6 +1,7 @@
 package dev.vality.ccreporter.integration;
 
 import dev.vality.ccreporter.dao.PaymentCurrentDao;
+import dev.vality.ccreporter.dao.DisplayNameLookupDao;
 import dev.vality.ccreporter.dao.WithdrawalCurrentDao;
 import dev.vality.ccreporter.dao.WithdrawalSessionBindingDao;
 import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
@@ -29,6 +30,9 @@ class CurrentStateDaoIntegrationTest extends AbstractReportingIntegrationTest {
 
     @Autowired
     private WithdrawalSessionBindingDao withdrawalSessionBindingDao;
+
+    @Autowired
+    private DisplayNameLookupDao displayNameLookupDao;
 
     @Test
     void paymentUpsertIsMonotonicAndKeepsFirstFinalizedAt() {
@@ -97,5 +101,31 @@ class CurrentStateDaoIntegrationTest extends AbstractReportingIntegrationTest {
         assertThat(row.get("trx_id")).isEqualTo("trx-2");
         assertThat(((Timestamp) Objects.requireNonNull(row.get("finalized_at"))).toLocalDateTime())
                 .isEqualTo(LocalDateTime.ofInstant(finalizedAt, ZoneOffset.UTC));
+    }
+
+    @Test
+    void displayNameLookupUpsertOverwritesExistingDominantName() {
+        displayNameLookupDao.upsertShop("shop-1", "Shop One");
+        displayNameLookupDao.upsertShop("shop-1", "Shop Uno");
+        displayNameLookupDao.upsertProvider("provider-1", "Provider One");
+        displayNameLookupDao.upsertTerminal("terminal-1", "Terminal One");
+        displayNameLookupDao.upsertWallet("wallet-1", "Wallet One");
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT shop_name FROM ccr.shop_lookup WHERE shop_id = 'shop-1'",
+                String.class
+        )).isEqualTo("Shop Uno");
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT provider_name FROM ccr.provider_lookup WHERE provider_id = 'provider-1'",
+                String.class
+        )).isEqualTo("Provider One");
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT terminal_name FROM ccr.terminal_lookup WHERE terminal_id = 'terminal-1'",
+                String.class
+        )).isEqualTo("Terminal One");
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT wallet_name FROM ccr.wallet_lookup WHERE wallet_id = 'wallet-1'",
+                String.class
+        )).isEqualTo("Wallet One");
     }
 }

@@ -4,6 +4,7 @@ import dev.vality.ccreporter.GetReportRequest;
 import dev.vality.ccreporter.PaymentsSearchFilter;
 import dev.vality.ccreporter.ReportStatus;
 import dev.vality.ccreporter.WithdrawalsSearchFilter;
+import dev.vality.ccreporter.dao.DisplayNameLookupDao;
 import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
 import dev.vality.ccreporter.integration.fixture.CurrentStateTableFixtures;
 import dev.vality.ccreporter.integration.fixture.ReportRequestFixtures;
@@ -29,6 +30,9 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
 
     @Autowired
     private WithdrawalIngestionService withdrawalIngestionService;
+
+    @Autowired
+    private DisplayNameLookupDao displayNameLookupDao;
 
     @Test
     void paymentsQueryFiltersExcludeNonMatchingRows() throws Exception {
@@ -133,6 +137,94 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
         assertThat(report.getRowsCount()).isEqualTo(1L);
         assertThat(csv).contains("withdrawal-filter-1,succeeded,20.00,RUB,trx-w-1");
         assertThat(csv).doesNotContain("withdrawal-filter-2,succeeded,20.00,RUB,trx-w-2");
+    }
+
+    @Test
+    void paymentsNameFiltersUseLocalLookupWhenCurrentStateNamesAreMissing() throws Exception {
+        CurrentStateTableFixtures.insertPaymentRow(
+                jdbcTemplate,
+                "invoice-lookup-1",
+                "payment-lookup-1",
+                Instant.parse("2026-01-01T10:00:00Z"),
+                Instant.parse("2026-01-01T11:00:00Z")
+        );
+        jdbcTemplate.update(
+                """
+                        UPDATE ccr.payment_txn_current
+                        SET shop_name = NULL, provider_name = NULL, terminal_name = NULL,
+                            shop_search = NULL, provider_search = NULL, terminal_search = NULL
+                        WHERE invoice_id = ? AND payment_id = ?
+                        """,
+                "invoice-lookup-1",
+                "payment-lookup-1"
+        );
+        displayNameLookupDao.upsertShop("shop-1", "Lookup Shop");
+        displayNameLookupDao.upsertProvider("provider-1", "Lookup Provider");
+        displayNameLookupDao.upsertTerminal("terminal-1", "Lookup Terminal");
+
+        final var request = ReportRequestFixtures.payments("payments-lookup-1");
+        var filter = new PaymentsSearchFilter();
+        filter.setShopTerm("lookup shop");
+        filter.setProviderTerm("lookup provider");
+        filter.setTerminalTerm("lookup terminal");
+        request.getQuery().getPayments().setFilter(filter);
+        var reportId = reportingHandler.createReport(request);
+
+        var processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
+
+        var report = reportingHandler.getReport(new GetReportRequest(reportId));
+        var csv = new String(
+                stubFileStorageClient.getStoredContent(report.getFile().getFileId()),
+                StandardCharsets.UTF_8
+        );
+
+        assertThat(processed).isTrue();
+        assertThat(report.getStatus()).isEqualTo(ReportStatus.created);
+        assertThat(report.getRowsCount()).isEqualTo(1L);
+        assertThat(csv).contains("invoice-lookup-1,payment-lookup-1");
+    }
+
+    @Test
+    void withdrawalsNameFiltersUseLocalLookupWhenCurrentStateNamesAreMissing() throws Exception {
+        CurrentStateTableFixtures.insertWithdrawalRow(
+                jdbcTemplate,
+                "withdrawal-lookup-1",
+                Instant.parse("2026-01-01T10:00:00Z"),
+                Instant.parse("2026-01-01T11:00:00Z")
+        );
+        jdbcTemplate.update(
+                """
+                        UPDATE ccr.withdrawal_txn_current
+                        SET wallet_name = NULL, provider_name = NULL, terminal_name = NULL,
+                            wallet_search = NULL, provider_search = NULL, terminal_search = NULL
+                        WHERE withdrawal_id = ?
+                        """,
+                "withdrawal-lookup-1"
+        );
+        displayNameLookupDao.upsertWallet("wallet-1", "Lookup Wallet");
+        displayNameLookupDao.upsertProvider("provider-1", "Lookup Provider");
+        displayNameLookupDao.upsertTerminal("terminal-1", "Lookup Terminal");
+
+        final var request = ReportRequestFixtures.withdrawals("withdrawals-lookup-1");
+        var filter = new WithdrawalsSearchFilter();
+        filter.setWalletTerm("lookup wallet");
+        filter.setProviderTerm("lookup provider");
+        filter.setTerminalTerm("lookup terminal");
+        request.getQuery().getWithdrawals().setFilter(filter);
+        var reportId = reportingHandler.createReport(request);
+
+        var processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
+
+        var report = reportingHandler.getReport(new GetReportRequest(reportId));
+        var csv = new String(
+                stubFileStorageClient.getStoredContent(report.getFile().getFileId()),
+                StandardCharsets.UTF_8
+        );
+
+        assertThat(processed).isTrue();
+        assertThat(report.getStatus()).isEqualTo(ReportStatus.created);
+        assertThat(report.getRowsCount()).isEqualTo(1L);
+        assertThat(csv).contains("withdrawal-lookup-1,succeeded,20.00,RUB,trx-w-1");
     }
 
     @Test

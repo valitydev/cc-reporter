@@ -1,6 +1,7 @@
 package dev.vality.ccreporter.integration.support;
 
 import dev.vality.kafka.common.serialization.ThriftSerializer;
+import dev.vality.damsel.domain_config_v2.HistoricalCommit;
 import dev.vality.machinegun.eventsink.MachineEvent;
 import dev.vality.machinegun.eventsink.SinkEvent;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -28,6 +29,8 @@ import java.util.function.Predicate;
 public final class KafkaIntegrationTestSupport {
 
     private static final ThriftSerializer<SinkEvent> THRIFT_SERIALIZER = new ThriftSerializer<>();
+    private static final ThriftSerializer<HistoricalCommit> HISTORICAL_COMMIT_THRIFT_SERIALIZER =
+            new ThriftSerializer<>();
 
     private KafkaIntegrationTestSupport() {
     }
@@ -57,6 +60,22 @@ public final class KafkaIntegrationTestSupport {
                 sinkEvent.setEvent(machineEvent);
                 var payload = THRIFT_SERIALIZER.serialize("", sinkEvent);
                 producer.send(new ProducerRecord<>(topic, machineEvent.getSourceId(), payload)).get();
+            }
+            producer.flush();
+        }
+    }
+
+    public static void sendDominantBatch(
+            EmbeddedKafkaBroker embeddedKafkaBroker,
+            String topic,
+            List<HistoricalCommit> commits
+    ) throws Exception {
+        try (KafkaProducer<String, byte[]> producer = new KafkaProducer<>(
+                producerProperties(embeddedKafkaBroker)
+        )) {
+            for (HistoricalCommit commit : commits) {
+                var payload = HISTORICAL_COMMIT_THRIFT_SERIALIZER.serialize("", commit);
+                producer.send(new ProducerRecord<>(topic, String.valueOf(commit.getVersion()), payload)).get();
             }
             producer.flush();
         }
