@@ -1,0 +1,759 @@
+[
+  {
+    "id": 1,
+    "created_at": "2025-11-14T12:25:53.051366Z",
+    "source": {
+      "invoice_id": "test-invoice-6"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_created": {
+            "invoice": {
+              "id": "2Bd6RPmJHVo",
+              "owner_id": "test-party-2",
+              "party_revision": 112,
+              "shop_id": "test-shop-3",
+              "created_at": "2025-11-14T12:25:53.036636Z",
+              "status": {
+                "unpaid": []
+              },
+              "details": {
+                "product": "126460576"
+              },
+              "due": "2025-11-15T12:25:52Z",
+              "cost": {
+                "amount": 200000,
+                "currency": {
+                  "symbolic_code": "KZT"
+                }
+              },
+              "context": {
+                "type": "application/json",
+                "data": "{\"X-traceparent\":\"00-00000000000000000000000000000000-0000000000000003-01\",\"transaction_id\":\"test-transaction-embedded\",\"user_id\":\"test-user-embedded\"}"
+              },
+              "external_id": "test-external-5"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 2,
+    "created_at": "2025-11-14T12:25:53.391900Z",
+    "source": {
+      "invoice_id": "test-invoice-6"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_started": {
+                "payment": {
+                  "id": "1",
+                  "created_at": "2025-11-14T12:25:53.385522Z",
+                  "status": {
+                    "pending": []
+                  },
+                  "context": {
+                    "type": "application/json",
+                    "data": "{\"transaction_id\":\"test-transaction-embedded\",\"user_id\":\"test-user-embedded\"}"
+                  },
+                  "cost": {
+                    "amount": 200000,
+                    "currency": {
+                      "symbolic_code": "KZT"
+                    }
+                  },
+                  "domain_revision": 72892,
+                  "flow": {
+                    "instant": []
+                  },
+                  "payer": {
+                    "payment_resource": {
+                      "resource": {
+                        "payment_tool": {
+                          "bank_card": {
+                            "token": "test-card-token-6",
+                            "payment_system": {
+                              "id": "VISA"
+                            },
+                            "bin": "411111",
+                            "last_digits": "1111",
+                            "issuer_country": "KAZ",
+                            "bank_name": "TEST BANK",
+                            "metadata": {
+                              "com.rbkmoney.binbase": {
+                                "obj": [
+                                  {
+                                    "key": {
+                                      "str": "version"
+                                    },
+                                    "value": {
+                                      "i": 1
+                                    }
+                                  }
+                                ]
+                              }
+                            },
+                            "is_cvv_empty": false,
+                            "exp_date": {
+                              "month": 2,
+                              "year": 2026
+                            },
+                            "category": "REWARDS"
+                          }
+                        },
+                        "payment_session_id": "test-payment-session-6",
+                        "client_info": {
+                          "ip_address": "198.51.100.20",
+                          "fingerprint": "test-fingerprint-6",
+                          "peer_ip_address": "198.51.100.21",
+                          "user_ip_address": "198.51.100.22"
+                        }
+                      },
+                      "contact_info": {
+                        "phone_number": "+79998799321",
+                        "email": "user6@example.com",
+                        "country": "KAZ",
+                        "state": "Kazakhstan"
+                      }
+                    }
+                  },
+                  "payer_session_info": {
+                    "redirect_url": "https://example.com/test-redirect-6"
+                  },
+                  "party_revision": 112,
+                  "owner_id": "test-party-2",
+                  "shop_id": "test-shop-3",
+                  "make_recurrent": true,
+                  "external_id": "test-external-6",
+                  "processing_deadline": "2025-11-14T12:27:53.363Z",
+                  "registration_origin": {
+                    "merchant": []
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T12:25:53.385522Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 3,
+    "created_at": "2025-11-14T12:25:53.405481Z",
+    "source": {
+      "invoice_id": "test-invoice-6"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_shop_limit_initiated": []
+            },
+            "occurred_at": "2025-11-14T12:25:53.404713Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 4,
+    "created_at": "2025-11-14T12:25:53.417827Z",
+    "source": {
+      "invoice_id": "test-invoice-6"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_shop_limit_applied": []
+            },
+            "occurred_at": "2025-11-14T12:25:53.417122Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 5,
+    "created_at": "2025-11-14T12:25:53.493080Z",
+    "source": {
+      "invoice_id": "test-invoice-6"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_risk_score_changed": {
+                "risk_score": "high"
+              }
+            },
+            "occurred_at": "2025-11-14T12:25:53.429646Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 6,
+    "created_at": "2025-11-14T12:25:53.600184Z",
+    "source": {
+      "invoice_id": "test-invoice-6"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_route_changed": {
+                "route": {
+                  "provider": {
+                    "id": 170
+                  },
+                  "terminal": {
+                    "id": 2529
+                  }
+                },
+                "candidates": [
+                  {
+                    "provider": {
+                      "id": 170
+                    },
+                    "terminal": {
+                      "id": 2529
+                    }
+                  },
+                  {
+                    "provider": {
+                      "id": 254
+                    },
+                    "terminal": {
+                      "id": 2171
+                    }
+                  },
+                  {
+                    "provider": {
+                      "id": 275
+                    },
+                    "terminal": {
+                      "id": 2304
+                    }
+                  }
+                ],
+                "scores": [
+                  {
+                    "key": {
+                      "provider": {
+                        "id": 275
+                      },
+                      "terminal": {
+                        "id": 2304
+                      }
+                    },
+                    "value": {
+                      "availability_condition": 1,
+                      "conversion_condition": 1,
+                      "terminal_priority_rating": 3000,
+                      "route_pin": 0,
+                      "random_condition": 1,
+                      "availability": 1.00000000000000000000e+00,
+                      "conversion": 1.00000000000000000000e+00,
+                      "blacklist_condition": 0
+                    }
+                  },
+                  {
+                    "key": {
+                      "provider": {
+                        "id": 254
+                      },
+                      "terminal": {
+                        "id": 2171
+                      }
+                    },
+                    "value": {
+                      "availability_condition": 1,
+                      "conversion_condition": 1,
+                      "terminal_priority_rating": 2000,
+                      "route_pin": 0,
+                      "random_condition": 1,
+                      "availability": 1.00000000000000000000e+00,
+                      "conversion": 1.00000000000000000000e+00,
+                      "blacklist_condition": 0
+                    }
+                  },
+                  {
+                    "key": {
+                      "provider": {
+                        "id": 170
+                      },
+                      "terminal": {
+                        "id": 2529
+                      }
+                    },
+                    "value": {
+                      "availability_condition": 1,
+                      "conversion_condition": 1,
+                      "terminal_priority_rating": 4000,
+                      "route_pin": 0,
+                      "random_condition": 1,
+                      "availability": 1.00000000000000000000e+00,
+                      "conversion": 9.95015913048699962573e-01,
+                      "blacklist_condition": 0
+                    }
+                  }
+                ],
+                "limits": [
+                  {
+                    "key": {
+                      "provider": {
+                        "id": 275
+                      },
+                      "terminal": {
+                        "id": 2304
+                      }
+                    },
+                    "value": []
+                  },
+                  {
+                    "key": {
+                      "provider": {
+                        "id": 254
+                      },
+                      "terminal": {
+                        "id": 2171
+                      }
+                    },
+                    "value": []
+                  },
+                  {
+                    "key": {
+                      "provider": {
+                        "id": 170
+                      },
+                      "terminal": {
+                        "id": 2529
+                      }
+                    },
+                    "value": []
+                  }
+                ]
+              }
+            },
+            "occurred_at": "2025-11-14T12:25:53.506444Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 7,
+    "created_at": "2025-11-14T12:25:53.660826Z",
+    "source": {
+      "invoice_id": "test-invoice-6"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_cash_flow_changed": {
+                "cash_flow": [
+                  {
+                    "source": {
+                      "account_type": {
+                        "merchant": "settlement"
+                      },
+                      "account_id": 82657505,
+                      "transaction_account": {
+                        "merchant": {
+                          "type": "settlement",
+                          "owner": {
+                            "party_id": "test-uuid-4",
+                            "shop_id": "test-shop-3"
+                          }
+                        }
+                      }
+                    },
+                    "destination": {
+                      "account_type": {
+                        "system": "settlement"
+                      },
+                      "account_id": 315,
+                      "transaction_account": {
+                        "system": {
+                          "type": "settlement"
+                        }
+                      }
+                    },
+                    "volume": {
+                      "amount": 9000,
+                      "currency": {
+                        "symbolic_code": "KZT"
+                      }
+                    }
+                  },
+                  {
+                    "source": {
+                      "account_type": {
+                        "provider": "settlement"
+                      },
+                      "account_id": 329,
+                      "transaction_account": {
+                        "provider": {
+                          "type": "settlement",
+                          "owner": {
+                            "provider_ref": {
+                              "id": 170
+                            },
+                            "terminal_ref": {
+                              "id": 2529
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "destination": {
+                      "account_type": {
+                        "merchant": "settlement"
+                      },
+                      "account_id": 82657505,
+                      "transaction_account": {
+                        "merchant": {
+                          "type": "settlement",
+                          "owner": {
+                            "party_id": "test-uuid-4",
+                            "shop_id": "test-shop-3"
+                          }
+                        }
+                      }
+                    },
+                    "volume": {
+                      "amount": 200000,
+                      "currency": {
+                        "symbolic_code": "KZT"
+                      }
+                    }
+                  },
+                  {
+                    "source": {
+                      "account_type": {
+                        "system": "settlement"
+                      },
+                      "account_id": 315,
+                      "transaction_account": {
+                        "system": {
+                          "type": "settlement"
+                        }
+                      }
+                    },
+                    "destination": {
+                      "account_type": {
+                        "provider": "settlement"
+                      },
+                      "account_id": 329,
+                      "transaction_account": {
+                        "provider": {
+                          "type": "settlement",
+                          "owner": {
+                            "provider_ref": {
+                              "id": 170
+                            },
+                            "terminal_ref": {
+                              "id": 2529
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "volume": {
+                      "amount": 8400,
+                      "currency": {
+                        "symbolic_code": "KZT"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "occurred_at": "2025-11-14T12:25:53.613294Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 8,
+    "created_at": "2025-11-14T12:25:53.675597Z",
+    "source": {
+      "invoice_id": "test-invoice-6"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_started": []
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T12:25:53.674770Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 9,
+    "created_at": "2025-11-14T12:25:53.846349Z",
+    "source": {
+      "invoice_id": "test-invoice-6"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_transaction_bound": {
+                    "trx": {
+                      "id": "GE00002302586822",
+                      "extra": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T12:25:53.687454Z"
+          }
+        },
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_proxy_state_changed": {
+                    "proxy_state": "{\"trxId\":\"test-provider-trx-alt-1\",\"step\":\"CHECK_STATUS\",\"options\":{},\"start_date_time_polling\":1763123153.837146306,\"max_date_time_polling\":1763123753.837145822}"
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T12:25:53.687454Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 10,
+    "created_at": "2025-11-14T12:26:00.019124Z",
+    "source": {
+      "invoice_id": "test-invoice-6"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_proxy_state_changed": {
+                    "proxy_state": "{\"md\":\"test-uuid-9\",\"paReq\":\"eyJpZnJhbWVzIjpbeyJ1cmwiOiJodHRwczovLzNkczIucmFkYXJwYXltZW50Lm9ubGluZS8zZHNzZXJ2ZXIvYXBpL3YxL2NsaWVudC9nYXRoZXI/dGhyZWVEU1NlcnZlclRyYW5zSUQ9ZDkyY2ZiYTQtZDQxNi00NDI0LTgxOTEtZDNiZjU0ZWQ1YzRjIiwibWV0aG9kIjoiUE9TVCIsImZvcm1fZGF0YSI6eyJ0aHJlZURTTWV0aG9kRGF0YSI6IiJ9LCJkZWxheSI6IjEwMDAifV0sImNoYWxsZW5nZV9kYXRhIjp7ImNyZXEiOiIiLCJhY3NfdXJsIjoiIiwic2tpcF90ZHMiOmZhbHNlLCJpc18zZHMxIjp0cnVlfX0=\",\"acsUrl\":\"https://webform.gateplantransfer.com/payments/test-uuid-10/threedsecure/method\",\"threeDsMethodData\":\"POST\",\"trxId\":\"test-provider-trx-alt-1\",\"step\":\"FINISH_THREE_DS\",\"options\":{},\"start_date_time_polling\":1763123153.837146306,\"max_date_time_polling\":1763123753.837145822}"
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T12:25:59.926523Z"
+          }
+        },
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "post_request": {
+                          "uri": "https://example.com/test-uri-36",
+                          "form": {
+                            "TermUrl": "https://example.com/test-term-url",
+                            "PaReq": "eyJpZnJhbWVzIjpbeyJ1cmwiOiJodHRwczovLzNkczIucmFkYXJwYXltZW50Lm9ubGluZS8zZHNzZXJ2ZXIvYXBpL3YxL2NsaWVudC9nYXRoZXI/dGhyZWVEU1NlcnZlclRyYW5zSUQ9ZDkyY2ZiYTQtZDQxNi00NDI0LTgxOTEtZDNiZjU0ZWQ1YzRjIiwibWV0aG9kIjoiUE9TVCIsImZvcm1fZGF0YSI6eyJ0aHJlZURTTWV0aG9kRGF0YSI6IiJ9LCJkZWxheSI6IjEwMDAifV0sImNoYWxsZW5nZV9kYXRhIjp7ImNyZXEiOiIiLCJhY3NfdXJsIjoiIiwic2tpcF90ZHMiOmZhbHNlLCJpc18zZHMxIjp0cnVlfX0=",
+                            "MD": "test-uuid-9"
+                          }
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T12:25:59.926523Z"
+          }
+        },
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_suspended": {
+                    "tag": "test-uuid-9",
+                    "timeout_behaviour": {
+                      "operation_failure": {
+                        "failure": {
+                          "code": "authorization_failed",
+                          "reason": "'3DS_NOT_FINISHED' - 'null'",
+                          "sub": {
+                            "code": "unknown"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T12:25:59.926523Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 11,
+    "created_at": "2025-11-14T12:26:20.939437Z",
+    "source": {
+      "invoice_id": "test-invoice-6"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_finished": {
+                    "result": {
+                      "failed": {
+                        "failure": {
+                          "failure": {
+                            "code": "authorization_failed",
+                            "reason": "'3DS_NOT_FINISHED' - 'null'",
+                            "sub": {
+                              "code": "unknown"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T12:26:20.931558Z"
+          }
+        },
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_rollback_started": {
+                "reason": {
+                  "failure": {
+                    "code": "authorization_failed",
+                    "reason": "'3DS_NOT_FINISHED' - 'null'",
+                    "sub": {
+                      "code": "unknown"
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T12:26:20.931558Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 12,
+    "created_at": "2025-11-14T12:26:20.991918Z",
+    "source": {
+      "invoice_id": "test-invoice-6"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_status_changed": {
+                "status": {
+                  "failed": {
+                    "failure": {
+                      "failure": {
+                        "code": "authorization_failed",
+                        "reason": "'3DS_NOT_FINISHED' - 'null'",
+                        "sub": {
+                          "code": "unknown"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T12:26:20.960200Z"
+          }
+        }
+      ]
+    }
+  }
+]

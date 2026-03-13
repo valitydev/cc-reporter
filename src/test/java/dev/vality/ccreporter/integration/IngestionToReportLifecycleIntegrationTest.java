@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.nio.charset.StandardCharsets;
+import java.math.BigDecimal;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -70,7 +71,9 @@ class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegra
         var row = jdbcTemplate.queryForMap(
                 """
                         SELECT status, provider_id, terminal_id, amount, currency, trx_id, external_id,
-                               payment_tool_type, finalized_at
+                               payment_tool_type, finalized_at, original_amount, original_currency,
+                               converted_amount, exchange_rate_internal, provider_amount, provider_currency,
+                               error_summary
                         FROM ccr.payment_txn_current
                         WHERE invoice_id = ? AND payment_id = ?
                         """,
@@ -94,6 +97,13 @@ class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegra
         assertThat(row.get("trx_id")).isEqualTo("test-provider-trx-1");
         assertThat(row.get("external_id")).isEqualTo("test-external-1");
         assertThat(row.get("payment_tool_type")).isEqualTo("bank_card");
+        assertThat(row.get("original_amount")).isEqualTo(425000L);
+        assertThat(row.get("original_currency")).isEqualTo("KZT");
+        assertThat(row.get("converted_amount")).isEqualTo(748L);
+        assertThat((BigDecimal) row.get("exchange_rate_internal")).isEqualByComparingTo("568.23");
+        assertThat(row.get("provider_amount")).isEqualTo(425000L);
+        assertThat(row.get("provider_currency")).isEqualTo("KZT");
+        assertThat(row.get("error_summary")).isNull();
         assertThat(row.get("finalized_at")).isNotNull();
         assertThat(processed).isTrue();
         assertThat(report.getStatus()).isEqualTo(ReportStatus.created);

@@ -118,6 +118,7 @@ CREATE TABLE ccr.payment_txn_current (
   rrn VARCHAR,
   approval_code VARCHAR,
   payment_tool_type VARCHAR,
+  error_summary VARCHAR,
 
   original_amount BIGINT,
   original_currency VARCHAR,

@@ -53,6 +53,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -243,7 +244,7 @@ public final class RealPaymentIngestionEventFixtures {
         var trxNode = sessionChangeNode.path("payload").path("session_transaction_bound").path("trx");
         var transactionInfo = new TransactionInfo();
         transactionInfo.setId(trxNode.path("id").asText());
-        transactionInfo.setExtra(Map.of());
+        transactionInfo.setExtra(readStringMap(trxNode.path("extra")));
 
         var additionalInfo = new AdditionalTransactionInfo();
         if (trxNode.path("additional_info").has("rrn")) {
@@ -318,14 +319,34 @@ public final class RealPaymentIngestionEventFixtures {
         if (!fields.hasNext()) {
             return status;
         }
-        switch (fields.next()) {
+        var fieldName = fields.next();
+        switch (fieldName) {
             case "pending" -> status.setPending(new InvoicePaymentPending());
             case "processed" -> status.setProcessed(new InvoicePaymentProcessed());
-            case "captured" -> status.setCaptured(new InvoicePaymentCaptured());
+            case "captured" -> {
+                var captured = new InvoicePaymentCaptured();
+                var capturedNode = statusNode.path(fieldName);
+                if (capturedNode.has("reason")) {
+                    captured.setReason(capturedNode.path("reason").asText());
+                }
+                if (capturedNode.has("cost")) {
+                    captured.setCost(buildCash(capturedNode.path("cost")));
+                }
+                status.setCaptured(captured);
+            }
             default -> {
             }
         }
         return status;
+    }
+
+    private static Map<String, String> readStringMap(JsonNode objectNode) {
+        if (objectNode == null || !objectNode.isObject()) {
+            return Map.of();
+        }
+        var values = new LinkedHashMap<String, String>();
+        objectNode.fields().forEachRemaining(entry -> values.put(entry.getKey(), entry.getValue().asText()));
+        return values;
     }
 
     private static void applyTargetStatus(TargetInvoicePaymentStatus target, JsonNode targetNode) {

@@ -34,7 +34,9 @@ class IngestionSerializedEventsIntegrationTest extends AbstractReportingIntegrat
 
         var row = jdbcTemplate.queryForMap(
                 """
-                        SELECT status, provider_id, terminal_id, amount, fee, trx_id, rrn, approval_code, finalized_at
+                        SELECT status, provider_id, terminal_id, amount, fee, trx_id, rrn, approval_code, finalized_at,
+                               original_amount, original_currency, converted_amount, exchange_rate_internal,
+                               provider_amount, provider_currency
                         FROM ccr.payment_txn_current
                         WHERE invoice_id = ? AND payment_id = ?
                         """,
@@ -50,8 +52,51 @@ class IngestionSerializedEventsIntegrationTest extends AbstractReportingIntegrat
         assertThat(row.get("trx_id")).isEqualTo("trx-payment-1");
         assertThat(row.get("rrn")).isEqualTo("rrn-payment-1");
         assertThat(row.get("approval_code")).isEqualTo("approval-payment-1");
+        assertThat(row.get("original_amount")).isEqualTo(1000L);
+        assertThat(row.get("original_currency")).isEqualTo("RUB");
+        assertThat(row.get("converted_amount")).isEqualTo(900L);
+        assertThat(row.get("exchange_rate_internal")).isEqualTo(new java.math.BigDecimal("0.9000000000"));
+        assertThat(row.get("provider_amount")).isEqualTo(900L);
+        assertThat(row.get("provider_currency")).isEqualTo("EUR");
         assertThat(((Timestamp) Objects.requireNonNull(row.get("finalized_at"))).toLocalDateTime())
                 .isEqualTo(LocalDateTime.parse("2026-01-01T00:04:00"));
+    }
+
+    @Test
+    void paymentProxyStateFallbackPopulatesTrxIdWhenTransactionBoundIsAbsent() {
+        paymentIngestionService.handleEvents(SerializedIngestionEventFixtures.paymentProxyStateFallbackEvents());
+
+        var row = jdbcTemplate.queryForMap(
+                """
+                        SELECT status, trx_id
+                        FROM ccr.payment_txn_current
+                        WHERE invoice_id = ? AND payment_id = ?
+                        """,
+                SerializedIngestionEventFixtures.PAYMENT_INVOICE_ID,
+                SerializedIngestionEventFixtures.PAYMENT_ID
+        );
+
+        assertThat(row.get("status")).isEqualTo("captured");
+        assertThat(row.get("trx_id")).isEqualTo("trx-from-proxy-state-1");
+    }
+
+    @Test
+    void failedPaymentStatusStoresPackedErrorSummary() {
+        paymentIngestionService.handleEvents(SerializedIngestionEventFixtures.failedPaymentEvents());
+
+        var row = jdbcTemplate.queryForMap(
+                """
+                        SELECT status, error_summary
+                        FROM ccr.payment_txn_current
+                        WHERE invoice_id = ? AND payment_id = ?
+                        """,
+                SerializedIngestionEventFixtures.PAYMENT_INVOICE_ID,
+                SerializedIngestionEventFixtures.PAYMENT_ID
+        );
+
+        assertThat(row.get("status")).isEqualTo("failed");
+        assertThat(row.get("error_summary"))
+                .isEqualTo("authorization_failed:payment_tool_rejected | 'FAILED: REFUSED' - 'Transaction failed'");
     }
 
     @Test

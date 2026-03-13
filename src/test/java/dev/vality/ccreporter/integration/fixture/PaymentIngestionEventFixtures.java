@@ -9,6 +9,7 @@ import dev.vality.machinegun.eventsink.MachineEvent;
 import dev.vality.machinegun.msgpack.Value;
 import org.apache.thrift.TBase;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +32,21 @@ public final class PaymentIngestionEventFixtures {
                 paymentMachineEvent(2L, cashFlowChangedPayload()),
                 paymentMachineEvent(3L, transactionBoundPayload()),
                 paymentMachineEvent(4L, statusChangedPayload())
+        );
+    }
+
+    public static List<MachineEvent> paymentProxyStateFallbackEvents() {
+        return List.of(
+                paymentMachineEvent(1L, startedPayload()),
+                paymentMachineEvent(2L, proxyStatePayload()),
+                paymentMachineEvent(3L, statusChangedPayload())
+        );
+    }
+
+    public static List<MachineEvent> failedPaymentEvents() {
+        return List.of(
+                paymentMachineEvent(1L, startedPayload()),
+                paymentMachineEvent(2L, failedStatusChangedPayload())
         );
     }
 
@@ -167,7 +183,10 @@ public final class PaymentIngestionEventFixtures {
 
         var transactionInfo = new TransactionInfo();
         transactionInfo.setId("trx-payment-1");
-        transactionInfo.setExtra(Map.of());
+        transactionInfo.setExtra(Map.of(
+                "rub_to_eur_converted_amount", "900",
+                "rub_to_eur_rate", "0.9000000000"
+        ));
         transactionInfo.setAdditionalInfo(additionalInfo);
 
         var transactionBound = new SessionTransactionBound();
@@ -199,14 +218,91 @@ public final class PaymentIngestionEventFixtures {
     }
 
     private static EventPayload statusChangedPayload() {
+        var currency = new CurrencyRef();
+        currency.setSymbolicCode("EUR");
+
+        var capturedCost = new Cash();
+        capturedCost.setAmount(900L);
+        capturedCost.setCurrency(currency);
+
+        var captured = new InvoicePaymentCaptured();
+        captured.setCost(capturedCost);
+
         var status = new InvoicePaymentStatus();
-        status.setCaptured(new InvoicePaymentCaptured());
+        status.setCaptured(captured);
 
         var statusChanged = new InvoicePaymentStatusChanged();
         statusChanged.setStatus(status);
 
         var changePayload = new InvoicePaymentChangePayload();
         changePayload.setInvoicePaymentStatusChanged(statusChanged);
+
+        var paymentChange = new InvoicePaymentChange();
+        paymentChange.setId(PAYMENT_ID);
+        paymentChange.setPayload(changePayload);
+
+        var invoiceChange = new InvoiceChange();
+        invoiceChange.setInvoicePaymentChange(paymentChange);
+
+        var eventPayload = new EventPayload();
+        eventPayload.setInvoiceChanges(List.of(invoiceChange));
+        return eventPayload;
+    }
+
+    private static EventPayload failedStatusChangedPayload() {
+        var subFailure = new SubFailure();
+        subFailure.setCode("payment_tool_rejected");
+
+        var failure = new Failure();
+        failure.setCode("authorization_failed");
+        failure.setReason("'FAILED: REFUSED' - 'Transaction failed'");
+        failure.setSub(subFailure);
+
+        var operationFailure = new OperationFailure();
+        operationFailure.setFailure(failure);
+
+        var failed = new InvoicePaymentFailed();
+        failed.setFailure(operationFailure);
+
+        var status = new InvoicePaymentStatus();
+        status.setFailed(failed);
+
+        var statusChanged = new InvoicePaymentStatusChanged();
+        statusChanged.setStatus(status);
+
+        var changePayload = new InvoicePaymentChangePayload();
+        changePayload.setInvoicePaymentStatusChanged(statusChanged);
+
+        var paymentChange = new InvoicePaymentChange();
+        paymentChange.setId(PAYMENT_ID);
+        paymentChange.setPayload(changePayload);
+
+        var invoiceChange = new InvoiceChange();
+        invoiceChange.setInvoicePaymentChange(paymentChange);
+
+        var eventPayload = new EventPayload();
+        eventPayload.setInvoiceChanges(List.of(invoiceChange));
+        return eventPayload;
+    }
+
+    private static EventPayload proxyStatePayload() {
+        var proxyStateChanged = new SessionProxyStateChanged();
+        proxyStateChanged.setProxyState("""
+                {"nextStep":"CHECK_STATUS","providerTrxId":"trx-from-proxy-state-1"}
+                """.getBytes(StandardCharsets.UTF_8));
+
+        var sessionChangePayload = new SessionChangePayload();
+        sessionChangePayload.setSessionProxyStateChanged(proxyStateChanged);
+
+        var targetStatus = new TargetInvoicePaymentStatus();
+        targetStatus.setProcessed(new InvoicePaymentProcessed());
+
+        var sessionChange = new InvoicePaymentSessionChange();
+        sessionChange.setTarget(targetStatus);
+        sessionChange.setPayload(sessionChangePayload);
+
+        var changePayload = new InvoicePaymentChangePayload();
+        changePayload.setInvoicePaymentSessionChange(sessionChange);
 
         var paymentChange = new InvoicePaymentChange();
         paymentChange.setId(PAYMENT_ID);

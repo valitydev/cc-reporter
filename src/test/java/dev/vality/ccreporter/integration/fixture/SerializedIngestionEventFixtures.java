@@ -24,6 +24,14 @@ public final class SerializedIngestionEventFixtures {
         return PaymentIngestionEventFixtures.paymentEvents();
     }
 
+    public static List<MachineEvent> paymentProxyStateFallbackEvents() {
+        return PaymentIngestionEventFixtures.paymentProxyStateFallbackEvents();
+    }
+
+    public static List<MachineEvent> failedPaymentEvents() {
+        return PaymentIngestionEventFixtures.failedPaymentEvents();
+    }
+
     public static List<MachineEvent> realPaymentEvents() {
         return RealPaymentIngestionEventFixtures.paymentEvents();
     }
