@@ -1,37 +1,44 @@
 package dev.vality.ccreporter.dao;
 
-import dev.vality.ccreporter.*;
+import dev.vality.ccreporter.FileType;
+import dev.vality.ccreporter.GetReportsFilter;
+import dev.vality.ccreporter.ReportQuery;
+import dev.vality.ccreporter.ReportStatus;
+import dev.vality.ccreporter.ReportType;
 import dev.vality.ccreporter.report.StoredReport;
 import dev.vality.ccreporter.storage.StoredFileData;
 import dev.vality.ccreporter.util.ContinuationTokenCodec.PageCursor;
 import dev.vality.ccreporter.util.ThriftQueryCodec;
 import dev.vality.ccreporter.util.TimestampUtils;
-import org.postgresql.util.PGobject;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.jooq.Condition;
+import org.jooq.DSLContext;
+import org.jooq.JSONB;
+import org.jooq.Record;
+import org.jooq.TableField;
+import org.jooq.SelectJoinStep;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static dev.vality.ccreporter.domain.Tables.REPORT_FILE;
+import static dev.vality.ccreporter.domain.Tables.REPORT_JOB;
+
 @Repository
 public class ReportDao {
 
-    private static final RowMapper<StoredReport> REPORT_ROW_MAPPER = ReportDao::mapReport;
-    private static final RowMapper<StoredFileData> FILE_ROW_MAPPER = ReportDao::mapFile;
-
-    private final NamedParameterJdbcTemplate jdbcTemplate;
+    private final DSLContext dslContext;
     private final ThriftQueryCodec thriftQueryCodec;
 
-    public ReportDao(NamedParameterJdbcTemplate jdbcTemplate, ThriftQueryCodec thriftQueryCodec) {
-        this.jdbcTemplate = jdbcTemplate;
+    public ReportDao(DSLContext dslContext, ThriftQueryCodec thriftQueryCodec) {
+        this.dslContext = dslContext;
         this.thriftQueryCodec = thriftQueryCodec;
     }
 
@@ -39,22 +46,11 @@ public class ReportDao {
         if (!StringUtils.hasText(idempotencyKey)) {
             return Optional.empty();
         }
-        try {
-            var id = jdbcTemplate.queryForObject(
-                    """
-                            SELECT id
-                            FROM ccr.report_job
-                            WHERE created_by = :createdBy AND idempotency_key = :idempotencyKey
-                            """,
-                    new MapSqlParameterSource()
-                            .addValue("createdBy", createdBy)
-                            .addValue("idempotencyKey", idempotencyKey),
-                    Long.class
-            );
-            return Optional.ofNullable(id);
-        } catch (EmptyResultDataAccessException ex) {
-            return Optional.empty();
-        }
+        return dslContext.select(REPORT_JOB.ID)
+                .from(REPORT_JOB)
+                .where(REPORT_JOB.CREATED_BY.eq(createdBy))
+                .and(REPORT_JOB.IDEMPOTENCY_KEY.eq(idempotencyKey))
+                .fetchOptional(REPORT_JOB.ID);
     }
 
     public long createReport(
@@ -69,85 +65,35 @@ public class ReportDao {
         var queryJson = thriftQueryCodec.serialize(query);
         var queryHash = thriftQueryCodec.hash(queryJson);
 
-        return Objects.requireNonNull(
-                jdbcTemplate.queryForObject(
-                """
-                        INSERT INTO ccr.report_job (
-                            report_type,
-                            file_type,
-                            query_json,
-                            query_hash,
-                            requested_time_from,
-                            requested_time_to,
-                            timezone,
-                            created_by,
-                            idempotency_key
-                        )
-                        VALUES (
-                            CAST(:reportType AS ccr.report_type),
-                            CAST(:fileType AS ccr.file_type),
-                            CAST(:queryJson AS jsonb),
-                            :queryHash,
-                            :requestedTimeFrom,
-                            :requestedTimeTo,
-                            :timezone,
-                            :createdBy,
-                            :idempotencyKey
-                        )
-                        RETURNING id
-                        """,
-                        new MapSqlParameterSource()
-                        .addValue("reportType", reportType.name())
-                        .addValue("fileType", fileType.name())
-                        .addValue("queryJson", queryJson)
-                        .addValue("queryHash", queryHash)
-                        .addValue("requestedTimeFrom", TimestampUtils.toLocalDateTime(timeRange.from()))
-                        .addValue("requestedTimeTo", TimestampUtils.toLocalDateTime(timeRange.to()))
-                        .addValue("timezone", timezone)
-                        .addValue("createdBy", createdBy)
-                        .addValue("idempotencyKey", StringUtils.hasText(idempotencyKey) ? idempotencyKey : null),
-                        Long.class
-                ),
-                "Report creation must return an id"
-        );
+        try {
+            return Objects.requireNonNull(
+                    dslContext.insertInto(REPORT_JOB)
+                            .set(REPORT_JOB.REPORT_TYPE, toJooqReportType(reportType))
+                            .set(REPORT_JOB.FILE_TYPE, toJooqFileType(fileType))
+                            .set(REPORT_JOB.QUERY_JSON, JSONB.jsonb(queryJson))
+                            .set(REPORT_JOB.QUERY_HASH, queryHash)
+                            .set(REPORT_JOB.REQUESTED_TIME_FROM, toLocalDateTime(timeRange.from()))
+                            .set(REPORT_JOB.REQUESTED_TIME_TO, toLocalDateTime(timeRange.to()))
+                            .set(REPORT_JOB.TIMEZONE, timezone)
+                            .set(REPORT_JOB.CREATED_BY, createdBy)
+                            .set(
+                                    REPORT_JOB.IDEMPOTENCY_KEY,
+                                    StringUtils.hasText(idempotencyKey) ? idempotencyKey : null
+                            )
+                            .returningResult(REPORT_JOB.ID)
+                            .fetchOne(REPORT_JOB.ID),
+                    "Report creation must return an id"
+            );
+        } catch (org.jooq.exception.IntegrityConstraintViolationException ex) {
+            throw new DuplicateKeyException("Report idempotency key already exists", ex);
+        }
     }
 
     public Optional<StoredReport> getReport(String createdBy, long reportId) {
-        var result = jdbcTemplate.query(
-                """
-                        SELECT r.id,
-                               r.report_type,
-                               r.file_type,
-                               r.query_json,
-                               r.timezone,
-                               r.status,
-                               r.created_at,
-                               r.updated_at,
-                               r.started_at,
-                               r.data_snapshot_fixed_at,
-                               r.finished_at,
-                               r.rows_count,
-                               r.expires_at,
-                               r.error_code,
-                               r.error_message,
-                               rf.file_id,
-                               rf.file_type AS report_file_type,
-                               rf.filename,
-                               rf.content_type,
-                               rf.md5,
-                               rf.sha256,
-                               rf.size_bytes,
-                               rf.created_at AS file_created_at
-                        FROM ccr.report_job r
-                        LEFT JOIN ccr.report_file rf ON rf.report_id = r.id
-                        WHERE r.id = :reportId AND r.created_by = :createdBy
-                        """,
-                new MapSqlParameterSource()
-                        .addValue("reportId", reportId)
-                        .addValue("createdBy", createdBy),
-                REPORT_ROW_MAPPER
-        );
-        return result.stream().findFirst();
+        return baseReportSelect()
+                .where(REPORT_JOB.ID.eq(reportId))
+                .and(REPORT_JOB.CREATED_BY.eq(createdBy))
+                .fetchOptional(ReportDao::mapReport);
     }
 
     public List<StoredReport> getReports(
@@ -156,203 +102,224 @@ public class ReportDao {
             PageCursor cursor,
             int limit
     ) {
-        var sql = new StringBuilder(
-                """
-                        SELECT r.id,
-                               r.report_type,
-                               r.file_type,
-                               r.query_json,
-                               r.timezone,
-                               r.status,
-                               r.created_at,
-                               r.updated_at,
-                               r.started_at,
-                               r.data_snapshot_fixed_at,
-                               r.finished_at,
-                               r.rows_count,
-                               r.expires_at,
-                               r.error_code,
-                               r.error_message,
-                               rf.file_id,
-                               rf.file_type AS report_file_type,
-                               rf.filename,
-                               rf.content_type,
-                               rf.md5,
-                               rf.sha256,
-                               rf.size_bytes,
-                               rf.created_at AS file_created_at
-                        FROM ccr.report_job r
-                        LEFT JOIN ccr.report_file rf ON rf.report_id = r.id
-                        WHERE r.created_by = :createdBy
-                        """
-        );
-        var parameters = new MapSqlParameterSource().addValue("createdBy", createdBy);
+        var conditions = new ArrayList<Condition>();
+        conditions.add(REPORT_JOB.CREATED_BY.eq(createdBy));
 
         if (filter != null && filter.isSetStatuses() && !filter.getStatuses().isEmpty()) {
-            sql.append(" AND r.status::text IN (:statuses)");
-            parameters.addValue("statuses", filter.getStatuses().stream().map(Enum::name).toList());
+            conditions.add(
+                    REPORT_JOB.STATUS.in(filter.getStatuses().stream().map(ReportDao::toJooqReportStatus).toList())
+            );
         }
         if (filter != null && filter.isSetReportTypes() && !filter.getReportTypes().isEmpty()) {
-            sql.append(" AND r.report_type::text IN (:reportTypes)");
-            parameters.addValue("reportTypes", filter.getReportTypes().stream().map(Enum::name).toList());
+            conditions.add(
+                    REPORT_JOB.REPORT_TYPE.in(
+                            filter.getReportTypes().stream().map(ReportDao::toJooqReportType).toList()
+                    )
+            );
         }
         if (filter != null && filter.isSetFileTypes() && !filter.getFileTypes().isEmpty()) {
-            sql.append(" AND r.file_type::text IN (:fileTypes)");
-            parameters.addValue("fileTypes", filter.getFileTypes().stream().map(Enum::name).toList());
+            conditions.add(
+                    REPORT_JOB.FILE_TYPE.in(filter.getFileTypes().stream().map(ReportDao::toJooqFileType).toList())
+            );
         }
         if (filter != null && filter.isSetCreatedFrom()) {
-            sql.append(" AND r.created_at >= :createdFrom");
-            parameters.addValue(
-                    "createdFrom",
-                    TimestampUtils.toLocalDateTime(TimestampUtils.parse(filter.getCreatedFrom()))
-            );
+            conditions.add(REPORT_JOB.CREATED_AT.ge(toLocalDateTime(TimestampUtils.parse(filter.getCreatedFrom()))));
         }
         if (filter != null && filter.isSetCreatedTo()) {
-            sql.append(" AND r.created_at <= :createdTo");
-            parameters.addValue(
-                    "createdTo",
-                    TimestampUtils.toLocalDateTime(TimestampUtils.parse(filter.getCreatedTo()))
-            );
+            conditions.add(REPORT_JOB.CREATED_AT.le(toLocalDateTime(TimestampUtils.parse(filter.getCreatedTo()))));
         }
         if (cursor != null) {
-            sql.append(" AND (r.created_at < :cursorCreatedAt OR " +
-                    "(r.created_at = :cursorCreatedAt AND r.id < :cursorId))");
-            parameters.addValue("cursorCreatedAt", TimestampUtils.toLocalDateTime(cursor.createdAt()));
-            parameters.addValue("cursorId", cursor.reportId());
+            conditions.add(
+                    REPORT_JOB.CREATED_AT.lt(toLocalDateTime(cursor.createdAt()))
+                            .or(
+                                    REPORT_JOB.CREATED_AT.eq(toLocalDateTime(cursor.createdAt()))
+                                            .and(REPORT_JOB.ID.lt(cursor.reportId()))
+                            )
+            );
         }
 
-        sql.append(" ORDER BY r.created_at DESC, r.id DESC LIMIT :limit");
-        parameters.addValue("limit", limit);
-        return jdbcTemplate.query(sql.toString(), parameters, REPORT_ROW_MAPPER);
+        return baseReportSelect()
+                .where(conditions)
+                .orderBy(REPORT_JOB.CREATED_AT.desc(), REPORT_JOB.ID.desc())
+                .limit(limit)
+                .fetch(ReportDao::mapReport);
     }
 
     public boolean cancelReport(String createdBy, long reportId, Instant now) {
-        var updated = jdbcTemplate.update(
-                """
-                        UPDATE ccr.report_job
-                        SET status = CAST(:canceledStatus AS ccr.report_status),
-                            finished_at = COALESCE(finished_at, :finishedAt),
-                            updated_at = :updatedAt
-                        WHERE id = :reportId
-                          AND created_by = :createdBy
-                          AND status::text IN (:cancelableStatuses)
-                        """,
-                new MapSqlParameterSource()
-                        .addValue("canceledStatus", ReportStatus.canceled.name())
-                        .addValue("finishedAt", TimestampUtils.toLocalDateTime(now))
-                        .addValue("updatedAt", TimestampUtils.toLocalDateTime(now))
-                        .addValue("reportId", reportId)
-                        .addValue("createdBy", createdBy)
-                        .addValue(
-                                "cancelableStatuses",
-                                List.of(ReportStatus.pending.name(), ReportStatus.processing.name())
+        var updated = dslContext.update(REPORT_JOB)
+                .set(REPORT_JOB.STATUS, toJooqReportStatus(ReportStatus.canceled))
+                .set(
+                        REPORT_JOB.FINISHED_AT,
+                        org.jooq.impl.DSL.coalesce(REPORT_JOB.FINISHED_AT, toLocalDateTime(now))
+                )
+                .set(REPORT_JOB.UPDATED_AT, toLocalDateTime(now))
+                .where(REPORT_JOB.ID.eq(reportId))
+                .and(REPORT_JOB.CREATED_BY.eq(createdBy))
+                .and(
+                        REPORT_JOB.STATUS.in(
+                                toJooqReportStatus(ReportStatus.pending),
+                                toJooqReportStatus(ReportStatus.processing)
                         )
-        );
+                )
+                .execute();
         return updated > 0;
     }
 
     public boolean reportExists(String createdBy, long reportId) {
-        var count = jdbcTemplate.queryForObject(
-                """
-                        SELECT count(*)
-                        FROM ccr.report_job
-                        WHERE id = :reportId AND created_by = :createdBy
-                        """,
-                new MapSqlParameterSource()
-                        .addValue("reportId", reportId)
-                        .addValue("createdBy", createdBy),
-                Integer.class
+        return dslContext.fetchExists(
+                dslContext.selectOne()
+                        .from(REPORT_JOB)
+                        .where(REPORT_JOB.ID.eq(reportId))
+                        .and(REPORT_JOB.CREATED_BY.eq(createdBy))
         );
-        return count != null && count > 0;
     }
 
     public Optional<StoredFileData> getFile(String createdBy, String fileId) {
-        var files = jdbcTemplate.query(
-                """
-                        SELECT rf.report_id,
-                               rf.file_id,
-                               rf.file_type,
-                               rf.filename,
-                               rf.content_type,
-                               rf.md5,
-                               rf.sha256,
-                               rf.size_bytes,
-                               rf.created_at,
-                               rf.bucket,
-                               rf.object_key
-                        FROM ccr.report_file rf
-                        JOIN ccr.report_job r ON r.id = rf.report_id
-                        WHERE rf.file_id = :fileId AND r.created_by = :createdBy
-                        """,
-                new MapSqlParameterSource()
-                        .addValue("fileId", fileId)
-                        .addValue("createdBy", createdBy),
-                FILE_ROW_MAPPER
-        );
-        return files.stream().findFirst();
+        var createdAt = timestampField(REPORT_FILE.CREATED_AT, "created_at_ts");
+        return dslContext.select(
+                        REPORT_FILE.REPORT_ID,
+                        REPORT_FILE.FILE_ID,
+                        REPORT_FILE.FILE_TYPE,
+                        REPORT_FILE.FILENAME,
+                        REPORT_FILE.CONTENT_TYPE,
+                        REPORT_FILE.MD5,
+                        REPORT_FILE.SHA256,
+                        REPORT_FILE.SIZE_BYTES,
+                        createdAt,
+                        REPORT_FILE.BUCKET,
+                        REPORT_FILE.OBJECT_KEY
+                )
+                .from(REPORT_FILE)
+                .join(REPORT_JOB).on(REPORT_JOB.ID.eq(REPORT_FILE.REPORT_ID))
+                .where(REPORT_FILE.FILE_ID.eq(fileId))
+                .and(REPORT_JOB.CREATED_BY.eq(createdBy))
+                .fetchOptional(ReportDao::mapFile);
     }
 
-    private static StoredReport mapReport(ResultSet rs, int rowNum) throws SQLException {
+    private SelectJoinStep<Record> baseReportSelect() {
+        var reportFileType = REPORT_FILE.FILE_TYPE.as("report_file_type");
+        var createdAt = timestampField(REPORT_JOB.CREATED_AT, "created_at_ts");
+        var updatedAt = timestampField(REPORT_JOB.UPDATED_AT, "updated_at_ts");
+        var startedAt = timestampField(REPORT_JOB.STARTED_AT, "started_at_ts");
+        var dataSnapshotFixedAt = timestampField(REPORT_JOB.DATA_SNAPSHOT_FIXED_AT, "data_snapshot_fixed_at_ts");
+        var finishedAt = timestampField(REPORT_JOB.FINISHED_AT, "finished_at_ts");
+        var expiresAt = timestampField(REPORT_JOB.EXPIRES_AT, "expires_at_ts");
+        var fileCreatedAt = timestampField(REPORT_FILE.CREATED_AT, "file_created_at_ts");
+        return dslContext.select(
+                        REPORT_JOB.ID,
+                        REPORT_JOB.REPORT_TYPE,
+                        REPORT_JOB.FILE_TYPE,
+                        REPORT_JOB.QUERY_JSON,
+                        REPORT_JOB.TIMEZONE,
+                        REPORT_JOB.STATUS,
+                        createdAt,
+                        updatedAt,
+                        startedAt,
+                        dataSnapshotFixedAt,
+                        finishedAt,
+                        REPORT_JOB.ROWS_COUNT,
+                        expiresAt,
+                        REPORT_JOB.ERROR_CODE,
+                        REPORT_JOB.ERROR_MESSAGE,
+                        REPORT_FILE.FILE_ID,
+                        reportFileType,
+                        REPORT_FILE.FILENAME,
+                        REPORT_FILE.CONTENT_TYPE,
+                        REPORT_FILE.MD5,
+                        REPORT_FILE.SHA256,
+                        REPORT_FILE.SIZE_BYTES,
+                        fileCreatedAt
+                )
+                .from(REPORT_JOB)
+                .leftJoin(REPORT_FILE).on(REPORT_FILE.REPORT_ID.eq(REPORT_JOB.ID));
+    }
+
+    private static StoredReport mapReport(Record record) {
+        var reportFileType = REPORT_FILE.FILE_TYPE.as("report_file_type");
+        var createdAt = timestampField(REPORT_JOB.CREATED_AT, "created_at_ts");
+        var updatedAt = timestampField(REPORT_JOB.UPDATED_AT, "updated_at_ts");
+        var startedAt = timestampField(REPORT_JOB.STARTED_AT, "started_at_ts");
+        var dataSnapshotFixedAt = timestampField(REPORT_JOB.DATA_SNAPSHOT_FIXED_AT, "data_snapshot_fixed_at_ts");
+        var finishedAt = timestampField(REPORT_JOB.FINISHED_AT, "finished_at_ts");
+        var expiresAt = timestampField(REPORT_JOB.EXPIRES_AT, "expires_at_ts");
+        var fileCreatedAt = timestampField(REPORT_FILE.CREATED_AT, "file_created_at_ts");
         return new StoredReport(
-                rs.getLong("id"),
-                ReportType.valueOf(rs.getString("report_type")),
-                FileType.valueOf(rs.getString("file_type")),
-                readJson(rs.getObject("query_json")),
-                rs.getString("timezone"),
-                ReportStatus.valueOf(rs.getString("status")),
-                TimestampUtils.toInstant(rs.getTimestamp("created_at")),
-                TimestampUtils.toInstant(rs.getTimestamp("updated_at")),
-                TimestampUtils.toOptionalInstant(rs.getTimestamp("started_at")),
-                TimestampUtils.toOptionalInstant(rs.getTimestamp("data_snapshot_fixed_at")),
-                TimestampUtils.toOptionalInstant(rs.getTimestamp("finished_at")),
-                optionalLong(rs, "rows_count"),
-                TimestampUtils.toOptionalInstant(rs.getTimestamp("expires_at")),
-                rs.getString("error_code"),
-                rs.getString("error_message"),
-                rs.getString("file_id") == null ? null : new StoredFileData(
+                record.get(REPORT_JOB.ID),
+                fromJooqReportType(record.get(REPORT_JOB.REPORT_TYPE)),
+                fromJooqFileType(record.get(REPORT_JOB.FILE_TYPE)),
+                record.get(REPORT_JOB.QUERY_JSON).data(),
+                record.get(REPORT_JOB.TIMEZONE),
+                fromJooqReportStatus(record.get(REPORT_JOB.STATUS)),
+                TimestampUtils.toInstant(record.get(createdAt)),
+                TimestampUtils.toInstant(record.get(updatedAt)),
+                TimestampUtils.toOptionalInstant(record.get(startedAt)),
+                TimestampUtils.toOptionalInstant(record.get(dataSnapshotFixedAt)),
+                TimestampUtils.toOptionalInstant(record.get(finishedAt)),
+                record.get(REPORT_JOB.ROWS_COUNT),
+                TimestampUtils.toOptionalInstant(record.get(expiresAt)),
+                record.get(REPORT_JOB.ERROR_CODE),
+                record.get(REPORT_JOB.ERROR_MESSAGE),
+                record.get(REPORT_FILE.FILE_ID) == null ? null : new StoredFileData(
                         null,
-                        rs.getString("file_id"),
-                        FileType.valueOf(rs.getString("report_file_type")),
-                        rs.getString("filename"),
-                        rs.getString("content_type"),
-                        rs.getString("md5"),
-                        rs.getString("sha256"),
-                        optionalLong(rs, "size_bytes"),
-                        TimestampUtils.toInstant(rs.getTimestamp("file_created_at")),
+                        record.get(REPORT_FILE.FILE_ID),
+                        fromJooqFileType(record.get(reportFileType)),
+                        record.get(REPORT_FILE.FILENAME),
+                        record.get(REPORT_FILE.CONTENT_TYPE),
+                        record.get(REPORT_FILE.MD5),
+                        record.get(REPORT_FILE.SHA256),
+                        record.get(REPORT_FILE.SIZE_BYTES),
+                        TimestampUtils.toInstant(record.get(fileCreatedAt)),
                         null,
                         null
                 )
         );
     }
 
-    private static StoredFileData mapFile(ResultSet rs, int rowNum) throws SQLException {
+    private static StoredFileData mapFile(Record record) {
         return new StoredFileData(
-                rs.getLong("report_id"),
-                rs.getString("file_id"),
-                FileType.valueOf(rs.getString("file_type")),
-                rs.getString("filename"),
-                rs.getString("content_type"),
-                rs.getString("md5"),
-                rs.getString("sha256"),
-                optionalLong(rs, "size_bytes"),
-                TimestampUtils.toInstant(rs.getTimestamp("created_at")),
-                rs.getString("bucket"),
-                rs.getString("object_key")
+                record.get(REPORT_FILE.REPORT_ID),
+                record.get(REPORT_FILE.FILE_ID),
+                fromJooqFileType(record.get(REPORT_FILE.FILE_TYPE)),
+                record.get(REPORT_FILE.FILENAME),
+                record.get(REPORT_FILE.CONTENT_TYPE),
+                record.get(REPORT_FILE.MD5),
+                record.get(REPORT_FILE.SHA256),
+                record.get(REPORT_FILE.SIZE_BYTES),
+                TimestampUtils.toInstant(record.get(timestampField(REPORT_FILE.CREATED_AT, "created_at_ts"))),
+                record.get(REPORT_FILE.BUCKET),
+                record.get(REPORT_FILE.OBJECT_KEY)
         );
     }
 
-    private static Long optionalLong(ResultSet rs, String columnName) throws SQLException {
-        var value = rs.getLong(columnName);
-        return rs.wasNull() ? null : value;
+    private static LocalDateTime toLocalDateTime(Instant value) {
+        return TimestampUtils.toLocalDateTime(value);
     }
 
-    private static String readJson(Object value) throws SQLException {
-        if (value instanceof PGobject pgObject) {
-            return pgObject.getValue();
-        }
-        if (value instanceof String string) {
-            return string;
-        }
-        throw new SQLException("Unsupported query_json type: " + value);
+    private static org.jooq.Field<Timestamp> timestampField(TableField<?, ?> field, String alias) {
+        return org.jooq.impl.DSL.field(field.getQualifiedName(), Timestamp.class).as(alias);
+    }
+
+    private static dev.vality.ccreporter.domain.enums.ReportStatus toJooqReportStatus(ReportStatus status) {
+        return dev.vality.ccreporter.domain.enums.ReportStatus.valueOf(status.name());
+    }
+
+    private static dev.vality.ccreporter.domain.enums.ReportType toJooqReportType(ReportType reportType) {
+        return dev.vality.ccreporter.domain.enums.ReportType.valueOf(reportType.name());
+    }
+
+    private static dev.vality.ccreporter.domain.enums.FileType toJooqFileType(FileType fileType) {
+        return dev.vality.ccreporter.domain.enums.FileType.valueOf(fileType.name());
+    }
+
+    private static ReportStatus fromJooqReportStatus(dev.vality.ccreporter.domain.enums.ReportStatus status) {
+        return ReportStatus.valueOf(status.getLiteral());
+    }
+
+    private static ReportType fromJooqReportType(dev.vality.ccreporter.domain.enums.ReportType reportType) {
+        return ReportType.valueOf(reportType.getLiteral());
+    }
+
+    private static FileType fromJooqFileType(dev.vality.ccreporter.domain.enums.FileType fileType) {
+        return FileType.valueOf(fileType.getLiteral());
     }
 }

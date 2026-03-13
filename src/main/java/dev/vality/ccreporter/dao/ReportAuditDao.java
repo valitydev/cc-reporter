@@ -3,21 +3,23 @@ package dev.vality.ccreporter.dao;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.vality.ccreporter.security.RequestAuditMetadata;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.jooq.DSLContext;
+import org.jooq.JSONB;
 import org.springframework.stereotype.Repository;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static dev.vality.ccreporter.domain.Tables.REPORT_AUDIT_EVENT;
+
 @Repository
 public class ReportAuditDao {
 
-    private final NamedParameterJdbcTemplate jdbcTemplate;
+    private final DSLContext dslContext;
     private final ObjectMapper objectMapper;
 
-    public ReportAuditDao(NamedParameterJdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
-        this.jdbcTemplate = jdbcTemplate;
+    public ReportAuditDao(DSLContext dslContext, ObjectMapper objectMapper) {
+        this.dslContext = dslContext;
         this.objectMapper = objectMapper;
     }
 
@@ -29,27 +31,20 @@ public class ReportAuditDao {
             Map<String, Object> details
     ) {
         var payloadJson = serializePayload(metadata, details);
-        jdbcTemplate.update(
-                """
-                        INSERT INTO ccr.report_audit_event (
-                            report_id,
-                            event_type,
-                            actor,
-                            payload_json
-                        )
-                        VALUES (
-                            :reportId,
-                            :eventType,
-                            :actor,
-                            CAST(:payloadJson AS jsonb)
-                        )
-                        """,
-                new MapSqlParameterSource()
-                        .addValue("reportId", reportId)
-                        .addValue("eventType", eventType)
-                        .addValue("actor", actor)
-                        .addValue("payloadJson", payloadJson)
-        );
+        dslContext.insertInto(
+                        REPORT_AUDIT_EVENT,
+                        REPORT_AUDIT_EVENT.REPORT_ID,
+                        REPORT_AUDIT_EVENT.EVENT_TYPE,
+                        REPORT_AUDIT_EVENT.ACTOR,
+                        REPORT_AUDIT_EVENT.PAYLOAD_JSON
+                )
+                .values(
+                        reportId,
+                        eventType,
+                        actor,
+                        JSONB.jsonb(payloadJson)
+                )
+                .execute();
     }
 
     private String serializePayload(RequestAuditMetadata metadata, Map<String, Object> details) {

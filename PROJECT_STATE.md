@@ -1,7 +1,7 @@
 # PROJECT_STATE.md
 
 ## Active tracks
-- `jooq-dsl-dao-transition`
+- None.
 
 ## Completed tracks
 - `kafka-to-db-ingestion`
@@ -10,6 +10,7 @@
 - `plan-convergence-hardening`
 - `csv-cursor-hardening`
 - `audit-observability-hardening`
+- `jooq-dsl-dao-transition`
 
 ## Temporary cross-track exception
 - `payments` FX handling remains a temporary exception: keep the contract, allow mock+`TODO`, and do not silently degrade it to permanent `null` behavior.
@@ -34,8 +35,12 @@
   persistence API used inside DAO implementations.
 
 ## Active track snapshot
-- `jooq-dsl-dao-transition` is in planning mode. Current DAO code is fully `NamedParameterJdbcTemplate`-based; generated `jOOQ`
-  classes exist only as build artifacts and are not used by runtime code.
-- The preferred transition shape is SQL-first, not ORM-first: keep existing domain DTOs and service boundaries, introduce
-  `DSLContext` in DAO implementations, and migrate DAO classes incrementally rather than rewriting the service around
-  `Hibernate` / JPA.
+- No active track is open right now.
+
+## Latest completed track snapshot
+- `jooq-dsl-dao-transition` is complete. Runtime DAO code now uses a Spring-managed `DSLContext` plus generated `jOOQ` schema
+  models in `WithdrawalSessionBindingDao`, `ReportAuditDao`, `ReportLifecycleDao`, `PaymentCurrentDao`,
+  `WithdrawalCurrentDao`, and `ReportDao`.
+- The transition stayed SQL-first and PostgreSQL-specific: current DTO/service boundaries were preserved, and the service was not
+  widened into `Hibernate` / JPA.
+- Full regression verification passed on Java 25; the residual JaCoCo missing-report message remains non-fatal when Maven exits `0`.

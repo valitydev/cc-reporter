@@ -3,137 +3,207 @@ package dev.vality.ccreporter.dao;
 import dev.vality.ccreporter.ingestion.PaymentCurrentUpdate;
 import dev.vality.ccreporter.ingestion.SearchValueNormalizer;
 import dev.vality.ccreporter.util.TimestampUtils;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.jooq.DSLContext;
+import org.jooq.Field;
+import org.jooq.TableField;
+import org.jooq.impl.DSL;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
 
+import static dev.vality.ccreporter.domain.Tables.PAYMENT_TXN_CURRENT;
+
 @Repository
 public class PaymentCurrentDao {
 
-    private final NamedParameterJdbcTemplate jdbcTemplate;
+    private static final Field<LocalDateTime> UTC_NOW =
+            DSL.field("(now() AT TIME ZONE 'utc')", LocalDateTime.class);
 
-    public PaymentCurrentDao(NamedParameterJdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    private final DSLContext dslContext;
+
+    public PaymentCurrentDao(DSLContext dslContext) {
+        this.dslContext = dslContext;
     }
 
     public boolean upsert(PaymentCurrentUpdate update) {
-        var params = params(update);
-        var updated = jdbcTemplate.update(
-                """
-                        UPDATE ccr.payment_txn_current
-                        SET domain_event_id = :domainEventId,
-                            domain_event_created_at = :domainEventCreatedAt,
-                            party_id = COALESCE(:partyId, party_id),
-                            shop_id = COALESCE(:shopId, shop_id),
-                            shop_name = COALESCE(:shopName, shop_name),
-                            created_at = COALESCE(:createdAt, created_at),
-                            finalized_at = COALESCE(finalized_at, :finalizedAt),
-                            status = COALESCE(:status, status),
-                            provider_id = COALESCE(:providerId, provider_id),
-                            provider_name = COALESCE(:providerName, provider_name),
-                            terminal_id = COALESCE(:terminalId, terminal_id),
-                            terminal_name = COALESCE(:terminalName, terminal_name),
-                            amount = COALESCE(:amount, amount),
-                            fee = COALESCE(:fee, fee),
-                            currency = COALESCE(:currency, currency),
-                            trx_id = COALESCE(:trxId, trx_id),
-                            external_id = COALESCE(:externalId, external_id),
-                            rrn = COALESCE(:rrn, rrn),
-                            approval_code = COALESCE(:approvalCode, approval_code),
-                            payment_tool_type = COALESCE(:paymentToolType, payment_tool_type),
-                            original_amount = COALESCE(:originalAmount, original_amount),
-                            original_currency = COALESCE(:originalCurrency, original_currency),
-                            converted_amount = COALESCE(:convertedAmount, converted_amount),
-                            exchange_rate_internal = COALESCE(:exchangeRateInternal, exchange_rate_internal),
-                            provider_amount = COALESCE(:providerAmount, provider_amount),
-                            provider_currency = COALESCE(:providerCurrency, provider_currency),
-                            shop_search = COALESCE(:shopSearch, shop_search),
-                            provider_search = COALESCE(:providerSearch, provider_search),
-                            terminal_search = COALESCE(:terminalSearch, terminal_search),
-                            trx_search = COALESCE(:trxSearch, trx_search),
-                            updated_at = (now() AT TIME ZONE 'utc')
-                        WHERE invoice_id = :invoiceId
-                          AND payment_id = :paymentId
-                          AND domain_event_id < :domainEventId
-                        """,
-                params
-        );
+        var updated = dslContext.update(PAYMENT_TXN_CURRENT)
+                .set(PAYMENT_TXN_CURRENT.DOMAIN_EVENT_ID, update.domainEventId())
+                .set(PAYMENT_TXN_CURRENT.DOMAIN_EVENT_CREATED_AT, toLocalDateTime(update.domainEventCreatedAt()))
+                .set(PAYMENT_TXN_CURRENT.PARTY_ID, patchValue(update.partyId(), PAYMENT_TXN_CURRENT.PARTY_ID))
+                .set(PAYMENT_TXN_CURRENT.SHOP_ID, patchValue(update.shopId(), PAYMENT_TXN_CURRENT.SHOP_ID))
+                .set(PAYMENT_TXN_CURRENT.SHOP_NAME, patchValue(update.shopName(), PAYMENT_TXN_CURRENT.SHOP_NAME))
+                .set(
+                        PAYMENT_TXN_CURRENT.CREATED_AT,
+                        patchValue(toLocalDateTime(update.createdAt()), PAYMENT_TXN_CURRENT.CREATED_AT)
+                )
+                .set(
+                        PAYMENT_TXN_CURRENT.FINALIZED_AT,
+                        firstWriteWins(toLocalDateTime(update.finalizedAt()), PAYMENT_TXN_CURRENT.FINALIZED_AT)
+                )
+                .set(PAYMENT_TXN_CURRENT.STATUS, patchValue(update.status(), PAYMENT_TXN_CURRENT.STATUS))
+                .set(PAYMENT_TXN_CURRENT.PROVIDER_ID, patchValue(update.providerId(), PAYMENT_TXN_CURRENT.PROVIDER_ID))
+                .set(
+                        PAYMENT_TXN_CURRENT.PROVIDER_NAME,
+                        patchValue(update.providerName(), PAYMENT_TXN_CURRENT.PROVIDER_NAME)
+                )
+                .set(PAYMENT_TXN_CURRENT.TERMINAL_ID, patchValue(update.terminalId(), PAYMENT_TXN_CURRENT.TERMINAL_ID))
+                .set(
+                        PAYMENT_TXN_CURRENT.TERMINAL_NAME,
+                        patchValue(update.terminalName(), PAYMENT_TXN_CURRENT.TERMINAL_NAME)
+                )
+                .set(PAYMENT_TXN_CURRENT.AMOUNT, patchValue(update.amount(), PAYMENT_TXN_CURRENT.AMOUNT))
+                .set(PAYMENT_TXN_CURRENT.FEE, patchValue(update.fee(), PAYMENT_TXN_CURRENT.FEE))
+                .set(PAYMENT_TXN_CURRENT.CURRENCY, patchValue(update.currency(), PAYMENT_TXN_CURRENT.CURRENCY))
+                .set(PAYMENT_TXN_CURRENT.TRX_ID, patchValue(update.trxId(), PAYMENT_TXN_CURRENT.TRX_ID))
+                .set(PAYMENT_TXN_CURRENT.EXTERNAL_ID, patchValue(update.externalId(), PAYMENT_TXN_CURRENT.EXTERNAL_ID))
+                .set(PAYMENT_TXN_CURRENT.RRN, patchValue(update.rrn(), PAYMENT_TXN_CURRENT.RRN))
+                .set(
+                        PAYMENT_TXN_CURRENT.APPROVAL_CODE,
+                        patchValue(update.approvalCode(), PAYMENT_TXN_CURRENT.APPROVAL_CODE)
+                )
+                .set(
+                        PAYMENT_TXN_CURRENT.PAYMENT_TOOL_TYPE,
+                        patchValue(update.paymentToolType(), PAYMENT_TXN_CURRENT.PAYMENT_TOOL_TYPE)
+                )
+                .set(
+                        PAYMENT_TXN_CURRENT.ORIGINAL_AMOUNT,
+                        patchValue(update.originalAmount(), PAYMENT_TXN_CURRENT.ORIGINAL_AMOUNT)
+                )
+                .set(
+                        PAYMENT_TXN_CURRENT.ORIGINAL_CURRENCY,
+                        patchValue(update.originalCurrency(), PAYMENT_TXN_CURRENT.ORIGINAL_CURRENCY)
+                )
+                .set(
+                        PAYMENT_TXN_CURRENT.CONVERTED_AMOUNT,
+                        patchValue(update.convertedAmount(), PAYMENT_TXN_CURRENT.CONVERTED_AMOUNT)
+                )
+                .set(
+                        PAYMENT_TXN_CURRENT.EXCHANGE_RATE_INTERNAL,
+                        patchValue(update.exchangeRateInternal(), PAYMENT_TXN_CURRENT.EXCHANGE_RATE_INTERNAL)
+                )
+                .set(
+                        PAYMENT_TXN_CURRENT.PROVIDER_AMOUNT,
+                        patchValue(update.providerAmount(), PAYMENT_TXN_CURRENT.PROVIDER_AMOUNT)
+                )
+                .set(
+                        PAYMENT_TXN_CURRENT.PROVIDER_CURRENCY,
+                        patchValue(update.providerCurrency(), PAYMENT_TXN_CURRENT.PROVIDER_CURRENCY)
+                )
+                .set(PAYMENT_TXN_CURRENT.SHOP_SEARCH, patchValue(shopSearch(update), PAYMENT_TXN_CURRENT.SHOP_SEARCH))
+                .set(
+                        PAYMENT_TXN_CURRENT.PROVIDER_SEARCH,
+                        patchValue(providerSearch(update), PAYMENT_TXN_CURRENT.PROVIDER_SEARCH)
+                )
+                .set(
+                        PAYMENT_TXN_CURRENT.TERMINAL_SEARCH,
+                        patchValue(terminalSearch(update), PAYMENT_TXN_CURRENT.TERMINAL_SEARCH)
+                )
+                .set(PAYMENT_TXN_CURRENT.TRX_SEARCH, patchValue(trxSearch(update), PAYMENT_TXN_CURRENT.TRX_SEARCH))
+                .set(PAYMENT_TXN_CURRENT.UPDATED_AT, UTC_NOW)
+                .where(PAYMENT_TXN_CURRENT.INVOICE_ID.eq(update.invoiceId()))
+                .and(PAYMENT_TXN_CURRENT.PAYMENT_ID.eq(update.paymentId()))
+                .and(PAYMENT_TXN_CURRENT.DOMAIN_EVENT_ID.lt(update.domainEventId()))
+                .execute();
         if (updated > 0) {
             return true;
         }
         if (!canInsert(update)) {
             return false;
         }
-        var inserted = jdbcTemplate.update(
-                """
-                        INSERT INTO ccr.payment_txn_current (
-                            invoice_id, payment_id, domain_event_id, domain_event_created_at,
-                            party_id, shop_id, shop_name, created_at, finalized_at, status,
-                            provider_id, provider_name, terminal_id, terminal_name, amount,
-                            fee, currency, trx_id, external_id, rrn, approval_code,
-                            payment_tool_type, original_amount, original_currency,
-                            converted_amount, exchange_rate_internal, provider_amount,
-                            provider_currency,
-                            shop_search, provider_search, terminal_search, trx_search
-                        ) VALUES (
-                            :invoiceId, :paymentId, :domainEventId, :domainEventCreatedAt,
-                            :partyId, :shopId, :shopName, :createdAt, :finalizedAt, :status,
-                            :providerId, :providerName, :terminalId, :terminalName, :amount,
-                            :fee, :currency, :trxId, :externalId, :rrn, :approvalCode,
-                            :paymentToolType, :originalAmount, :originalCurrency,
-                            :convertedAmount, :exchangeRateInternal, :providerAmount,
-                            :providerCurrency,
-                            :shopSearch, :providerSearch, :terminalSearch, :trxSearch
-                        )
-                        ON CONFLICT (invoice_id, payment_id) DO NOTHING
-                        """,
-                params
-        );
+        var inserted = dslContext.insertInto(
+                        PAYMENT_TXN_CURRENT,
+                        PAYMENT_TXN_CURRENT.INVOICE_ID,
+                        PAYMENT_TXN_CURRENT.PAYMENT_ID,
+                        PAYMENT_TXN_CURRENT.DOMAIN_EVENT_ID,
+                        PAYMENT_TXN_CURRENT.DOMAIN_EVENT_CREATED_AT,
+                        PAYMENT_TXN_CURRENT.PARTY_ID,
+                        PAYMENT_TXN_CURRENT.SHOP_ID,
+                        PAYMENT_TXN_CURRENT.SHOP_NAME,
+                        PAYMENT_TXN_CURRENT.CREATED_AT,
+                        PAYMENT_TXN_CURRENT.FINALIZED_AT,
+                        PAYMENT_TXN_CURRENT.STATUS,
+                        PAYMENT_TXN_CURRENT.PROVIDER_ID,
+                        PAYMENT_TXN_CURRENT.PROVIDER_NAME,
+                        PAYMENT_TXN_CURRENT.TERMINAL_ID,
+                        PAYMENT_TXN_CURRENT.TERMINAL_NAME,
+                        PAYMENT_TXN_CURRENT.AMOUNT,
+                        PAYMENT_TXN_CURRENT.FEE,
+                        PAYMENT_TXN_CURRENT.CURRENCY,
+                        PAYMENT_TXN_CURRENT.TRX_ID,
+                        PAYMENT_TXN_CURRENT.EXTERNAL_ID,
+                        PAYMENT_TXN_CURRENT.RRN,
+                        PAYMENT_TXN_CURRENT.APPROVAL_CODE,
+                        PAYMENT_TXN_CURRENT.PAYMENT_TOOL_TYPE,
+                        PAYMENT_TXN_CURRENT.ORIGINAL_AMOUNT,
+                        PAYMENT_TXN_CURRENT.ORIGINAL_CURRENCY,
+                        PAYMENT_TXN_CURRENT.CONVERTED_AMOUNT,
+                        PAYMENT_TXN_CURRENT.EXCHANGE_RATE_INTERNAL,
+                        PAYMENT_TXN_CURRENT.PROVIDER_AMOUNT,
+                        PAYMENT_TXN_CURRENT.PROVIDER_CURRENCY,
+                        PAYMENT_TXN_CURRENT.SHOP_SEARCH,
+                        PAYMENT_TXN_CURRENT.PROVIDER_SEARCH,
+                        PAYMENT_TXN_CURRENT.TERMINAL_SEARCH,
+                        PAYMENT_TXN_CURRENT.TRX_SEARCH
+                )
+                .values(
+                        update.invoiceId(),
+                        update.paymentId(),
+                        update.domainEventId(),
+                        toLocalDateTime(update.domainEventCreatedAt()),
+                        update.partyId(),
+                        update.shopId(),
+                        update.shopName(),
+                        toLocalDateTime(update.createdAt()),
+                        toLocalDateTime(update.finalizedAt()),
+                        update.status(),
+                        update.providerId(),
+                        update.providerName(),
+                        update.terminalId(),
+                        update.terminalName(),
+                        update.amount(),
+                        update.fee(),
+                        update.currency(),
+                        update.trxId(),
+                        update.externalId(),
+                        update.rrn(),
+                        update.approvalCode(),
+                        update.paymentToolType(),
+                        update.originalAmount(),
+                        update.originalCurrency(),
+                        update.convertedAmount(),
+                        update.exchangeRateInternal(),
+                        update.providerAmount(),
+                        update.providerCurrency(),
+                        shopSearch(update),
+                        providerSearch(update),
+                        terminalSearch(update),
+                        trxSearch(update)
+                )
+                .onConflict(PAYMENT_TXN_CURRENT.INVOICE_ID, PAYMENT_TXN_CURRENT.PAYMENT_ID)
+                .doNothing()
+                .execute();
         return inserted > 0;
-    }
-
-    private MapSqlParameterSource params(PaymentCurrentUpdate update) {
-        return new MapSqlParameterSource()
-                .addValue("invoiceId", update.invoiceId())
-                .addValue("paymentId", update.paymentId())
-                .addValue("domainEventId", update.domainEventId())
-                .addValue("domainEventCreatedAt", toLocalDateTime(update.domainEventCreatedAt()))
-                .addValue("partyId", update.partyId())
-                .addValue("shopId", update.shopId())
-                .addValue("shopName", update.shopName())
-                .addValue("createdAt", toLocalDateTime(update.createdAt()))
-                .addValue("finalizedAt", toLocalDateTime(update.finalizedAt()))
-                .addValue("status", update.status())
-                .addValue("providerId", update.providerId())
-                .addValue("providerName", update.providerName())
-                .addValue("terminalId", update.terminalId())
-                .addValue("terminalName", update.terminalName())
-                .addValue("amount", update.amount())
-                .addValue("fee", update.fee())
-                .addValue("currency", update.currency())
-                .addValue("trxId", update.trxId())
-                .addValue("externalId", update.externalId())
-                .addValue("rrn", update.rrn())
-                .addValue("approvalCode", update.approvalCode())
-                .addValue("paymentToolType", update.paymentToolType())
-                .addValue("originalAmount", update.originalAmount())
-                .addValue("originalCurrency", update.originalCurrency())
-                .addValue("convertedAmount", update.convertedAmount())
-                .addValue("exchangeRateInternal", update.exchangeRateInternal())
-                .addValue("providerAmount", update.providerAmount())
-                .addValue("providerCurrency", update.providerCurrency())
-                .addValue("shopSearch", SearchValueNormalizer.normalize(update.shopId(), update.shopName()))
-                .addValue("providerSearch", SearchValueNormalizer.normalize(update.providerId(), update.providerName()))
-                .addValue("terminalSearch", SearchValueNormalizer.normalize(update.terminalId(), update.terminalName()))
-                .addValue("trxSearch",
-                        SearchValueNormalizer.normalize(update.trxId(), update.rrn(), update.approvalCode()));
     }
 
     private LocalDateTime toLocalDateTime(Instant value) {
         return value == null ? null : TimestampUtils.toLocalDateTime(value);
+    }
+
+    private String shopSearch(PaymentCurrentUpdate update) {
+        return SearchValueNormalizer.normalize(update.shopId(), update.shopName());
+    }
+
+    private String providerSearch(PaymentCurrentUpdate update) {
+        return SearchValueNormalizer.normalize(update.providerId(), update.providerName());
+    }
+
+    private String terminalSearch(PaymentCurrentUpdate update) {
+        return SearchValueNormalizer.normalize(update.terminalId(), update.terminalName());
+    }
+
+    private String trxSearch(PaymentCurrentUpdate update) {
+        return SearchValueNormalizer.normalize(update.trxId(), update.rrn(), update.approvalCode());
     }
 
     private boolean canInsert(PaymentCurrentUpdate update) {
@@ -142,5 +212,13 @@ public class PaymentCurrentDao {
                 && update.status() != null
                 && update.amount() != null
                 && update.currency() != null;
+    }
+
+    private static <T> Field<T> patchValue(T value, TableField<?, T> field) {
+        return DSL.coalesce(DSL.val(value, field.getDataType()), field);
+    }
+
+    private static <T> Field<T> firstWriteWins(T value, TableField<?, T> field) {
+        return DSL.coalesce(field, DSL.val(value, field.getDataType()));
     }
 }

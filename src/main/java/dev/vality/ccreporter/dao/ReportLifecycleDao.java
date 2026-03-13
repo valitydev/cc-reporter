@@ -2,78 +2,84 @@ package dev.vality.ccreporter.dao;
 
 import dev.vality.ccreporter.ReportStatus;
 import dev.vality.ccreporter.report.ReportFileMetadata;
-import org.postgresql.util.PGobject;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import dev.vality.ccreporter.util.TimestampUtils;
+import org.jooq.DSLContext;
+import org.jooq.Field;
+import org.jooq.Record6;
+import org.jooq.impl.DSL;
 import org.springframework.stereotype.Repository;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Optional;
+
+import static dev.vality.ccreporter.domain.Tables.REPORT_FILE;
+import static dev.vality.ccreporter.domain.Tables.REPORT_JOB;
 
 @Repository
 public class ReportLifecycleDao {
 
-    private final NamedParameterJdbcTemplate jdbcTemplate;
+    private static final Field<Long> CANDIDATE_ID = DSL.field(DSL.name("candidate", "id"), Long.class);
 
-    public ReportLifecycleDao(NamedParameterJdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    private final DSLContext dslContext;
+
+    public ReportLifecycleDao(DSLContext dslContext) {
+        this.dslContext = dslContext;
     }
 
     public Optional<ClaimedReportJob> claimNextPendingReport(Instant now) {
-        var claimedReports = jdbcTemplate.query(
-                """
-                        WITH candidate AS (
-                            SELECT id
-                            FROM ccr.report_job
-                            WHERE status = CAST(:pendingStatus AS ccr.report_status)
-                              AND (next_attempt_at IS NULL OR next_attempt_at <= :now)
-                            ORDER BY created_at ASC, id ASC
-                            FOR UPDATE SKIP LOCKED
-                            LIMIT 1
-                        )
-                        UPDATE ccr.report_job r
-                        SET status = CAST(:processingStatus AS ccr.report_status),
-                            attempt = r.attempt + 1,
-                            started_at = COALESCE(r.started_at, :now),
-                            next_attempt_at = NULL,
-                            updated_at = :now
-                        FROM candidate
-                        WHERE r.id = candidate.id
-                        RETURNING r.id, r.report_type, r.file_type, r.query_json, r.timezone, r.attempt
-                        """,
-                new MapSqlParameterSource()
-                        .addValue("pendingStatus", ReportStatus.pending.name())
-                        .addValue("processingStatus", ReportStatus.processing.name())
-                        .addValue("now", Timestamp.from(now)),
-                ReportLifecycleDao::mapClaimedReport
-        );
-        return claimedReports.stream().findFirst();
+        var reportJob = REPORT_JOB.as("r");
+        var candidate = DSL.table(DSL.name("candidate"));
+        return dslContext.with("candidate").as(
+                        dslContext.select(REPORT_JOB.ID)
+                                .from(REPORT_JOB)
+                                .where(REPORT_JOB.STATUS.eq(toJooqStatus(ReportStatus.pending)))
+                                .and(
+                                        REPORT_JOB.NEXT_ATTEMPT_AT.isNull()
+                                                .or(
+                                                        REPORT_JOB.NEXT_ATTEMPT_AT.le(
+                                                                timestampValue(now, REPORT_JOB.NEXT_ATTEMPT_AT)
+                                                        )
+                                                )
+                                )
+                                .orderBy(REPORT_JOB.CREATED_AT.asc(), REPORT_JOB.ID.asc())
+                                .limit(1)
+                                .forUpdate()
+                                .skipLocked()
+                )
+                .update(reportJob)
+                .set(reportJob.STATUS, toJooqStatus(ReportStatus.processing))
+                .set(reportJob.ATTEMPT, reportJob.ATTEMPT.plus(1))
+                .set(
+                        reportJob.STARTED_AT,
+                        DSL.coalesce(reportJob.STARTED_AT, timestampValue(now, reportJob.STARTED_AT))
+                )
+                .set(reportJob.NEXT_ATTEMPT_AT, (LocalDateTime) null)
+                .set(reportJob.UPDATED_AT, timestampValue(now, reportJob.UPDATED_AT))
+                .from(candidate)
+                .where(reportJob.ID.eq(CANDIDATE_ID))
+                .returningResult(
+                        reportJob.ID,
+                        reportJob.REPORT_TYPE,
+                        reportJob.FILE_TYPE,
+                        reportJob.QUERY_JSON,
+                        reportJob.TIMEZONE,
+                        reportJob.ATTEMPT
+                )
+                .fetchOptional(ReportLifecycleDao::mapClaimedReport);
     }
 
     public boolean rescheduleForRetry(long reportId, Instant nextAttemptAt, String errorCode, String errorMessage) {
-        var updated = jdbcTemplate.update(
-                """
-                        UPDATE ccr.report_job
-                        SET status = CAST(:pendingStatus AS ccr.report_status),
-                            next_attempt_at = :nextAttemptAt,
-                            error_code = :errorCode,
-                            error_message = :errorMessage,
-                            updated_at = :updatedAt
-                        WHERE id = :reportId
-                          AND status = CAST(:processingStatus AS ccr.report_status)
-                        """,
-                new MapSqlParameterSource()
-                        .addValue("pendingStatus", ReportStatus.pending.name())
-                        .addValue("processingStatus", ReportStatus.processing.name())
-                        .addValue("nextAttemptAt", Timestamp.from(nextAttemptAt))
-                        .addValue("errorCode", errorCode)
-                        .addValue("errorMessage", errorMessage)
-                        .addValue("updatedAt", Timestamp.from(nextAttemptAt))
-                        .addValue("reportId", reportId)
-        );
+        var updated = dslContext.update(REPORT_JOB)
+                .set(REPORT_JOB.STATUS, toJooqStatus(ReportStatus.pending))
+                .set(REPORT_JOB.NEXT_ATTEMPT_AT, timestampValue(nextAttemptAt, REPORT_JOB.NEXT_ATTEMPT_AT))
+                .set(REPORT_JOB.ERROR_CODE, errorCode)
+                .set(REPORT_JOB.ERROR_MESSAGE, errorMessage)
+                .set(REPORT_JOB.UPDATED_AT, timestampValue(nextAttemptAt, REPORT_JOB.UPDATED_AT))
+                .where(REPORT_JOB.ID.eq(reportId))
+                .and(REPORT_JOB.STATUS.eq(toJooqStatus(ReportStatus.processing)))
+                .execute();
         return updated > 0;
     }
 
@@ -84,77 +90,45 @@ public class ReportLifecycleDao {
             Instant expiresAt,
             long rowsCount
     ) {
-        var updated = jdbcTemplate.update(
-                """
-                        UPDATE ccr.report_job
-                        SET status = CAST(:createdStatus AS ccr.report_status),
-                            data_snapshot_fixed_at = COALESCE(data_snapshot_fixed_at, :dataSnapshotFixedAt),
-                            finished_at = COALESCE(finished_at, :finishedAt),
-                            expires_at = :expiresAt,
-                            rows_count = :rowsCount,
-                            error_code = NULL,
-                            error_message = NULL,
-                            next_attempt_at = NULL,
-                            updated_at = :updatedAt
-                        WHERE id = :reportId
-                          AND status = CAST(:processingStatus AS ccr.report_status)
-                        """,
-                new MapSqlParameterSource()
-                        .addValue("createdStatus", ReportStatus.created.name())
-                        .addValue("processingStatus", ReportStatus.processing.name())
-                        .addValue("dataSnapshotFixedAt", Timestamp.from(dataSnapshotFixedAt))
-                        .addValue("finishedAt", Timestamp.from(finishedAt))
-                        .addValue("expiresAt", Timestamp.from(expiresAt))
-                        .addValue("rowsCount", rowsCount)
-                        .addValue("updatedAt", Timestamp.from(finishedAt))
-                        .addValue("reportId", reportId)
-        );
+        var updated = dslContext.update(REPORT_JOB)
+                .set(REPORT_JOB.STATUS, toJooqStatus(ReportStatus.created))
+                .set(
+                        REPORT_JOB.DATA_SNAPSHOT_FIXED_AT,
+                        DSL.coalesce(
+                                REPORT_JOB.DATA_SNAPSHOT_FIXED_AT,
+                                timestampValue(dataSnapshotFixedAt, REPORT_JOB.DATA_SNAPSHOT_FIXED_AT)
+                        )
+                )
+                .set(
+                        REPORT_JOB.FINISHED_AT,
+                        DSL.coalesce(REPORT_JOB.FINISHED_AT, timestampValue(finishedAt, REPORT_JOB.FINISHED_AT))
+                )
+                .set(REPORT_JOB.EXPIRES_AT, timestampValue(expiresAt, REPORT_JOB.EXPIRES_AT))
+                .set(REPORT_JOB.ROWS_COUNT, rowsCount)
+                .set(REPORT_JOB.ERROR_CODE, (String) null)
+                .set(REPORT_JOB.ERROR_MESSAGE, (String) null)
+                .set(REPORT_JOB.NEXT_ATTEMPT_AT, (LocalDateTime) null)
+                .set(REPORT_JOB.UPDATED_AT, timestampValue(finishedAt, REPORT_JOB.UPDATED_AT))
+                .where(REPORT_JOB.ID.eq(reportId))
+                .and(REPORT_JOB.STATUS.eq(toJooqStatus(ReportStatus.processing)))
+                .execute();
         return updated > 0;
     }
 
     public boolean publishFileRecord(long reportId, ReportFileMetadata fileMetadata, Instant createdAt) {
-        var updated = jdbcTemplate.update(
-                """
-                        INSERT INTO ccr.report_file (
-                            report_id,
-                            file_id,
-                            file_type,
-                            bucket,
-                            object_key,
-                            filename,
-                            content_type,
-                            size_bytes,
-                            md5,
-                            sha256,
-                            created_at
-                        )
-                        VALUES (
-                            :reportId,
-                            :fileId,
-                            CAST(:fileType AS ccr.file_type),
-                            :bucket,
-                            :objectKey,
-                            :fileName,
-                            :contentType,
-                            :sizeBytes,
-                            :md5,
-                            :sha256,
-                            :createdAt
-                        )
-                        """,
-                new MapSqlParameterSource()
-                        .addValue("reportId", reportId)
-                        .addValue("fileId", fileMetadata.fileId())
-                        .addValue("fileType", "csv")
-                        .addValue("bucket", fileMetadata.bucket())
-                        .addValue("objectKey", fileMetadata.objectKey())
-                        .addValue("fileName", fileMetadata.fileName())
-                        .addValue("contentType", fileMetadata.contentType())
-                        .addValue("sizeBytes", fileMetadata.sizeBytes())
-                        .addValue("md5", fileMetadata.md5())
-                        .addValue("sha256", fileMetadata.sha256())
-                        .addValue("createdAt", Timestamp.from(createdAt))
-        );
+        var updated = dslContext.insertInto(REPORT_FILE)
+                .set(REPORT_FILE.REPORT_ID, reportId)
+                .set(REPORT_FILE.FILE_ID, fileMetadata.fileId())
+                .set(REPORT_FILE.FILE_TYPE, toJooqFileType(dev.vality.ccreporter.FileType.csv))
+                .set(REPORT_FILE.BUCKET, fileMetadata.bucket())
+                .set(REPORT_FILE.OBJECT_KEY, fileMetadata.objectKey())
+                .set(REPORT_FILE.FILENAME, fileMetadata.fileName())
+                .set(REPORT_FILE.CONTENT_TYPE, fileMetadata.contentType())
+                .set(REPORT_FILE.SIZE_BYTES, fileMetadata.sizeBytes())
+                .set(REPORT_FILE.MD5, fileMetadata.md5())
+                .set(REPORT_FILE.SHA256, fileMetadata.sha256())
+                .set(REPORT_FILE.CREATED_AT, timestampValue(createdAt, REPORT_FILE.CREATED_AT))
+                .execute();
         return updated > 0;
     }
 
@@ -169,63 +143,60 @@ public class ReportLifecycleDao {
     }
 
     public boolean expireReport(long reportId, Instant expiredAt) {
-        var updated = jdbcTemplate.update(
-                """
-                        UPDATE ccr.report_job
-                        SET status = CAST(:expiredStatus AS ccr.report_status),
-                            finished_at = COALESCE(finished_at, :expiredAt),
-                            updated_at = :expiredAt
-                        WHERE id = :reportId
-                          AND status = CAST(:createdStatus AS ccr.report_status)
-                        """,
-                new MapSqlParameterSource()
-                        .addValue("expiredStatus", ReportStatus.expired.name())
-                        .addValue("createdStatus", ReportStatus.created.name())
-                        .addValue("expiredAt", Timestamp.from(expiredAt))
-                        .addValue("reportId", reportId)
-        );
+        var updated = dslContext.update(REPORT_JOB)
+                .set(REPORT_JOB.STATUS, toJooqStatus(ReportStatus.expired))
+                .set(
+                        REPORT_JOB.FINISHED_AT,
+                        DSL.coalesce(REPORT_JOB.FINISHED_AT, timestampValue(expiredAt, REPORT_JOB.FINISHED_AT))
+                )
+                .set(REPORT_JOB.UPDATED_AT, timestampValue(expiredAt, REPORT_JOB.UPDATED_AT))
+                .where(REPORT_JOB.ID.eq(reportId))
+                .and(REPORT_JOB.STATUS.eq(toJooqStatus(ReportStatus.created)))
+                .execute();
         return updated > 0;
     }
 
     public int timeoutStaleProcessingReports(Instant staleBefore, Instant finishedAt) {
-        return jdbcTemplate.update(
-                """
-                        UPDATE ccr.report_job
-                        SET status = CAST(:timedOutStatus AS ccr.report_status),
-                            finished_at = COALESCE(finished_at, :finishedAt),
-                            error_code = COALESCE(error_code, :errorCode),
-                            error_message = COALESCE(error_message, :errorMessage),
-                            next_attempt_at = NULL,
-                            updated_at = :finishedAt
-                        WHERE status = CAST(:processingStatus AS ccr.report_status)
-                          AND updated_at <= :staleBefore
-                        """,
-                new MapSqlParameterSource()
-                        .addValue("timedOutStatus", ReportStatus.timed_out.name())
-                        .addValue("processingStatus", ReportStatus.processing.name())
-                        .addValue("finishedAt", Timestamp.from(finishedAt))
-                        .addValue("staleBefore", Timestamp.from(staleBefore))
-                        .addValue("errorCode", "worker_timeout")
-                        .addValue("errorMessage", "Report processing exceeded stale timeout")
-        );
+        return dslContext.update(REPORT_JOB)
+                .set(REPORT_JOB.STATUS, toJooqStatus(ReportStatus.timed_out))
+                .set(
+                        REPORT_JOB.FINISHED_AT,
+                        DSL.coalesce(REPORT_JOB.FINISHED_AT, timestampValue(finishedAt, REPORT_JOB.FINISHED_AT))
+                )
+                .set(
+                        REPORT_JOB.ERROR_CODE,
+                        DSL.coalesce(REPORT_JOB.ERROR_CODE, DSL.val("worker_timeout", REPORT_JOB.ERROR_CODE))
+                )
+                .set(
+                        REPORT_JOB.ERROR_MESSAGE,
+                        DSL.coalesce(
+                                REPORT_JOB.ERROR_MESSAGE,
+                                DSL.val("Report processing exceeded stale timeout", REPORT_JOB.ERROR_MESSAGE)
+                        )
+                )
+                .set(REPORT_JOB.NEXT_ATTEMPT_AT, (LocalDateTime) null)
+                .set(REPORT_JOB.UPDATED_AT, timestampValue(finishedAt, REPORT_JOB.UPDATED_AT))
+                .where(REPORT_JOB.STATUS.eq(toJooqStatus(ReportStatus.processing)))
+                .and(REPORT_JOB.UPDATED_AT.le(timestampValue(staleBefore, REPORT_JOB.UPDATED_AT)))
+                .execute();
     }
 
     public int expireReports(Instant now) {
-        return jdbcTemplate.update(
-                """
-                        UPDATE ccr.report_job
-                        SET status = CAST(:expiredStatus AS ccr.report_status),
-                            finished_at = COALESCE(finished_at, expires_at, :now),
-                            updated_at = :now
-                        WHERE status = CAST(:createdStatus AS ccr.report_status)
-                          AND expires_at IS NOT NULL
-                          AND expires_at <= :now
-                        """,
-                new MapSqlParameterSource()
-                        .addValue("expiredStatus", ReportStatus.expired.name())
-                        .addValue("createdStatus", ReportStatus.created.name())
-                        .addValue("now", Timestamp.from(now))
-        );
+        return dslContext.update(REPORT_JOB)
+                .set(REPORT_JOB.STATUS, toJooqStatus(ReportStatus.expired))
+                .set(
+                        REPORT_JOB.FINISHED_AT,
+                        DSL.coalesce(
+                                REPORT_JOB.FINISHED_AT,
+                                REPORT_JOB.EXPIRES_AT,
+                                timestampValue(now, REPORT_JOB.FINISHED_AT)
+                        )
+                )
+                .set(REPORT_JOB.UPDATED_AT, timestampValue(now, REPORT_JOB.UPDATED_AT))
+                .where(REPORT_JOB.STATUS.eq(toJooqStatus(ReportStatus.created)))
+                .and(REPORT_JOB.EXPIRES_AT.isNotNull())
+                .and(REPORT_JOB.EXPIRES_AT.le(timestampValue(now, REPORT_JOB.EXPIRES_AT)))
+                .execute();
     }
 
     private boolean markTerminal(
@@ -236,50 +207,57 @@ public class ReportLifecycleDao {
             String code,
             String message
     ) {
-        var updated = jdbcTemplate.update(
-                """
-                        UPDATE ccr.report_job
-                        SET status = CAST(:terminalStatus AS ccr.report_status),
-                            data_snapshot_fixed_at = COALESCE(data_snapshot_fixed_at, :dataSnapshotFixedAt),
-                            finished_at = COALESCE(finished_at, :finishedAt),
-                            error_code = :errorCode,
-                            error_message = :errorMessage,
-                            next_attempt_at = NULL,
-                            updated_at = :updatedAt
-                        WHERE id = :reportId
-                          AND status = CAST(:processingStatus AS ccr.report_status)
-                        """,
-                new MapSqlParameterSource()
-                        .addValue("terminalStatus", terminalStatus.name())
-                        .addValue("processingStatus", ReportStatus.processing.name())
-                        .addValue("dataSnapshotFixedAt", Timestamp.from(dataSnapshotFixedAt))
-                        .addValue("finishedAt", Timestamp.from(finishedAt))
-                        .addValue("errorCode", code)
-                        .addValue("errorMessage", message)
-                        .addValue("updatedAt", Timestamp.from(finishedAt))
-                        .addValue("reportId", reportId)
-        );
+        var updated = dslContext.update(REPORT_JOB)
+                .set(REPORT_JOB.STATUS, toJooqStatus(terminalStatus))
+                .set(
+                        REPORT_JOB.DATA_SNAPSHOT_FIXED_AT,
+                        DSL.coalesce(
+                                REPORT_JOB.DATA_SNAPSHOT_FIXED_AT,
+                                timestampValue(dataSnapshotFixedAt, REPORT_JOB.DATA_SNAPSHOT_FIXED_AT)
+                        )
+                )
+                .set(
+                        REPORT_JOB.FINISHED_AT,
+                        DSL.coalesce(REPORT_JOB.FINISHED_AT, timestampValue(finishedAt, REPORT_JOB.FINISHED_AT))
+                )
+                .set(REPORT_JOB.ERROR_CODE, code)
+                .set(REPORT_JOB.ERROR_MESSAGE, message)
+                .set(REPORT_JOB.NEXT_ATTEMPT_AT, (LocalDateTime) null)
+                .set(REPORT_JOB.UPDATED_AT, timestampValue(finishedAt, REPORT_JOB.UPDATED_AT))
+                .where(REPORT_JOB.ID.eq(reportId))
+                .and(REPORT_JOB.STATUS.eq(toJooqStatus(ReportStatus.processing)))
+                .execute();
         return updated > 0;
     }
 
-    private static ClaimedReportJob mapClaimedReport(ResultSet rs, int rowNum) throws SQLException {
+    private static ClaimedReportJob mapClaimedReport(Record6<Long,
+            dev.vality.ccreporter.domain.enums.ReportType,
+            dev.vality.ccreporter.domain.enums.FileType,
+            org.jooq.JSONB,
+            String,
+            Integer> record) {
         return new ClaimedReportJob(
-                rs.getLong("id"),
-                dev.vality.ccreporter.ReportType.valueOf(rs.getString("report_type")),
-                dev.vality.ccreporter.FileType.valueOf(rs.getString("file_type")),
-                readJson(rs.getObject("query_json")),
-                rs.getString("timezone"),
-                rs.getInt("attempt")
+                record.value1(),
+                dev.vality.ccreporter.ReportType.valueOf(record.value2().getLiteral()),
+                dev.vality.ccreporter.FileType.valueOf(record.value3().getLiteral()),
+                record.value4().data(),
+                record.value5(),
+                record.value6()
         );
     }
 
-    private static String readJson(Object value) throws SQLException {
-        if (value instanceof PGobject pgObject) {
-            return pgObject.getValue();
+    private static Field<LocalDateTime> timestampValue(Instant value, Field<LocalDateTime> field) {
+        if (value == null) {
+            return DSL.castNull(field.getDataType());
         }
-        if (value instanceof String string) {
-            return string;
-        }
-        throw new SQLException("Unsupported query_json type: " + value);
+        return DSL.val(Timestamp.from(value)).cast(field.getDataType());
+    }
+
+    private static dev.vality.ccreporter.domain.enums.ReportStatus toJooqStatus(ReportStatus status) {
+        return dev.vality.ccreporter.domain.enums.ReportStatus.valueOf(status.name());
+    }
+
+    private static dev.vality.ccreporter.domain.enums.FileType toJooqFileType(dev.vality.ccreporter.FileType fileType) {
+        return dev.vality.ccreporter.domain.enums.FileType.valueOf(fileType.name());
     }
 }

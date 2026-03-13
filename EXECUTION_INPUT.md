@@ -53,7 +53,8 @@ Exit checks:
 - Payments FX placeholder behavior is visibly marked in code as temporary `TODO`.
 
 Last known baseline:
-- Root `cc-reporter` service is scaffolded: schema migration, app config, and Thrift IDL already exist.
+- Root `cc-reporter` service is implemented across Kafka ingestion, Thrift API, report lifecycle, CSV execution,
+  audit writes, and the bounded `jOOQ` DAO migration track.
 - Reference modules are present in the same repo: `reporter`, `magista`, `fistful-reporter`, `fistful-magista`, `daway`.
 
 ## Constraints / non-goals
@@ -87,15 +88,12 @@ Last known baseline:
   S3-compatible storage via `file-storage`
 - package manager: Maven
 - dev command: unknown
-- build command: unknown
-- test command: unknown
+- build command: `env JAVA_HOME=/Users/karleowne/Library/Java/JavaVirtualMachines/temurin-25.0.2/Contents/Home PATH=$JAVA_HOME/bin:$PATH mvn -q -DskipTests validate`
+- test command: `env JAVA_HOME=/Users/karleowne/Library/Java/JavaVirtualMachines/temurin-25.0.2/Contents/Home PATH=$JAVA_HOME/bin:$PATH mvn -q test`
 - lint / typecheck command: unknown
 - notable subsystems / protocols / infra: Kafka batch listeners, PostgreSQL current-state read model, `cc-reporter-proto` Thrift API, `damsel`, `fistful-proto`, `file-storage`, presigned URL flow, reference services `reporter` / `magista` / `fistful-*` / `daway`
 
 ## Missing or unclear inputs
 - Exact confirmed source for `payments` FX fields beyond temporary mock placeholder behavior.
-- Exact command conventions for running build/test/lint in this repo.
 - Exact final mapping for `provider_amount/provider_currency` in withdrawals if cashflow interpretation differs from current assumptions.
 - Exact retry policy values and worker concurrency sizing for production behavior.
-- Exact target boundary for `jooq-dsl-dao-transition`: schema-guardrail-only use of generated models versus full DAO rewrite to
-  `DSLContext`.

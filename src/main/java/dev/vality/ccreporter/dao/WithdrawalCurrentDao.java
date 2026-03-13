@@ -3,152 +3,256 @@ package dev.vality.ccreporter.dao;
 import dev.vality.ccreporter.ingestion.SearchValueNormalizer;
 import dev.vality.ccreporter.ingestion.WithdrawalCurrentUpdate;
 import dev.vality.ccreporter.util.TimestampUtils;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.jooq.DSLContext;
+import org.jooq.Field;
+import org.jooq.TableField;
+import org.jooq.impl.DSL;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
 
+import static dev.vality.ccreporter.domain.Tables.WITHDRAWAL_TXN_CURRENT;
+
 @Repository
 public class WithdrawalCurrentDao {
 
-    private final NamedParameterJdbcTemplate jdbcTemplate;
+    private static final Field<LocalDateTime> UTC_NOW =
+            DSL.field("(now() AT TIME ZONE 'utc')", LocalDateTime.class);
 
-    public WithdrawalCurrentDao(NamedParameterJdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    private final DSLContext dslContext;
+
+    public WithdrawalCurrentDao(DSLContext dslContext) {
+        this.dslContext = dslContext;
     }
 
     public boolean upsert(WithdrawalCurrentUpdate update) {
-        var params = params(update);
         if (isTransactionPatchOnly(update)) {
-            var patched = jdbcTemplate.update(
-                    """
-                            UPDATE ccr.withdrawal_txn_current
-                            SET trx_id = COALESCE(:trxId, trx_id),
-                                trx_search = COALESCE(:trxSearch, trx_search),
-                                updated_at = (now() AT TIME ZONE 'utc')
-                            WHERE withdrawal_id = :withdrawalId
-                              AND (:trxId IS NULL OR trx_id IS NULL OR trx_id = :trxId)
-                            """,
-                    params
-            );
+            var patched = dslContext.update(WITHDRAWAL_TXN_CURRENT)
+                    .set(WITHDRAWAL_TXN_CURRENT.TRX_ID, patchValue(update.trxId(), WITHDRAWAL_TXN_CURRENT.TRX_ID))
+                    .set(
+                            WITHDRAWAL_TXN_CURRENT.TRX_SEARCH,
+                            patchValue(trxSearch(update), WITHDRAWAL_TXN_CURRENT.TRX_SEARCH)
+                    )
+                    .set(WITHDRAWAL_TXN_CURRENT.UPDATED_AT, UTC_NOW)
+                    .where(WITHDRAWAL_TXN_CURRENT.WITHDRAWAL_ID.eq(update.withdrawalId()))
+                    .and(
+                            DSL.val(update.trxId(), WITHDRAWAL_TXN_CURRENT.TRX_ID).isNull()
+                                    .or(WITHDRAWAL_TXN_CURRENT.TRX_ID.isNull())
+                                    .or(WITHDRAWAL_TXN_CURRENT.TRX_ID.eq(update.trxId()))
+                    )
+                    .execute();
             if (patched > 0) {
                 return true;
             }
         }
-        var updated = jdbcTemplate.update(
-                """
-                        UPDATE ccr.withdrawal_txn_current
-                        SET domain_event_id = :domainEventId,
-                            domain_event_created_at = :domainEventCreatedAt,
-                            party_id = COALESCE(:partyId, party_id),
-                            wallet_id = COALESCE(:walletId, wallet_id),
-                            wallet_name = COALESCE(:walletName, wallet_name),
-                            destination_id = COALESCE(:destinationId, destination_id),
-                            created_at = COALESCE(:createdAt, created_at),
-                            finalized_at = COALESCE(finalized_at, :finalizedAt),
-                            status = COALESCE(:status, status),
-                            provider_id = COALESCE(:providerId, provider_id),
-                            provider_name = COALESCE(:providerName, provider_name),
-                            terminal_id = COALESCE(:terminalId, terminal_id),
-                            terminal_name = COALESCE(:terminalName, terminal_name),
-                            amount = COALESCE(:amount, amount),
-                            fee = COALESCE(:fee, fee),
-                            currency = COALESCE(:currency, currency),
-                            trx_id = COALESCE(:trxId, trx_id),
-                            external_id = COALESCE(:externalId, external_id),
-                            error_code = COALESCE(:errorCode, error_code),
-                            error_reason = COALESCE(:errorReason, error_reason),
-                            error_sub_failure = COALESCE(:errorSubFailure, error_sub_failure),
-                            original_amount = COALESCE(:originalAmount, original_amount),
-                            original_currency = COALESCE(:originalCurrency, original_currency),
-                            converted_amount = COALESCE(:convertedAmount, converted_amount),
-                            exchange_rate_internal = COALESCE(:exchangeRateInternal, exchange_rate_internal),
-                            provider_amount = COALESCE(:providerAmount, provider_amount),
-                            provider_currency = COALESCE(:providerCurrency, provider_currency),
-                            wallet_search = COALESCE(:walletSearch, wallet_search),
-                            provider_search = COALESCE(:providerSearch, provider_search),
-                            terminal_search = COALESCE(:terminalSearch, terminal_search),
-                            trx_search = COALESCE(:trxSearch, trx_search),
-                            updated_at = (now() AT TIME ZONE 'utc')
-                        WHERE withdrawal_id = :withdrawalId
-                          AND domain_event_id < :domainEventId
-                        """,
-                params
-        );
+        var updated = dslContext.update(WITHDRAWAL_TXN_CURRENT)
+                .set(WITHDRAWAL_TXN_CURRENT.DOMAIN_EVENT_ID, update.domainEventId())
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.DOMAIN_EVENT_CREATED_AT,
+                        toLocalDateTime(update.domainEventCreatedAt())
+                )
+                .set(WITHDRAWAL_TXN_CURRENT.PARTY_ID, patchValue(update.partyId(), WITHDRAWAL_TXN_CURRENT.PARTY_ID))
+                .set(WITHDRAWAL_TXN_CURRENT.WALLET_ID, patchValue(update.walletId(), WITHDRAWAL_TXN_CURRENT.WALLET_ID))
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.WALLET_NAME,
+                        patchValue(update.walletName(), WITHDRAWAL_TXN_CURRENT.WALLET_NAME)
+                )
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.DESTINATION_ID,
+                        patchValue(update.destinationId(), WITHDRAWAL_TXN_CURRENT.DESTINATION_ID)
+                )
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.CREATED_AT,
+                        patchValue(toLocalDateTime(update.createdAt()), WITHDRAWAL_TXN_CURRENT.CREATED_AT)
+                )
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.FINALIZED_AT,
+                        firstWriteWins(toLocalDateTime(update.finalizedAt()), WITHDRAWAL_TXN_CURRENT.FINALIZED_AT)
+                )
+                .set(WITHDRAWAL_TXN_CURRENT.STATUS, patchValue(update.status(), WITHDRAWAL_TXN_CURRENT.STATUS))
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.PROVIDER_ID,
+                        patchValue(update.providerId(), WITHDRAWAL_TXN_CURRENT.PROVIDER_ID)
+                )
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.PROVIDER_NAME,
+                        patchValue(update.providerName(), WITHDRAWAL_TXN_CURRENT.PROVIDER_NAME)
+                )
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.TERMINAL_ID,
+                        patchValue(update.terminalId(), WITHDRAWAL_TXN_CURRENT.TERMINAL_ID)
+                )
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.TERMINAL_NAME,
+                        patchValue(update.terminalName(), WITHDRAWAL_TXN_CURRENT.TERMINAL_NAME)
+                )
+                .set(WITHDRAWAL_TXN_CURRENT.AMOUNT, patchValue(update.amount(), WITHDRAWAL_TXN_CURRENT.AMOUNT))
+                .set(WITHDRAWAL_TXN_CURRENT.FEE, patchValue(update.fee(), WITHDRAWAL_TXN_CURRENT.FEE))
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.CURRENCY,
+                        patchValue(update.currency(), WITHDRAWAL_TXN_CURRENT.CURRENCY)
+                )
+                .set(WITHDRAWAL_TXN_CURRENT.TRX_ID, patchValue(update.trxId(), WITHDRAWAL_TXN_CURRENT.TRX_ID))
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.EXTERNAL_ID,
+                        patchValue(update.externalId(), WITHDRAWAL_TXN_CURRENT.EXTERNAL_ID)
+                )
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.ERROR_CODE,
+                        patchValue(update.errorCode(), WITHDRAWAL_TXN_CURRENT.ERROR_CODE)
+                )
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.ERROR_REASON,
+                        patchValue(update.errorReason(), WITHDRAWAL_TXN_CURRENT.ERROR_REASON)
+                )
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.ERROR_SUB_FAILURE,
+                        patchValue(update.errorSubFailure(), WITHDRAWAL_TXN_CURRENT.ERROR_SUB_FAILURE)
+                )
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.ORIGINAL_AMOUNT,
+                        patchValue(update.originalAmount(), WITHDRAWAL_TXN_CURRENT.ORIGINAL_AMOUNT)
+                )
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.ORIGINAL_CURRENCY,
+                        patchValue(update.originalCurrency(), WITHDRAWAL_TXN_CURRENT.ORIGINAL_CURRENCY)
+                )
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.CONVERTED_AMOUNT,
+                        patchValue(update.convertedAmount(), WITHDRAWAL_TXN_CURRENT.CONVERTED_AMOUNT)
+                )
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.EXCHANGE_RATE_INTERNAL,
+                        patchValue(update.exchangeRateInternal(), WITHDRAWAL_TXN_CURRENT.EXCHANGE_RATE_INTERNAL)
+                )
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.PROVIDER_AMOUNT,
+                        patchValue(update.providerAmount(), WITHDRAWAL_TXN_CURRENT.PROVIDER_AMOUNT)
+                )
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.PROVIDER_CURRENCY,
+                        patchValue(update.providerCurrency(), WITHDRAWAL_TXN_CURRENT.PROVIDER_CURRENCY)
+                )
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.WALLET_SEARCH,
+                        patchValue(walletSearch(update), WITHDRAWAL_TXN_CURRENT.WALLET_SEARCH)
+                )
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.PROVIDER_SEARCH,
+                        patchValue(providerSearch(update), WITHDRAWAL_TXN_CURRENT.PROVIDER_SEARCH)
+                )
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.TERMINAL_SEARCH,
+                        patchValue(terminalSearch(update), WITHDRAWAL_TXN_CURRENT.TERMINAL_SEARCH)
+                )
+                .set(
+                        WITHDRAWAL_TXN_CURRENT.TRX_SEARCH,
+                        patchValue(trxSearch(update), WITHDRAWAL_TXN_CURRENT.TRX_SEARCH)
+                )
+                .set(WITHDRAWAL_TXN_CURRENT.UPDATED_AT, UTC_NOW)
+                .where(WITHDRAWAL_TXN_CURRENT.WITHDRAWAL_ID.eq(update.withdrawalId()))
+                .and(WITHDRAWAL_TXN_CURRENT.DOMAIN_EVENT_ID.lt(update.domainEventId()))
+                .execute();
         if (updated > 0) {
             return true;
         }
         if (!canInsert(update)) {
             return false;
         }
-        var inserted = jdbcTemplate.update(
-                """
-                        INSERT INTO ccr.withdrawal_txn_current (
-                            withdrawal_id, domain_event_id, domain_event_created_at,
-                            party_id, wallet_id, wallet_name, destination_id, created_at,
-                            finalized_at, status, provider_id, provider_name, terminal_id,
-                            terminal_name, amount, fee, currency, trx_id, external_id,
-                            error_code, error_reason, error_sub_failure, original_amount,
-                            original_currency, converted_amount, exchange_rate_internal,
-                            provider_amount, provider_currency, wallet_search,
-                            provider_search, terminal_search, trx_search
-                        ) VALUES (
-                            :withdrawalId, :domainEventId, :domainEventCreatedAt,
-                            :partyId, :walletId, :walletName, :destinationId, :createdAt,
-                            :finalizedAt, :status, :providerId, :providerName, :terminalId,
-                            :terminalName, :amount, :fee, :currency, :trxId, :externalId,
-                            :errorCode, :errorReason, :errorSubFailure, :originalAmount,
-                            :originalCurrency, :convertedAmount, :exchangeRateInternal,
-                            :providerAmount, :providerCurrency, :walletSearch,
-                            :providerSearch, :terminalSearch, :trxSearch
-                        )
-                        ON CONFLICT (withdrawal_id) DO NOTHING
-                        """,
-                params
-        );
+        var inserted = dslContext.insertInto(
+                        WITHDRAWAL_TXN_CURRENT,
+                        WITHDRAWAL_TXN_CURRENT.WITHDRAWAL_ID,
+                        WITHDRAWAL_TXN_CURRENT.DOMAIN_EVENT_ID,
+                        WITHDRAWAL_TXN_CURRENT.DOMAIN_EVENT_CREATED_AT,
+                        WITHDRAWAL_TXN_CURRENT.PARTY_ID,
+                        WITHDRAWAL_TXN_CURRENT.WALLET_ID,
+                        WITHDRAWAL_TXN_CURRENT.WALLET_NAME,
+                        WITHDRAWAL_TXN_CURRENT.DESTINATION_ID,
+                        WITHDRAWAL_TXN_CURRENT.CREATED_AT,
+                        WITHDRAWAL_TXN_CURRENT.FINALIZED_AT,
+                        WITHDRAWAL_TXN_CURRENT.STATUS,
+                        WITHDRAWAL_TXN_CURRENT.PROVIDER_ID,
+                        WITHDRAWAL_TXN_CURRENT.PROVIDER_NAME,
+                        WITHDRAWAL_TXN_CURRENT.TERMINAL_ID,
+                        WITHDRAWAL_TXN_CURRENT.TERMINAL_NAME,
+                        WITHDRAWAL_TXN_CURRENT.AMOUNT,
+                        WITHDRAWAL_TXN_CURRENT.FEE,
+                        WITHDRAWAL_TXN_CURRENT.CURRENCY,
+                        WITHDRAWAL_TXN_CURRENT.TRX_ID,
+                        WITHDRAWAL_TXN_CURRENT.EXTERNAL_ID,
+                        WITHDRAWAL_TXN_CURRENT.ERROR_CODE,
+                        WITHDRAWAL_TXN_CURRENT.ERROR_REASON,
+                        WITHDRAWAL_TXN_CURRENT.ERROR_SUB_FAILURE,
+                        WITHDRAWAL_TXN_CURRENT.ORIGINAL_AMOUNT,
+                        WITHDRAWAL_TXN_CURRENT.ORIGINAL_CURRENCY,
+                        WITHDRAWAL_TXN_CURRENT.CONVERTED_AMOUNT,
+                        WITHDRAWAL_TXN_CURRENT.EXCHANGE_RATE_INTERNAL,
+                        WITHDRAWAL_TXN_CURRENT.PROVIDER_AMOUNT,
+                        WITHDRAWAL_TXN_CURRENT.PROVIDER_CURRENCY,
+                        WITHDRAWAL_TXN_CURRENT.WALLET_SEARCH,
+                        WITHDRAWAL_TXN_CURRENT.PROVIDER_SEARCH,
+                        WITHDRAWAL_TXN_CURRENT.TERMINAL_SEARCH,
+                        WITHDRAWAL_TXN_CURRENT.TRX_SEARCH
+                )
+                .values(
+                        update.withdrawalId(),
+                        update.domainEventId(),
+                        toLocalDateTime(update.domainEventCreatedAt()),
+                        update.partyId(),
+                        update.walletId(),
+                        update.walletName(),
+                        update.destinationId(),
+                        toLocalDateTime(update.createdAt()),
+                        toLocalDateTime(update.finalizedAt()),
+                        update.status(),
+                        update.providerId(),
+                        update.providerName(),
+                        update.terminalId(),
+                        update.terminalName(),
+                        update.amount(),
+                        update.fee(),
+                        update.currency(),
+                        update.trxId(),
+                        update.externalId(),
+                        update.errorCode(),
+                        update.errorReason(),
+                        update.errorSubFailure(),
+                        update.originalAmount(),
+                        update.originalCurrency(),
+                        update.convertedAmount(),
+                        update.exchangeRateInternal(),
+                        update.providerAmount(),
+                        update.providerCurrency(),
+                        walletSearch(update),
+                        providerSearch(update),
+                        terminalSearch(update),
+                        trxSearch(update)
+                )
+                .onConflict(WITHDRAWAL_TXN_CURRENT.WITHDRAWAL_ID)
+                .doNothing()
+                .execute();
         return inserted > 0;
-    }
-
-    private MapSqlParameterSource params(WithdrawalCurrentUpdate update) {
-        return new MapSqlParameterSource()
-                .addValue("withdrawalId", update.withdrawalId())
-                .addValue("domainEventId", update.domainEventId())
-                .addValue("domainEventCreatedAt", toLocalDateTime(update.domainEventCreatedAt()))
-                .addValue("partyId", update.partyId())
-                .addValue("walletId", update.walletId())
-                .addValue("walletName", update.walletName())
-                .addValue("destinationId", update.destinationId())
-                .addValue("createdAt", toLocalDateTime(update.createdAt()))
-                .addValue("finalizedAt", toLocalDateTime(update.finalizedAt()))
-                .addValue("status", update.status())
-                .addValue("providerId", update.providerId())
-                .addValue("providerName", update.providerName())
-                .addValue("terminalId", update.terminalId())
-                .addValue("terminalName", update.terminalName())
-                .addValue("amount", update.amount())
-                .addValue("fee", update.fee())
-                .addValue("currency", update.currency())
-                .addValue("trxId", update.trxId())
-                .addValue("externalId", update.externalId())
-                .addValue("errorCode", update.errorCode())
-                .addValue("errorReason", update.errorReason())
-                .addValue("errorSubFailure", update.errorSubFailure())
-                .addValue("originalAmount", update.originalAmount())
-                .addValue("originalCurrency", update.originalCurrency())
-                .addValue("convertedAmount", update.convertedAmount())
-                .addValue("exchangeRateInternal", update.exchangeRateInternal())
-                .addValue("providerAmount", update.providerAmount())
-                .addValue("providerCurrency", update.providerCurrency())
-                .addValue("walletSearch", SearchValueNormalizer.normalize(update.walletId(), update.walletName()))
-                .addValue("providerSearch", SearchValueNormalizer.normalize(update.providerId(), update.providerName()))
-                .addValue("terminalSearch", SearchValueNormalizer.normalize(update.terminalId(), update.terminalName()))
-                .addValue("trxSearch", SearchValueNormalizer.normalize(update.trxId()));
     }
 
     private LocalDateTime toLocalDateTime(Instant value) {
         return value == null ? null : TimestampUtils.toLocalDateTime(value);
+    }
+
+    private String walletSearch(WithdrawalCurrentUpdate update) {
+        return SearchValueNormalizer.normalize(update.walletId(), update.walletName());
+    }
+
+    private String providerSearch(WithdrawalCurrentUpdate update) {
+        return SearchValueNormalizer.normalize(update.providerId(), update.providerName());
+    }
+
+    private String terminalSearch(WithdrawalCurrentUpdate update) {
+        return SearchValueNormalizer.normalize(update.terminalId(), update.terminalName());
+    }
+
+    private String trxSearch(WithdrawalCurrentUpdate update) {
+        return SearchValueNormalizer.normalize(update.trxId());
     }
 
     private boolean canInsert(WithdrawalCurrentUpdate update) {
@@ -185,5 +289,13 @@ public class WithdrawalCurrentDao {
                 && update.exchangeRateInternal() == null
                 && update.providerAmount() == null
                 && update.providerCurrency() == null;
+    }
+
+    private static <T> Field<T> patchValue(T value, TableField<?, T> field) {
+        return DSL.coalesce(DSL.val(value, field.getDataType()), field);
+    }
+
+    private static <T> Field<T> firstWriteWins(T value, TableField<?, T> field) {
+        return DSL.coalesce(field, DSL.val(value, field.getDataType()));
     }
 }
