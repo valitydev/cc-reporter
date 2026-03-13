@@ -2,6 +2,7 @@ package dev.vality.ccreporter.dao;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.vality.ccreporter.domain.tables.pojos.ReportAuditEvent;
 import dev.vality.ccreporter.security.RequestAuditMetadata;
 import org.jooq.DSLContext;
 import org.jooq.JSONB;
@@ -31,19 +32,16 @@ public class ReportAuditDao {
             Map<String, Object> details
     ) {
         var payloadJson = serializePayload(metadata, details);
-        dslContext.insertInto(
-                        REPORT_AUDIT_EVENT,
-                        REPORT_AUDIT_EVENT.REPORT_ID,
-                        REPORT_AUDIT_EVENT.EVENT_TYPE,
-                        REPORT_AUDIT_EVENT.ACTOR,
-                        REPORT_AUDIT_EVENT.PAYLOAD_JSON
-                )
-                .values(
-                        reportId,
-                        eventType,
-                        actor,
-                        JSONB.jsonb(payloadJson)
-                )
+        var auditEvent = new ReportAuditEvent();
+        auditEvent.setReportId(reportId);
+        auditEvent.setEventType(eventType);
+        auditEvent.setActor(actor);
+        auditEvent.setPayloadJson(JSONB.jsonb(payloadJson));
+        var record = dslContext.newRecord(REPORT_AUDIT_EVENT, auditEvent);
+        record.changed(REPORT_AUDIT_EVENT.ID, false);
+        record.changed(REPORT_AUDIT_EVENT.CREATED_AT, false);
+        dslContext.insertInto(REPORT_AUDIT_EVENT)
+                .set(record)
                 .execute();
     }
 

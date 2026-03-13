@@ -1,6 +1,7 @@
 package dev.vality.ccreporter.dao;
 
 import dev.vality.ccreporter.ReportStatus;
+import dev.vality.ccreporter.domain.tables.pojos.ReportFile;
 import dev.vality.ccreporter.model.ClaimedReportJob;
 import dev.vality.ccreporter.model.ReportFileMetadata;
 import org.jooq.DSLContext;
@@ -118,18 +119,22 @@ public class ReportLifecycleDao {
     }
 
     public boolean publishFileRecord(long reportId, ReportFileMetadata fileMetadata, Instant createdAt) {
+        var reportFile = new ReportFile();
+        reportFile.setReportId(reportId);
+        reportFile.setFileId(fileMetadata.fileId());
+        reportFile.setFileType(CSV_FILE_TYPE);
+        reportFile.setBucket(fileMetadata.bucket());
+        reportFile.setObjectKey(fileMetadata.objectKey());
+        reportFile.setFilename(fileMetadata.fileName());
+        reportFile.setContentType(fileMetadata.contentType());
+        reportFile.setSizeBytes(fileMetadata.sizeBytes());
+        reportFile.setMd5(fileMetadata.md5());
+        reportFile.setSha256(fileMetadata.sha256());
+        reportFile.setCreatedAt(LocalDateTime.ofInstant(createdAt, java.time.ZoneOffset.UTC));
+        var record = dslContext.newRecord(REPORT_FILE, reportFile);
+        record.changed(REPORT_FILE.ID, false);
         var updated = dslContext.insertInto(REPORT_FILE)
-                .set(REPORT_FILE.REPORT_ID, reportId)
-                .set(REPORT_FILE.FILE_ID, fileMetadata.fileId())
-                .set(REPORT_FILE.FILE_TYPE, CSV_FILE_TYPE)
-                .set(REPORT_FILE.BUCKET, fileMetadata.bucket())
-                .set(REPORT_FILE.OBJECT_KEY, fileMetadata.objectKey())
-                .set(REPORT_FILE.FILENAME, fileMetadata.fileName())
-                .set(REPORT_FILE.CONTENT_TYPE, fileMetadata.contentType())
-                .set(REPORT_FILE.SIZE_BYTES, fileMetadata.sizeBytes())
-                .set(REPORT_FILE.MD5, fileMetadata.md5())
-                .set(REPORT_FILE.SHA256, fileMetadata.sha256())
-                .set(REPORT_FILE.CREATED_AT, timestampValue(createdAt, REPORT_FILE.CREATED_AT))
+                .set(record)
                 .execute();
         return updated > 0;
     }

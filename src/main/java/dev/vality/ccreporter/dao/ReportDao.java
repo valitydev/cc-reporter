@@ -2,7 +2,9 @@ package dev.vality.ccreporter.dao;
 
 import dev.vality.ccreporter.*;
 import dev.vality.ccreporter.domain.tables.pojos.ReportFile;
+import dev.vality.ccreporter.domain.tables.pojos.ReportJob;
 import dev.vality.ccreporter.model.StoredReport;
+import dev.vality.ccreporter.model.StoredReportFile;
 import dev.vality.ccreporter.util.ContinuationTokenCodec.PageCursor;
 import dev.vality.ccreporter.util.ThriftQueryCodec;
 import dev.vality.ccreporter.util.TimestampUtils;
@@ -56,22 +58,27 @@ public class ReportDao {
         var timeRange = thriftQueryCodec.extractTimeRange(query);
         var queryJson = thriftQueryCodec.serialize(query);
         var queryHash = thriftQueryCodec.hash(queryJson);
+        var reportJob = new ReportJob();
+        reportJob.setReportType(toJooqReportType(reportType));
+        reportJob.setFileType(toJooqFileType(fileType));
+        reportJob.setQueryJson(JSONB.jsonb(queryJson));
+        reportJob.setQueryHash(queryHash);
+        reportJob.setRequestedTimeFrom(toLocalDateTime(timeRange.from()));
+        reportJob.setRequestedTimeTo(toLocalDateTime(timeRange.to()));
+        reportJob.setTimezone(timezone);
+        reportJob.setCreatedBy(createdBy);
+        reportJob.setIdempotencyKey(StringUtils.hasText(idempotencyKey) ? idempotencyKey : null);
 
         try {
+            var record = dslContext.newRecord(REPORT_JOB, reportJob);
+            record.changed(REPORT_JOB.ID, false);
+            record.changed(REPORT_JOB.STATUS, false);
+            record.changed(REPORT_JOB.ATTEMPT, false);
+            record.changed(REPORT_JOB.CREATED_AT, false);
+            record.changed(REPORT_JOB.UPDATED_AT, false);
             return Objects.requireNonNull(
                     dslContext.insertInto(REPORT_JOB)
-                            .set(REPORT_JOB.REPORT_TYPE, toJooqReportType(reportType))
-                            .set(REPORT_JOB.FILE_TYPE, toJooqFileType(fileType))
-                            .set(REPORT_JOB.QUERY_JSON, JSONB.jsonb(queryJson))
-                            .set(REPORT_JOB.QUERY_HASH, queryHash)
-                            .set(REPORT_JOB.REQUESTED_TIME_FROM, toLocalDateTime(timeRange.from()))
-                            .set(REPORT_JOB.REQUESTED_TIME_TO, toLocalDateTime(timeRange.to()))
-                            .set(REPORT_JOB.TIMEZONE, timezone)
-                            .set(REPORT_JOB.CREATED_BY, createdBy)
-                            .set(
-                                    REPORT_JOB.IDEMPOTENCY_KEY,
-                                    StringUtils.hasText(idempotencyKey) ? idempotencyKey : null
-                            )
+                            .set(record)
                             .returningResult(REPORT_JOB.ID)
                             .fetchOne(REPORT_JOB.ID),
                     "Report creation must return an id"
@@ -251,7 +258,7 @@ public class ReportDao {
                 TimestampUtils.toOptionalInstant(record.get(expiresAt)),
                 record.get(REPORT_JOB.ERROR_CODE),
                 record.get(REPORT_JOB.ERROR_MESSAGE),
-                record.get(REPORT_FILE.FILE_ID) == null ? null : partialReportFile(
+                record.get(REPORT_FILE.FILE_ID) == null ? null : mapStoredReportFile(
                         record.get(REPORT_FILE.FILE_ID),
                         record.get(reportFileType),
                         record.get(REPORT_FILE.FILENAME),
@@ -282,7 +289,7 @@ public class ReportDao {
         return reportFile;
     }
 
-    private static ReportFile partialReportFile(
+    private static StoredReportFile mapStoredReportFile(
             String fileId,
             dev.vality.ccreporter.domain.enums.FileType fileType,
             String filename,
@@ -292,16 +299,16 @@ public class ReportDao {
             Long sizeBytes,
             Timestamp createdAt
     ) {
-        var reportFile = new ReportFile();
-        reportFile.setFileId(fileId);
-        reportFile.setFileType(fileType);
-        reportFile.setFilename(filename);
-        reportFile.setContentType(contentType);
-        reportFile.setMd5(md5);
-        reportFile.setSha256(sha256);
-        reportFile.setSizeBytes(sizeBytes);
-        reportFile.setCreatedAt(TimestampUtils.toLocalDateTime(TimestampUtils.toInstant(createdAt)));
-        return reportFile;
+        return new StoredReportFile(
+                fileId,
+                fromJooqFileType(fileType),
+                filename,
+                contentType,
+                md5,
+                sha256,
+                sizeBytes,
+                TimestampUtils.toInstant(createdAt)
+        );
     }
 
     private static LocalDateTime toLocalDateTime(Instant value) {

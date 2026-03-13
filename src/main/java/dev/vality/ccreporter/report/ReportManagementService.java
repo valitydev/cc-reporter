@@ -5,8 +5,8 @@ import dev.vality.ccreporter.config.properties.CcrApiProperties;
 import dev.vality.ccreporter.config.properties.ReportProperties;
 import dev.vality.ccreporter.dao.ReportAuditDao;
 import dev.vality.ccreporter.dao.ReportDao;
-import dev.vality.ccreporter.domain.tables.pojos.ReportFile;
 import dev.vality.ccreporter.model.StoredReport;
+import dev.vality.ccreporter.model.StoredReportFile;
 import dev.vality.ccreporter.security.CurrentPrincipalResolver;
 import dev.vality.ccreporter.security.RequestAuditMetadata;
 import dev.vality.ccreporter.security.RequestAuditMetadataResolver;
@@ -342,17 +342,17 @@ public class ReportManagementService {
         return report;
     }
 
-    private FileMeta toThriftFile(ReportFile fileData) {
+    private FileMeta toThriftFile(StoredReportFile fileData) {
         var fileMeta = new FileMeta();
-        fileMeta.setFileId(fileData.getFileId());
-        fileMeta.setFileType(FileType.valueOf(fileData.getFileType().getLiteral()));
-        fileMeta.setFilename(fileData.getFilename());
-        fileMeta.setContentType(fileData.getContentType());
-        fileMeta.setSignature(new FileSignature(fileData.getMd5(), fileData.getSha256()));
-        if (fileData.getSizeBytes() != null) {
-            fileMeta.setSizeBytes(fileData.getSizeBytes());
+        fileMeta.setFileId(fileData.fileId());
+        fileMeta.setFileType(fileData.fileType());
+        fileMeta.setFilename(fileData.filename());
+        fileMeta.setContentType(fileData.contentType());
+        fileMeta.setSignature(new FileSignature(fileData.md5(), fileData.sha256()));
+        if (fileData.sizeBytes() != null) {
+            fileMeta.setSizeBytes(fileData.sizeBytes());
         }
-        fileMeta.setCreatedAt(TimestampUtils.format(fileData.getCreatedAt().toInstant(java.time.ZoneOffset.UTC)));
+        fileMeta.setCreatedAt(TimestampUtils.format(fileData.createdAt()));
         return fileMeta;
     }
 
