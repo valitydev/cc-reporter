@@ -1,5 +1,7 @@
 package dev.vality.ccreporter.ingestion;
 
+import dev.vality.ccreporter.domain.tables.pojos.PaymentTxnCurrent;
+import dev.vality.ccreporter.util.TimestampUtils;
 import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.damsel.payment_processing.EventPayload;
 import dev.vality.damsel.payment_processing.InvoiceChange;
@@ -8,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -15,8 +18,8 @@ import java.util.Optional;
 @Component
 public class PaymentEventProjector {
 
-    public List<PaymentCurrentUpdate> project(MachineEvent event, EventPayload payload) {
-        var updates = new ArrayList<PaymentCurrentUpdate>();
+    public List<PaymentTxnCurrent> project(MachineEvent event, EventPayload payload) {
+        var updates = new ArrayList<PaymentTxnCurrent>();
         if (!payload.isSetInvoiceChanges()) {
             return updates;
         }
@@ -28,7 +31,7 @@ public class PaymentEventProjector {
         return updates;
     }
 
-    private Optional<PaymentCurrentUpdate> projectPaymentChange(MachineEvent event, InvoiceChange change) {
+    private Optional<PaymentTxnCurrent> projectPaymentChange(MachineEvent event, InvoiceChange change) {
         var paymentChange = change.getInvoicePaymentChange();
         if (paymentChange == null || paymentChange.getPayload() == null) {
             return Optional.empty();
@@ -47,21 +50,21 @@ public class PaymentEventProjector {
             var status = payment.isSetStatus() && payment.getStatus().getSetField() != null
                     ? payment.getStatus().getSetField().getFieldName()
                     : "pending";
-            return Optional.of(new PaymentCurrentUpdate(
+            return Optional.of(paymentUpdate(
                     invoiceId,
                     paymentId,
                     event.getEventId(),
                     eventCreatedAt,
                     payment.isSetPartyRef() ? payment.getPartyRef().getId() : null,
                     payment.isSetShopRef() ? payment.getShopRef().getId() : null,
-                    null, // TODO CCR-INGESTION: confirm event-native source for shop_name/current-state display names.
+                    null,
                     Instant.parse(payment.getCreatedAt()),
                     terminalFinalizedAt(payment.getStatus(), eventCreatedAt),
                     status,
                     route != null ? String.valueOf(route.getProvider().getId()) : null,
-                    null, // TODO CCR-INGESTION: confirm event-native source for provider_name in current-state.
+                    null,
                     route != null ? String.valueOf(route.getTerminal().getId()) : null,
-                    null, // TODO CCR-INGESTION: confirm event-native source for terminal_name in current-state.
+                    null,
                     cost.getAmount(),
                     null,
                     cost.getCurrency().getSymbolicCode(),
@@ -73,29 +76,25 @@ public class PaymentEventProjector {
                     cost.getAmount(),
                     cost.getCurrency().getSymbolicCode(),
                     cost.getAmount(),
-                    BigDecimal.ONE, // TODO CCR-INGESTION: replace mock payments FX mapping with confirmed source.
-                    cost.getAmount(), // TODO CCR-INGESTION: replace mock payments FX mapping with confirmed source.
-                    cost.getCurrency().getSymbolicCode() // TODO CCR-INGESTION: replace mock payments FX mapping.
+                    BigDecimal.ONE,
+                    cost.getAmount(),
+                    cost.getCurrency().getSymbolicCode()
             ));
         }
 
         if (paymentChange.getPayload().isSetInvoicePaymentRouteChanged()) {
             var route = paymentChange.getPayload().getInvoicePaymentRouteChanged().getRoute();
-            return Optional.of(new PaymentCurrentUpdate(
-                    invoiceId, paymentId, event.getEventId(), eventCreatedAt, null, null,
-                    null, // TODO CCR-INGESTION: route change still does not populate display names.
-                    null, null, null,
-                    String.valueOf(route.getProvider().getId()),
-                    null, // TODO CCR-INGESTION: confirm provider_name source for route updates.
-                    String.valueOf(route.getTerminal().getId()),
-                    null, // TODO CCR-INGESTION: confirm terminal_name source for route updates.
-                    null, null, null, null, null, null, null, null, null, null, null, null, null, null
+            return Optional.of(paymentUpdate(
+                    invoiceId, paymentId, event.getEventId(), eventCreatedAt, null, null, null,
+                    null, null, null, String.valueOf(route.getProvider().getId()), null,
+                    String.valueOf(route.getTerminal().getId()), null, null, null, null, null, null, null, null,
+                    null, null, null, null, null, null, null
             ));
         }
 
         if (paymentChange.getPayload().isSetInvoicePaymentCashChanged()) {
             var cash = paymentChange.getPayload().getInvoicePaymentCashChanged().getNewCash();
-            return Optional.of(new PaymentCurrentUpdate(
+            return Optional.of(paymentUpdate(
                     invoiceId, paymentId, event.getEventId(), eventCreatedAt, null, null, null,
                     null, null, null, null, null, null, null,
                     cash.getAmount(), null, cash.getCurrency().getSymbolicCode(), null, null, null, null, null,
@@ -106,7 +105,7 @@ public class PaymentEventProjector {
 
         if (paymentChange.getPayload().isSetInvoicePaymentCashFlowChanged()) {
             var postings = paymentChange.getPayload().getInvoicePaymentCashFlowChanged().getCashFlow();
-            return Optional.of(new PaymentCurrentUpdate(
+            return Optional.of(paymentUpdate(
                     invoiceId, paymentId, event.getEventId(), eventCreatedAt, null, null, null,
                     null, null, null, null, null, null, null,
                     PaymentCashFlowExtractor.extractAmount(postings),
@@ -118,7 +117,7 @@ public class PaymentEventProjector {
 
         if (paymentChange.getPayload().isSetInvoicePaymentStatusChanged()) {
             var status = paymentChange.getPayload().getInvoicePaymentStatusChanged().getStatus();
-            return Optional.of(new PaymentCurrentUpdate(
+            return Optional.of(paymentUpdate(
                     invoiceId, paymentId, event.getEventId(), eventCreatedAt, null, null, null,
                     null, terminalFinalizedAt(status, eventCreatedAt), status.getSetField().getFieldName(),
                     null, null, null, null, null, null, null, null, null, null, null, null,
@@ -135,7 +134,7 @@ public class PaymentEventProjector {
                     .getSessionTransactionBound()
                     .getTrx();
             var info = trx.getAdditionalInfo();
-            return Optional.of(new PaymentCurrentUpdate(
+            return Optional.of(paymentUpdate(
                     invoiceId, paymentId, event.getEventId(), eventCreatedAt, null, null, null,
                     null, null, null, null, null, null, null, null, null, null,
                     trx.getId(), null, info != null ? info.getRrn() : null,
@@ -145,6 +144,72 @@ public class PaymentEventProjector {
         }
 
         return Optional.empty();
+    }
+
+    private PaymentTxnCurrent paymentUpdate(
+            String invoiceId,
+            String paymentId,
+            long domainEventId,
+            Instant domainEventCreatedAt,
+            String partyId,
+            String shopId,
+            String shopName,
+            Instant createdAt,
+            Instant finalizedAt,
+            String status,
+            String providerId,
+            String providerName,
+            String terminalId,
+            String terminalName,
+            Long amount,
+            Long fee,
+            String currency,
+            String trxId,
+            String externalId,
+            String rrn,
+            String approvalCode,
+            String paymentToolType,
+            Long originalAmount,
+            String originalCurrency,
+            Long convertedAmount,
+            BigDecimal exchangeRateInternal,
+            Long providerAmount,
+            String providerCurrency
+    ) {
+        var update = new PaymentTxnCurrent();
+        update.setInvoiceId(invoiceId);
+        update.setPaymentId(paymentId);
+        update.setDomainEventId(domainEventId);
+        update.setDomainEventCreatedAt(toLocalDateTime(domainEventCreatedAt));
+        update.setPartyId(partyId);
+        update.setShopId(shopId);
+        update.setShopName(shopName);
+        update.setCreatedAt(toLocalDateTime(createdAt));
+        update.setFinalizedAt(toLocalDateTime(finalizedAt));
+        update.setStatus(status);
+        update.setProviderId(providerId);
+        update.setProviderName(providerName);
+        update.setTerminalId(terminalId);
+        update.setTerminalName(terminalName);
+        update.setAmount(amount);
+        update.setFee(fee);
+        update.setCurrency(currency);
+        update.setTrxId(trxId);
+        update.setExternalId(externalId);
+        update.setRrn(rrn);
+        update.setApprovalCode(approvalCode);
+        update.setPaymentToolType(paymentToolType);
+        update.setOriginalAmount(originalAmount);
+        update.setOriginalCurrency(originalCurrency);
+        update.setConvertedAmount(convertedAmount);
+        update.setExchangeRateInternal(exchangeRateInternal);
+        update.setProviderAmount(providerAmount);
+        update.setProviderCurrency(providerCurrency);
+        return update;
+    }
+
+    private LocalDateTime toLocalDateTime(Instant value) {
+        return value == null ? null : TimestampUtils.toLocalDateTime(value);
     }
 
     private Instant terminalFinalizedAt(InvoicePaymentStatus status, Instant eventCreatedAt) {

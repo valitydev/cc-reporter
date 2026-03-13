@@ -61,8 +61,7 @@ public class KafkaIngestionConfig {
     }
 
     @Bean
-    public ThriftBinaryDeserializer<dev.vality.fistful.withdrawal_session.Event>
-            withdrawalSessionEventDeserializer() {
+    public ThriftBinaryDeserializer<dev.vality.fistful.withdrawal_session.Event> withdrawalSessionEventDeserializer() {
         return new ThriftBinaryDeserializer<>() {
             @Override
             protected dev.vality.fistful.withdrawal_session.Event newInstance() {

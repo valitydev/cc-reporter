@@ -16,7 +16,7 @@ public final class WithdrawalCashFlowExtractor {
                 .filter(posting -> posting.getSource().getAccountType().isSetWallet()
                         && posting.getDestination().getAccountType().isSetSystem())
                 .map(FinalCashFlowPosting::getVolume)
-                .mapToLong(volume -> volume.getAmount())
+                .mapToLong(dev.vality.fistful.base.Cash::getAmount)
                 .sum();
     }
 }

@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.report;
+package dev.vality.ccreporter.model;
 
 import java.nio.file.Path;
 import java.time.Instant;

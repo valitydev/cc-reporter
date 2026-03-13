@@ -1,9 +1,9 @@
-package dev.vality.ccreporter.report;
+package dev.vality.ccreporter.model;
 
 import dev.vality.ccreporter.FileType;
 import dev.vality.ccreporter.ReportStatus;
 import dev.vality.ccreporter.ReportType;
-import dev.vality.ccreporter.storage.StoredFileData;
+import dev.vality.ccreporter.domain.tables.pojos.ReportFile;
 
 import java.time.Instant;
 
@@ -23,6 +23,6 @@ public record StoredReport(
         Instant expiresAt,
         String errorCode,
         String errorMessage,
-        StoredFileData fileData
+        ReportFile fileData
 ) {
 }

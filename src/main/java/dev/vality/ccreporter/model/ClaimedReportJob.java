@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.dao;
+package dev.vality.ccreporter.model;
 
 import dev.vality.ccreporter.FileType;
 import dev.vality.ccreporter.ReportType;

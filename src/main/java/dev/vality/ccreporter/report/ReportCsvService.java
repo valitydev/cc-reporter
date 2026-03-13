@@ -4,7 +4,8 @@ import dev.vality.ccreporter.PaymentsQuery;
 import dev.vality.ccreporter.PaymentsSearchFilter;
 import dev.vality.ccreporter.WithdrawalsQuery;
 import dev.vality.ccreporter.WithdrawalsSearchFilter;
-import dev.vality.ccreporter.dao.ClaimedReportJob;
+import dev.vality.ccreporter.model.ClaimedReportJob;
+import dev.vality.ccreporter.model.GeneratedCsvReport;
 import dev.vality.ccreporter.util.ThriftQueryCodec;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.PreparedStatementCreatorFactory;
@@ -107,13 +108,15 @@ public class ReportCsvService {
                 var md5 = createDigest("MD5");
                 var sha256 = createDigest("SHA-256");
                 var rowsCount = 0L;
-                try (var fileOutputStream = Files.newOutputStream(stagedFile);
+                try (
+                        var fileOutputStream = Files.newOutputStream(stagedFile);
                         var bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
                         var md5OutputStream = new DigestOutputStream(bufferedOutputStream, md5);
                         var sha256OutputStream = new DigestOutputStream(md5OutputStream, sha256);
                         var writer = new BufferedWriter(
                                 new OutputStreamWriter(sha256OutputStream, StandardCharsets.UTF_8)
-                        )) {
+                        )
+                ) {
                     if (reportQuery.isSetPayments()) {
                         rowsCount = writePaymentsCsv(writer, reportQuery.getPayments(), zoneId);
                     } else if (reportQuery.isSetWithdrawals()) {
@@ -427,8 +430,8 @@ public class ReportCsvService {
     private Instant currentSnapshot() {
         var epochSeconds = Objects.requireNonNull(
                 jdbcTemplate.getJdbcTemplate().queryForObject(
-                "SELECT EXTRACT(EPOCH FROM now())",
-                BigDecimal.class
+                        "SELECT EXTRACT(EPOCH FROM now())",
+                        BigDecimal.class
                 ),
                 "Current snapshot query must return epoch seconds"
         );

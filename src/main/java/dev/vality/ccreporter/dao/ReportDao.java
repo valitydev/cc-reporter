@@ -1,21 +1,13 @@
 package dev.vality.ccreporter.dao;
 
-import dev.vality.ccreporter.FileType;
-import dev.vality.ccreporter.GetReportsFilter;
-import dev.vality.ccreporter.ReportQuery;
-import dev.vality.ccreporter.ReportStatus;
-import dev.vality.ccreporter.ReportType;
-import dev.vality.ccreporter.report.StoredReport;
-import dev.vality.ccreporter.storage.StoredFileData;
+import dev.vality.ccreporter.*;
+import dev.vality.ccreporter.domain.tables.pojos.ReportFile;
+import dev.vality.ccreporter.model.StoredReport;
 import dev.vality.ccreporter.util.ContinuationTokenCodec.PageCursor;
 import dev.vality.ccreporter.util.ThriftQueryCodec;
 import dev.vality.ccreporter.util.TimestampUtils;
-import org.jooq.Condition;
-import org.jooq.DSLContext;
-import org.jooq.JSONB;
+import org.jooq.*;
 import org.jooq.Record;
-import org.jooq.TableField;
-import org.jooq.SelectJoinStep;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
@@ -174,7 +166,7 @@ public class ReportDao {
         );
     }
 
-    public Optional<StoredFileData> getFile(String createdBy, String fileId) {
+    public Optional<ReportFile> getFile(String createdBy, String fileId) {
         var createdAt = timestampField(REPORT_FILE.CREATED_AT, "created_at_ts");
         return dslContext.select(
                         REPORT_FILE.REPORT_ID,
@@ -259,36 +251,57 @@ public class ReportDao {
                 TimestampUtils.toOptionalInstant(record.get(expiresAt)),
                 record.get(REPORT_JOB.ERROR_CODE),
                 record.get(REPORT_JOB.ERROR_MESSAGE),
-                record.get(REPORT_FILE.FILE_ID) == null ? null : new StoredFileData(
-                        null,
+                record.get(REPORT_FILE.FILE_ID) == null ? null : partialReportFile(
                         record.get(REPORT_FILE.FILE_ID),
-                        fromJooqFileType(record.get(reportFileType)),
+                        record.get(reportFileType),
                         record.get(REPORT_FILE.FILENAME),
                         record.get(REPORT_FILE.CONTENT_TYPE),
                         record.get(REPORT_FILE.MD5),
                         record.get(REPORT_FILE.SHA256),
                         record.get(REPORT_FILE.SIZE_BYTES),
-                        TimestampUtils.toInstant(record.get(fileCreatedAt)),
-                        null,
-                        null
+                        record.get(fileCreatedAt)
                 )
         );
     }
 
-    private static StoredFileData mapFile(Record record) {
-        return new StoredFileData(
-                record.get(REPORT_FILE.REPORT_ID),
-                record.get(REPORT_FILE.FILE_ID),
-                fromJooqFileType(record.get(REPORT_FILE.FILE_TYPE)),
-                record.get(REPORT_FILE.FILENAME),
-                record.get(REPORT_FILE.CONTENT_TYPE),
-                record.get(REPORT_FILE.MD5),
-                record.get(REPORT_FILE.SHA256),
-                record.get(REPORT_FILE.SIZE_BYTES),
-                TimestampUtils.toInstant(record.get(timestampField(REPORT_FILE.CREATED_AT, "created_at_ts"))),
-                record.get(REPORT_FILE.BUCKET),
-                record.get(REPORT_FILE.OBJECT_KEY)
-        );
+    private static ReportFile mapFile(Record record) {
+        var reportFile = new ReportFile();
+        reportFile.setReportId(record.get(REPORT_FILE.REPORT_ID));
+        reportFile.setFileId(record.get(REPORT_FILE.FILE_ID));
+        reportFile.setFileType(record.get(REPORT_FILE.FILE_TYPE));
+        reportFile.setFilename(record.get(REPORT_FILE.FILENAME));
+        reportFile.setContentType(record.get(REPORT_FILE.CONTENT_TYPE));
+        reportFile.setMd5(record.get(REPORT_FILE.MD5));
+        reportFile.setSha256(record.get(REPORT_FILE.SHA256));
+        reportFile.setSizeBytes(record.get(REPORT_FILE.SIZE_BYTES));
+        reportFile.setCreatedAt(TimestampUtils.toLocalDateTime(
+                TimestampUtils.toInstant(record.get(timestampField(REPORT_FILE.CREATED_AT, "created_at_ts")))
+        ));
+        reportFile.setBucket(record.get(REPORT_FILE.BUCKET));
+        reportFile.setObjectKey(record.get(REPORT_FILE.OBJECT_KEY));
+        return reportFile;
+    }
+
+    private static ReportFile partialReportFile(
+            String fileId,
+            dev.vality.ccreporter.domain.enums.FileType fileType,
+            String filename,
+            String contentType,
+            String md5,
+            String sha256,
+            Long sizeBytes,
+            Timestamp createdAt
+    ) {
+        var reportFile = new ReportFile();
+        reportFile.setFileId(fileId);
+        reportFile.setFileType(fileType);
+        reportFile.setFilename(filename);
+        reportFile.setContentType(contentType);
+        reportFile.setMd5(md5);
+        reportFile.setSha256(sha256);
+        reportFile.setSizeBytes(sizeBytes);
+        reportFile.setCreatedAt(TimestampUtils.toLocalDateTime(TimestampUtils.toInstant(createdAt)));
+        return reportFile;
     }
 
     private static LocalDateTime toLocalDateTime(Instant value) {

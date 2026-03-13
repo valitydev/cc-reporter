@@ -1,8 +1,8 @@
 package dev.vality.ccreporter.dao;
 
 import dev.vality.ccreporter.ReportStatus;
-import dev.vality.ccreporter.report.ReportFileMetadata;
-import dev.vality.ccreporter.util.TimestampUtils;
+import dev.vality.ccreporter.model.ClaimedReportJob;
+import dev.vality.ccreporter.model.ReportFileMetadata;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record6;
@@ -21,6 +21,8 @@ import static dev.vality.ccreporter.domain.Tables.REPORT_JOB;
 public class ReportLifecycleDao {
 
     private static final Field<Long> CANDIDATE_ID = DSL.field(DSL.name("candidate", "id"), Long.class);
+    private static final dev.vality.ccreporter.domain.enums.FileType CSV_FILE_TYPE =
+            dev.vality.ccreporter.domain.enums.FileType.csv;
 
     private final DSLContext dslContext;
 
@@ -119,7 +121,7 @@ public class ReportLifecycleDao {
         var updated = dslContext.insertInto(REPORT_FILE)
                 .set(REPORT_FILE.REPORT_ID, reportId)
                 .set(REPORT_FILE.FILE_ID, fileMetadata.fileId())
-                .set(REPORT_FILE.FILE_TYPE, toJooqFileType(dev.vality.ccreporter.FileType.csv))
+                .set(REPORT_FILE.FILE_TYPE, CSV_FILE_TYPE)
                 .set(REPORT_FILE.BUCKET, fileMetadata.bucket())
                 .set(REPORT_FILE.OBJECT_KEY, fileMetadata.objectKey())
                 .set(REPORT_FILE.FILENAME, fileMetadata.fileName())
@@ -255,9 +257,5 @@ public class ReportLifecycleDao {
 
     private static dev.vality.ccreporter.domain.enums.ReportStatus toJooqStatus(ReportStatus status) {
         return dev.vality.ccreporter.domain.enums.ReportStatus.valueOf(status.name());
-    }
-
-    private static dev.vality.ccreporter.domain.enums.FileType toJooqFileType(dev.vality.ccreporter.FileType fileType) {
-        return dev.vality.ccreporter.domain.enums.FileType.valueOf(fileType.name());
     }
 }

@@ -2,8 +2,10 @@ package dev.vality.ccreporter.report;
 
 import dev.vality.ccreporter.config.properties.ReportProperties;
 import dev.vality.ccreporter.config.properties.ReportSchedulerProperties;
-import dev.vality.ccreporter.dao.ClaimedReportJob;
 import dev.vality.ccreporter.dao.ReportLifecycleDao;
+import dev.vality.ccreporter.model.ClaimedReportJob;
+import dev.vality.ccreporter.model.GeneratedCsvReport;
+import dev.vality.ccreporter.model.ReportFileMetadata;
 import dev.vality.ccreporter.storage.FileStorageService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -42,8 +44,8 @@ public class ReportLifecycleService {
         this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
-    public boolean processNextPendingReport() {
-        return processNextPendingReport(Instant.now());
+    public void processNextPendingReport() {
+        processNextPendingReport(Instant.now());
     }
 
     public boolean processNextPendingReport(Instant now) {
@@ -55,8 +57,8 @@ public class ReportLifecycleService {
         return true;
     }
 
-    public int timeoutStaleProcessingReports() {
-        return timeoutStaleProcessingReports(Instant.now());
+    public void timeoutStaleProcessingReports() {
+        timeoutStaleProcessingReports(Instant.now());
     }
 
     public int timeoutStaleProcessingReports(Instant now) {
@@ -64,8 +66,8 @@ public class ReportLifecycleService {
         return reportLifecycleDao.timeoutStaleProcessingReports(staleBefore, now);
     }
 
-    public int expireReadyReports() {
-        return expireReadyReports(Instant.now());
+    public void expireReadyReports() {
+        expireReadyReports(Instant.now());
     }
 
     public int expireReadyReports(Instant now) {

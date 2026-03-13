@@ -37,7 +37,7 @@ public final class PaymentCashFlowExtractor {
                 : postings.stream()
                 .filter(filter)
                 .map(FinalCashFlowPosting::getVolume)
-                .mapToLong(volume -> volume.getAmount())
+                .mapToLong(dev.vality.damsel.domain.Cash::getAmount)
                 .sum();
     }
 }

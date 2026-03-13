@@ -19,8 +19,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.function.Predicate;
 import java.util.concurrent.locks.LockSupport;
+import java.util.function.Predicate;
 
 /**
  * Выносит из Kafka integration-тестов техническую обвязку вокруг producer и ожидания записей в базе.

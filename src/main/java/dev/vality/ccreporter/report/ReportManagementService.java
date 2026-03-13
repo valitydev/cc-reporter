@@ -5,11 +5,12 @@ import dev.vality.ccreporter.config.properties.CcrApiProperties;
 import dev.vality.ccreporter.config.properties.ReportProperties;
 import dev.vality.ccreporter.dao.ReportAuditDao;
 import dev.vality.ccreporter.dao.ReportDao;
+import dev.vality.ccreporter.domain.tables.pojos.ReportFile;
+import dev.vality.ccreporter.model.StoredReport;
 import dev.vality.ccreporter.security.CurrentPrincipalResolver;
 import dev.vality.ccreporter.security.RequestAuditMetadata;
 import dev.vality.ccreporter.security.RequestAuditMetadataResolver;
 import dev.vality.ccreporter.storage.FileStorageService;
-import dev.vality.ccreporter.storage.StoredFileData;
 import dev.vality.ccreporter.util.ContinuationTokenCodec;
 import dev.vality.ccreporter.util.ThriftQueryCodec;
 import dev.vality.ccreporter.util.TimestampUtils;
@@ -119,7 +120,7 @@ public class ReportManagementService {
         var response = new GetReportsResponse();
         response.setReports(storedReports.stream().map(this::toThriftReport).toList());
         if (storedReports.size() == limit) {
-            var lastReport = storedReports.get(storedReports.size() - 1);
+            var lastReport = storedReports.getLast();
             response.setContinuationToken(continuationTokenCodec.encode(lastReport.createdAt(), lastReport.id()));
         }
         return response;
@@ -173,15 +174,15 @@ public class ReportManagementService {
         var effectiveExpiresAt = requestedExpiresAt.isAfter(ttlCap) ? ttlCap : requestedExpiresAt;
         try {
             var url = fileStorageService.generateDownloadUrl(
-                    fileData.get().fileId(),
+                    fileData.get().getFileId(),
                     effectiveExpiresAt
             );
             reportAuditDao.insertEvent(
-                    fileData.get().reportId(),
+                    fileData.get().getReportId(),
                     PRESIGNED_URL_GENERATED_EVENT,
                     createdBy,
                     auditMetadata,
-                    buildPresignedUrlDetails(request, effectiveExpiresAt, fileData.get().fileId())
+                    buildPresignedUrlDetails(request, effectiveExpiresAt, fileData.get().getFileId())
             );
             return url;
         } catch (NoSuchFileException ex) {
@@ -341,17 +342,17 @@ public class ReportManagementService {
         return report;
     }
 
-    private FileMeta toThriftFile(StoredFileData fileData) {
+    private FileMeta toThriftFile(ReportFile fileData) {
         var fileMeta = new FileMeta();
-        fileMeta.setFileId(fileData.fileId());
-        fileMeta.setFileType(fileData.fileType());
-        fileMeta.setFilename(fileData.filename());
-        fileMeta.setContentType(fileData.contentType());
-        fileMeta.setSignature(new FileSignature(fileData.md5(), fileData.sha256()));
-        if (fileData.sizeBytes() != null) {
-            fileMeta.setSizeBytes(fileData.sizeBytes());
+        fileMeta.setFileId(fileData.getFileId());
+        fileMeta.setFileType(FileType.valueOf(fileData.getFileType().getLiteral()));
+        fileMeta.setFilename(fileData.getFilename());
+        fileMeta.setContentType(fileData.getContentType());
+        fileMeta.setSignature(new FileSignature(fileData.getMd5(), fileData.getSha256()));
+        if (fileData.getSizeBytes() != null) {
+            fileMeta.setSizeBytes(fileData.getSizeBytes());
         }
-        fileMeta.setCreatedAt(TimestampUtils.format(fileData.createdAt()));
+        fileMeta.setCreatedAt(TimestampUtils.format(fileData.getCreatedAt().toInstant(java.time.ZoneOffset.UTC)));
         return fileMeta;
     }
 
