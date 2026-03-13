@@ -74,6 +74,10 @@ public class PaymentCurrentDao {
                         patchValue(update.getPaymentToolType(), PAYMENT_TXN_CURRENT.PAYMENT_TOOL_TYPE)
                 )
                 .set(
+                        PAYMENT_TXN_CURRENT.ERROR_SUMMARY,
+                        patchValue(update.getErrorSummary(), PAYMENT_TXN_CURRENT.ERROR_SUMMARY)
+                )
+                .set(
                         PAYMENT_TXN_CURRENT.ORIGINAL_AMOUNT,
                         patchValue(update.getOriginalAmount(), PAYMENT_TXN_CURRENT.ORIGINAL_AMOUNT)
                 )
