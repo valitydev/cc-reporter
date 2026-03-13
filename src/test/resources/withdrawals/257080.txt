@@ -1,0 +1,300 @@
+[
+  {
+    "event_id": 1,
+    "occured_at": "2026-03-13T14:46:09.773010Z",
+    "change": {
+      "created": {
+        "withdrawal": {
+          "id": "257080",
+          "body": {
+            "amount": 5000000,
+            "currency": {
+              "symbolic_code": "KZT"
+            }
+          },
+          "wallet_id": "3425",
+          "destination_id": "257513",
+          "party_id": "test-uuid-1",
+          "created_at": "2026-03-13T14:46:09.645Z",
+          "domain_revision": 3041,
+          "metadata": {
+            "user_id": {
+              "str": "test-user-meta"
+            },
+            "transaction_id": {
+              "str": "test-uuid-15"
+            },
+            "X-traceparent": {
+              "str": "00-18e1062252a360b297da1bde68a3fd51-6e1b0c29aa59ca7b-01"
+            }
+          },
+          "external_id": "test-external-14"
+        }
+      }
+    }
+  },
+  {
+    "event_id": 2,
+    "occured_at": "2026-03-13T14:46:09.773010Z",
+    "change": {
+      "status_changed": {
+        "status": {
+          "pending": []
+        }
+      }
+    }
+  },
+  {
+    "event_id": 3,
+    "occured_at": "2026-03-13T14:46:09.773010Z",
+    "change": {
+      "resource": {
+        "got": {
+          "resource": {
+            "bank_card": {
+              "bank_card": {
+                "token": "test-token",
+                "bin": "411111",
+                "masked_pan": "9335",
+                "issuer_country": "kaz",
+                "bank_name": "TEST BANK",
+                "card_type": "debit",
+                "bin_data_id": {
+                  "i": 1001
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 4,
+    "occured_at": "2026-03-13T14:46:09.914269Z",
+    "change": {
+      "route": {
+        "route": {
+          "provider_id": 10,
+          "terminal_id": 17,
+          "provider_id_legacy": "-290"
+        }
+      }
+    }
+  },
+  {
+    "event_id": 5,
+    "occured_at": "2026-03-13T14:46:10.014828Z",
+    "change": {
+      "transfer": {
+        "payload": {
+          "created": {
+            "transfer": {
+              "id": "ff/withdrawal/257080/1",
+              "cashflow": {
+                "postings": [
+                  {
+                    "source": {
+                      "account_type": {
+                        "wallet": "sender_settlement"
+                      },
+                      "account": {
+                        "party_id": "test-uuid-1",
+                        "realm": "live",
+                        "currency": {
+                          "symbolic_code": "KZT"
+                        },
+                        "account_id": 5346
+                      }
+                    },
+                    "destination": {
+                      "account_type": {
+                        "wallet": "receiver_destination"
+                      },
+                      "account": {
+                        "party_id": "test-uuid-1",
+                        "realm": "live",
+                        "currency": {
+                          "symbolic_code": "KZT"
+                        },
+                        "account_id": 257961
+                      }
+                    },
+                    "volume": {
+                      "amount": 5000000,
+                      "currency": {
+                        "symbolic_code": "KZT"
+                      }
+                    }
+                  },
+                  {
+                    "source": {
+                      "account_type": {
+                        "system": "settlement"
+                      },
+                      "account": {
+                        "realm": "live",
+                        "currency": {
+                          "symbolic_code": "KZT"
+                        },
+                        "account_id": 5011
+                      }
+                    },
+                    "destination": {
+                      "account_type": {
+                        "provider": "settlement"
+                      },
+                      "account": {
+                        "realm": "live",
+                        "currency": {
+                          "symbolic_code": "KZT"
+                        },
+                        "account_id": 137944
+                      }
+                    },
+                    "volume": {
+                      "amount": 0,
+                      "currency": {
+                        "symbolic_code": "KZT"
+                      }
+                    }
+                  },
+                  {
+                    "source": {
+                      "account_type": {
+                        "wallet": "sender_settlement"
+                      },
+                      "account": {
+                        "party_id": "test-uuid-1",
+                        "realm": "live",
+                        "currency": {
+                          "symbolic_code": "KZT"
+                        },
+                        "account_id": 5346
+                      }
+                    },
+                    "destination": {
+                      "account_type": {
+                        "system": "settlement"
+                      },
+                      "account": {
+                        "realm": "live",
+                        "currency": {
+                          "symbolic_code": "KZT"
+                        },
+                        "account_id": 5011
+                      }
+                    },
+                    "volume": {
+                      "amount": 500000,
+                      "currency": {
+                        "symbolic_code": "KZT"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 6,
+    "occured_at": "2026-03-13T14:46:10.014828Z",
+    "change": {
+      "transfer": {
+        "payload": {
+          "status_changed": {
+            "status": {
+              "created": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 7,
+    "occured_at": "2026-03-13T14:46:10.082140Z",
+    "change": {
+      "transfer": {
+        "payload": {
+          "status_changed": {
+            "status": {
+              "prepared": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 8,
+    "occured_at": "2026-03-13T14:46:10.135382Z",
+    "change": {
+      "limit_check": {
+        "details": {
+          "wallet_sender": {
+            "ok": []
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 9,
+    "occured_at": "2026-03-13T14:46:10.222720Z",
+    "change": {
+      "session": {
+        "id": "257080/1",
+        "payload": {
+          "started": []
+        }
+      }
+    }
+  },
+  {
+    "event_id": 10,
+    "occured_at": "2026-03-13T15:23:11.329197Z",
+    "change": {
+      "session": {
+        "id": "257080/1",
+        "payload": {
+          "finished": {
+            "result": {
+              "succeeded": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 11,
+    "occured_at": "2026-03-13T15:23:11.446664Z",
+    "change": {
+      "transfer": {
+        "payload": {
+          "status_changed": {
+            "status": {
+              "committed": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 12,
+    "occured_at": "2026-03-13T15:23:11.473273Z",
+    "change": {
+      "status_changed": {
+        "status": {
+          "succeeded": []
+        }
+      }
+    }
+  }
+]

@@ -1,45 +1,45 @@
-2026-03-13T12:07:40.464189+00:00 notice: Skipping unknown field [5] with type: struct
-2026-03-13T12:07:40.470934+00:00 notice: Skipping unknown field [5] with type: struct
-2026-03-13T12:07:40.471256+00:00 notice: Skipping unknown field [5] with type: struct
+2026-03-13T15:32:04.732814+00:00 notice: Skipping unknown field [5] with type: struct
+2026-03-13T15:32:04.736413+00:00 notice: Skipping unknown field [5] with type: struct
+2026-03-13T15:32:04.736901+00:00 notice: Skipping unknown field [5] with type: struct
 [
   {
     "id": 1,
-    "created_at": "2026-03-12T21:49:59Z",
+    "created_at": "2026-03-11T20:49:25Z",
     "source": {
-      "invoice_id": "2EnbPdxImPo"
+      "invoice_id": "2ElsBI5GY4m"
     },
     "payload": {
       "invoice_changes": [
         {
           "invoice_created": {
             "invoice": {
-              "id": "2EnbPdxImPo",
-              "domain_revision": 2999,
+              "id": "2ElsBI5GY4m",
+              "domain_revision": 2901,
               "party_ref": {
-                "id": "test-party-1"
+                "id": "test-uuid-1"
               },
               "shop_ref": {
-                "id": "test-shop-1"
+                "id": "test-uuid-2"
               },
-              "created_at": "2026-03-12T21:49:59.408094Z",
+              "created_at": "2026-03-11T20:49:25.892772Z",
               "status": {
                 "unpaid": []
               },
               "details": {
-                "product": "test-external-1"
+                "product": "371797540"
               },
-              "due": "2026-03-12T22:49:59Z",
+              "due": "2026-03-11T21:49:25Z",
               "cost": {
-                "amount": 425000,
+                "amount": 800000,
                 "currency": {
                   "symbolic_code": "KZT"
                 }
               },
               "context": {
                 "type": "application/json",
-                "data": "{\"X-traceparent\":\"00-00000000000000000000000000000000-0000000000000000-01\",\"transaction_id\":\"test-transaction-1\",\"user_id\":\"test-user-1\"}"
+                "data": "{\"X-traceparent\":\"00-eac0e359e4946f2c68594b0e93004276-593c7c82d90fcc34-01\",\"transaction_id\":\"test-uuid-10\",\"user_id\":\"50400\"}"
               },
-              "external_id": "test-external-1"
+              "external_id": "test-external-9"
             }
           }
         }
@@ -48,9 +48,9 @@
   },
   {
     "id": 2,
-    "created_at": "2026-03-12T21:49:59Z",
+    "created_at": "2026-03-11T20:49:26Z",
     "source": {
-      "invoice_id": "2EnbPdxImPo"
+      "invoice_id": "2ElsBI5GY4m"
     },
     "payload": {
       "invoice_changes": [
@@ -61,21 +61,21 @@
               "invoice_payment_started": {
                 "payment": {
                   "id": "1",
-                  "created_at": "2026-03-12T21:49:59.901367Z",
+                  "created_at": "2026-03-11T20:49:26.305189Z",
                   "status": {
                     "pending": []
                   },
                   "context": {
                     "type": "application/json",
-                    "data": "{\"transaction_id\":\"test-transaction-1\",\"user_id\":\"test-user-1\"}"
+                    "data": "{\"transaction_id\":\"test-uuid-10\",\"user_id\":\"50400\"}"
                   },
                   "cost": {
-                    "amount": 425000,
+                    "amount": 800000,
                     "currency": {
                       "symbolic_code": "KZT"
                     }
                   },
-                  "domain_revision": 2999,
+                  "domain_revision": 2901,
                   "flow": {
                     "instant": []
                   },
@@ -84,13 +84,13 @@
                       "resource": {
                         "payment_tool": {
                           "bank_card": {
-                            "token": "test-card-token-1",
+                            "token": "test-token",
                             "payment_system": {
-                              "id": "VISA"
+                              "id": "MASTERCARD"
                             },
                             "bin": "411111",
-                            "last_digits": "1111",
-                            "issuer_country": "KAZ",
+                            "last_digits": "5288",
+                            "issuer_country": "kaz",
                             "bank_name": "TEST BANK",
                             "metadata": {
                               "com.rbkmoney.binbase": {
@@ -108,47 +108,50 @@
                             },
                             "is_cvv_empty": false,
                             "exp_date": {
-                              "month": 10,
-                              "year": 2029
+                              "month": 6,
+                              "year": 2026
                             },
-                            "category": "REWARDS"
+                            "category": "PLATINUM"
                           }
                         },
-                        "payment_session_id": "test-payment-session-1",
+                        "payment_session_id": "5FKIWL4OBRQtGl5kYcNPys",
                         "client_info": {
-                          "ip_address": "203.0.113.10",
-                          "fingerprint": "test-fingerprint-1",
-                          "peer_ip_address": "198.51.100.20",
-                          "user_ip_address": "203.0.113.10"
+                          "ip_address": "198.51.100.22",
+                          "fingerprint": "74bd837bd785493cab84d1e67a3a493e",
+                          "peer_ip_address": "198.51.100.23",
+                          "user_ip_address": "198.51.100.24"
                         }
                       },
                       "contact_info": {
-                        "phone_number": "+10000000000",
-                        "email": "test-user-1@example.com",
+                        "phone_number": "+77785620492",
+                        "email": "user5@example.test",
+                        "first_name": "ÐÐ°ÑÑÐ°Ñ",
+                        "last_name": "ÐÐµÐ»ÑÐ´ÐµÐ±ÐµÐºÐ¾Ð²Ð°",
                         "country": "KAZ",
-                        "state": "Kazakhstan"
+                        "state": "Kazakhstan",
+                        "city": "ÐÐ»Ð¼Ð°ÑÑ"
                       }
                     }
                   },
                   "payer_session_info": {
-                    "redirect_url": "https://example.com/redirect/test-payment-1"
+                    "redirect_url": "https://example.com/test-url-15"
                   },
                   "party_ref": {
-                    "id": "test-party-1"
+                    "id": "test-uuid-1"
                   },
                   "shop_ref": {
-                    "id": "test-shop-1"
+                    "id": "test-uuid-2"
                   },
                   "make_recurrent": false,
-                  "external_id": "test-external-1",
-                  "processing_deadline": "2026-03-12T21:51:59.874Z",
+                  "external_id": "test-external-10",
+                  "processing_deadline": "2026-03-11T20:51:26.278Z",
                   "registration_origin": {
                     "merchant": []
                   }
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:49:59.901367Z"
+            "occurred_at": "2026-03-11T20:49:26.305189Z"
           }
         }
       ]
@@ -156,9 +159,9 @@
   },
   {
     "id": 3,
-    "created_at": "2026-03-12T21:49:59Z",
+    "created_at": "2026-03-11T20:49:26Z",
     "source": {
-      "invoice_id": "2EnbPdxImPo"
+      "invoice_id": "2ElsBI5GY4m"
     },
     "payload": {
       "invoice_changes": [
@@ -168,7 +171,7 @@
             "payload": {
               "invoice_payment_shop_limit_initiated": []
             },
-            "occurred_at": "2026-03-12T21:49:59.926987Z"
+            "occurred_at": "2026-03-11T20:49:26.334389Z"
           }
         }
       ]
@@ -176,9 +179,9 @@
   },
   {
     "id": 4,
-    "created_at": "2026-03-12T21:49:59Z",
+    "created_at": "2026-03-11T20:49:26Z",
     "source": {
-      "invoice_id": "2EnbPdxImPo"
+      "invoice_id": "2ElsBI5GY4m"
     },
     "payload": {
       "invoice_changes": [
@@ -188,7 +191,7 @@
             "payload": {
               "invoice_payment_shop_limit_applied": []
             },
-            "occurred_at": "2026-03-12T21:49:59.944485Z"
+            "occurred_at": "2026-03-11T20:49:26.350789Z"
           }
         }
       ]
@@ -196,9 +199,9 @@
   },
   {
     "id": 5,
-    "created_at": "2026-03-12T21:50:00Z",
+    "created_at": "2026-03-11T20:49:26Z",
     "source": {
-      "invoice_id": "2EnbPdxImPo"
+      "invoice_id": "2ElsBI5GY4m"
     },
     "payload": {
       "invoice_changes": [
@@ -210,7 +213,7 @@
                 "risk_score": "low"
               }
             },
-            "occurred_at": "2026-03-12T21:49:59.962070Z"
+            "occurred_at": "2026-03-11T20:49:26.369959Z"
           }
         }
       ]
@@ -218,9 +221,9 @@
   },
   {
     "id": 6,
-    "created_at": "2026-03-12T21:50:00Z",
+    "created_at": "2026-03-11T20:49:27Z",
     "source": {
-      "invoice_id": "2EnbPdxImPo"
+      "invoice_id": "2ElsBI5GY4m"
     },
     "payload": {
       "invoice_changes": [
@@ -244,6 +247,14 @@
                     },
                     "terminal": {
                       "id": 2554
+                    }
+                  },
+                  {
+                    "provider": {
+                      "id": 5
+                    },
+                    "terminal": {
+                      "id": 12
                     }
                   },
                   {
@@ -307,6 +318,26 @@
                   {
                     "key": {
                       "provider": {
+                        "id": 5
+                      },
+                      "terminal": {
+                        "id": 12
+                      }
+                    },
+                    "value": {
+                      "availability_condition": 1,
+                      "conversion_condition": 1,
+                      "terminal_priority_rating": 2,
+                      "route_pin": 0,
+                      "random_condition": 1,
+                      "availability": 1.00000000000000000000e+00,
+                      "conversion": 1.00000000000000000000e+00,
+                      "blacklist_condition": 0
+                    }
+                  },
+                  {
+                    "key": {
+                      "provider": {
                         "id": 4
                       },
                       "terminal": {
@@ -351,6 +382,38 @@
                   {
                     "key": {
                       "provider": {
+                        "id": 5
+                      },
+                      "terminal": {
+                        "id": 12
+                      }
+                    },
+                    "value": [
+                      {
+                        "limit": {
+                          "ref": {
+                            "id": "payment_card_day_amount_kzt"
+                          },
+                          "upper_boundary": 1180000000,
+                          "domain_revision": 1523
+                        },
+                        "value": 1800000
+                      },
+                      {
+                        "limit": {
+                          "ref": {
+                            "id": "payment_card_month_amount_kzt"
+                          },
+                          "upper_boundary": 2953000000,
+                          "domain_revision": 1523
+                        },
+                        "value": 1800000
+                      }
+                    ]
+                  },
+                  {
+                    "key": {
+                      "provider": {
                         "id": 4
                       },
                       "terminal": {
@@ -362,7 +425,7 @@
                 ]
               }
             },
-            "occurred_at": "2026-03-12T21:50:00.215040Z"
+            "occurred_at": "2026-03-11T20:49:26.622310Z"
           }
         }
       ]
@@ -370,9 +433,9 @@
   },
   {
     "id": 7,
-    "created_at": "2026-03-12T21:50:00Z",
+    "created_at": "2026-03-11T20:49:27Z",
     "source": {
-      "invoice_id": "2EnbPdxImPo"
+      "invoice_id": "2ElsBI5GY4m"
     },
     "payload": {
       "invoice_changes": [
@@ -393,10 +456,10 @@
                           "type": "settlement",
                           "owner": {
                             "party_ref": {
-                              "id": "test-party-1"
+                              "id": "test-uuid-1"
                             },
                             "shop_ref": {
-                              "id": "test-shop-1"
+                              "id": "test-uuid-2"
                             }
                           }
                         }
@@ -431,10 +494,10 @@
                           "type": "settlement",
                           "owner": {
                             "party_ref": {
-                              "id": "test-party-1"
+                              "id": "test-uuid-1"
                             },
                             "shop_ref": {
-                              "id": "test-shop-1"
+                              "id": "test-uuid-2"
                             }
                           }
                         }
@@ -452,7 +515,7 @@
                       }
                     },
                     "volume": {
-                      "amount": 60375,
+                      "amount": 96000,
                       "currency": {
                         "symbolic_code": "KZT"
                       }
@@ -488,17 +551,17 @@
                           "type": "settlement",
                           "owner": {
                             "party_ref": {
-                              "id": "test-party-1"
+                              "id": "test-uuid-1"
                             },
                             "shop_ref": {
-                              "id": "test-shop-1"
+                              "id": "test-uuid-2"
                             }
                           }
                         }
                       }
                     },
                     "volume": {
-                      "amount": 425000,
+                      "amount": 800000,
                       "currency": {
                         "symbolic_code": "KZT"
                       }
@@ -536,7 +599,7 @@
                       }
                     },
                     "volume": {
-                      "amount": 31875,
+                      "amount": 60000,
                       "currency": {
                         "symbolic_code": "KZT"
                       }
@@ -583,7 +646,7 @@
                 ]
               }
             },
-            "occurred_at": "2026-03-12T21:50:00.413382Z"
+            "occurred_at": "2026-03-11T20:49:27.438611Z"
           }
         }
       ]
@@ -591,9 +654,9 @@
   },
   {
     "id": 8,
-    "created_at": "2026-03-12T21:50:00Z",
+    "created_at": "2026-03-11T20:49:27Z",
     "source": {
-      "invoice_id": "2EnbPdxImPo"
+      "invoice_id": "2ElsBI5GY4m"
     },
     "payload": {
       "invoice_changes": [
@@ -610,7 +673,7 @@
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:50:00.469754Z"
+            "occurred_at": "2026-03-11T20:49:27.543732Z"
           }
         }
       ]
@@ -618,9 +681,9 @@
   },
   {
     "id": 9,
-    "created_at": "2026-03-12T21:50:25Z",
+    "created_at": "2026-03-11T20:49:27Z",
     "source": {
-      "invoice_id": "2EnbPdxImPo"
+      "invoice_id": "2ElsBI5GY4m"
     },
     "payload": {
       "invoice_changes": [
@@ -635,17 +698,17 @@
                 "payload": {
                   "session_transaction_bound": {
                     "trx": {
-                      "id": "test-provider-trx-2",
+                      "id": "100044678853",
                       "extra": {
-                        "kzt_to_usd_rate": "491.68",
-                        "kzt_to_usd_converted_amount": "864"
+                        "kzt_to_usd_rate": "489.39",
+                        "kzt_to_usd_converted_amount": "1635"
                       }
                     }
                   }
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:50:00.485347Z"
+            "occurred_at": "2026-03-11T20:49:27.560127Z"
           }
         },
         {
@@ -663,7 +726,7 @@
                         "failure": {
                           "failure": {
                             "code": "preauthorization_failed",
-                            "reason": "'30500' - 'code: 30600 reason: Value 'test-card-mask-1' is invalid. The combination of currency, card type and transaction type is not supported by a Merchant Acquirer relationship'",
+                            "reason": "'30500' - 'code: 30003 reason: no appropriate payment routes found'",
                             "sub": {
                               "code": "unknown"
                             }
@@ -675,7 +738,7 @@
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:50:00.485347Z"
+            "occurred_at": "2026-03-11T20:49:27.560127Z"
           }
         },
         {
@@ -686,7 +749,7 @@
                 "reason": {
                   "failure": {
                     "code": "preauthorization_failed",
-                    "reason": "'30500' - 'code: 30600 reason: Value 'test-card-mask-1' is invalid. The combination of currency, card type and transaction type is not supported by a Merchant Acquirer relationship'",
+                    "reason": "'30500' - 'code: 30003 reason: no appropriate payment routes found'",
                     "sub": {
                       "code": "unknown"
                     }
@@ -694,7 +757,7 @@
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:50:00.485347Z"
+            "occurred_at": "2026-03-11T20:49:27.560127Z"
           }
         }
       ]
@@ -702,9 +765,9 @@
   },
   {
     "id": 10,
-    "created_at": "2026-03-12T21:50:25Z",
+    "created_at": "2026-03-11T20:49:28Z",
     "source": {
-      "invoice_id": "2EnbPdxImPo"
+      "invoice_id": "2ElsBI5GY4m"
     },
     "payload": {
       "invoice_changes": [
@@ -732,6 +795,14 @@
                   },
                   {
                     "provider": {
+                      "id": 5
+                    },
+                    "terminal": {
+                      "id": 12
+                    }
+                  },
+                  {
+                    "provider": {
                       "id": 254
                     },
                     "terminal": {
@@ -753,6 +824,26 @@
                       "availability_condition": 1,
                       "conversion_condition": 1,
                       "terminal_priority_rating": 1,
+                      "route_pin": 0,
+                      "random_condition": 1,
+                      "availability": 1.00000000000000000000e+00,
+                      "conversion": 1.00000000000000000000e+00,
+                      "blacklist_condition": 0
+                    }
+                  },
+                  {
+                    "key": {
+                      "provider": {
+                        "id": 5
+                      },
+                      "terminal": {
+                        "id": 12
+                      }
+                    },
+                    "value": {
+                      "availability_condition": 1,
+                      "conversion_condition": 1,
+                      "terminal_priority_rating": 2,
                       "route_pin": 0,
                       "random_condition": 1,
                       "availability": 1.00000000000000000000e+00,
@@ -796,6 +887,38 @@
                   {
                     "key": {
                       "provider": {
+                        "id": 5
+                      },
+                      "terminal": {
+                        "id": 12
+                      }
+                    },
+                    "value": [
+                      {
+                        "limit": {
+                          "ref": {
+                            "id": "payment_card_day_amount_kzt"
+                          },
+                          "upper_boundary": 1180000000,
+                          "domain_revision": 1523
+                        },
+                        "value": 1800000
+                      },
+                      {
+                        "limit": {
+                          "ref": {
+                            "id": "payment_card_month_amount_kzt"
+                          },
+                          "upper_boundary": 2953000000,
+                          "domain_revision": 1523
+                        },
+                        "value": 1800000
+                      }
+                    ]
+                  },
+                  {
+                    "key": {
+                      "provider": {
                         "id": 4
                       },
                       "terminal": {
@@ -807,7 +930,7 @@
                 ]
               }
             },
-            "occurred_at": "2026-03-12T21:50:25.657993Z"
+            "occurred_at": "2026-03-11T20:49:27.722089Z"
           }
         }
       ]
@@ -815,9 +938,9 @@
   },
   {
     "id": 11,
-    "created_at": "2026-03-12T21:50:25Z",
+    "created_at": "2026-03-11T20:49:28Z",
     "source": {
-      "invoice_id": "2EnbPdxImPo"
+      "invoice_id": "2ElsBI5GY4m"
     },
     "payload": {
       "invoice_changes": [
@@ -838,10 +961,10 @@
                           "type": "settlement",
                           "owner": {
                             "party_ref": {
-                              "id": "test-party-1"
+                              "id": "test-uuid-1"
                             },
                             "shop_ref": {
-                              "id": "test-shop-1"
+                              "id": "test-uuid-2"
                             }
                           }
                         }
@@ -876,10 +999,10 @@
                           "type": "settlement",
                           "owner": {
                             "party_ref": {
-                              "id": "test-party-1"
+                              "id": "test-uuid-1"
                             },
                             "shop_ref": {
-                              "id": "test-shop-1"
+                              "id": "test-uuid-2"
                             }
                           }
                         }
@@ -897,7 +1020,7 @@
                       }
                     },
                     "volume": {
-                      "amount": 60375,
+                      "amount": 96000,
                       "currency": {
                         "symbolic_code": "KZT"
                       }
@@ -933,17 +1056,17 @@
                           "type": "settlement",
                           "owner": {
                             "party_ref": {
-                              "id": "test-party-1"
+                              "id": "test-uuid-1"
                             },
                             "shop_ref": {
-                              "id": "test-shop-1"
+                              "id": "test-uuid-2"
                             }
                           }
                         }
                       }
                     },
                     "volume": {
-                      "amount": 425000,
+                      "amount": 800000,
                       "currency": {
                         "symbolic_code": "KZT"
                       }
@@ -981,7 +1104,7 @@
                       }
                     },
                     "volume": {
-                      "amount": 21250,
+                      "amount": 40000,
                       "currency": {
                         "symbolic_code": "KZT"
                       }
@@ -990,7 +1113,7 @@
                 ]
               }
             },
-            "occurred_at": "2026-03-12T21:50:25.845803Z"
+            "occurred_at": "2026-03-11T20:49:28.396396Z"
           }
         }
       ]
@@ -998,9 +1121,9 @@
   },
   {
     "id": 12,
-    "created_at": "2026-03-12T21:50:25Z",
+    "created_at": "2026-03-11T20:49:28Z",
     "source": {
-      "invoice_id": "2EnbPdxImPo"
+      "invoice_id": "2ElsBI5GY4m"
     },
     "payload": {
       "invoice_changes": [
@@ -1017,7 +1140,7 @@
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:50:25.898434Z"
+            "occurred_at": "2026-03-11T20:49:28.469010Z"
           }
         }
       ]
@@ -1025,9 +1148,9 @@
   },
   {
     "id": 13,
-    "created_at": "2026-03-12T21:50:26Z",
+    "created_at": "2026-03-11T20:49:33Z",
     "source": {
-      "invoice_id": "2EnbPdxImPo"
+      "invoice_id": "2ElsBI5GY4m"
     },
     "payload": {
       "invoice_changes": [
@@ -1042,16 +1165,16 @@
                 "payload": {
                   "session_transaction_bound": {
                     "trx": {
-                      "id": "2EnbPdxImPo.1",
+                      "id": "2ElsBI5GY4m.1",
                       "extra": {
-                        "term_url": "https://example.com/redirect/test-payment-1"
+                        "term_url": "https://example.com/test-url-16"
                       }
                     }
                   }
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:50:25.916636Z"
+            "occurred_at": "2026-03-11T20:49:33.470487Z"
           }
         },
         {
@@ -1081,7 +1204,7 @@
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:50:25.916636Z"
+            "occurred_at": "2026-03-11T20:49:33.470487Z"
           }
         },
         {
@@ -1100,7 +1223,7 @@
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:50:25.916636Z"
+            "occurred_at": "2026-03-11T20:49:33.470487Z"
           }
         }
       ]
@@ -1108,9 +1231,9 @@
   },
   {
     "id": 14,
-    "created_at": "2026-03-12T21:50:26Z",
+    "created_at": "2026-03-11T20:49:34Z",
     "source": {
-      "invoice_id": "2EnbPdxImPo"
+      "invoice_id": "2ElsBI5GY4m"
     },
     "payload": {
       "invoice_changes": [
@@ -1121,13 +1244,21 @@
               "invoice_payment_route_changed": {
                 "route": {
                   "provider": {
-                    "id": 254
+                    "id": 5
                   },
                   "terminal": {
-                    "id": 2551
+                    "id": 12
                   }
                 },
                 "candidates": [
+                  {
+                    "provider": {
+                      "id": 5
+                    },
+                    "terminal": {
+                      "id": 12
+                    }
+                  },
                   {
                     "provider": {
                       "id": 254
@@ -1157,6 +1288,26 @@
                       "conversion": 1.00000000000000000000e+00,
                       "blacklist_condition": 0
                     }
+                  },
+                  {
+                    "key": {
+                      "provider": {
+                        "id": 5
+                      },
+                      "terminal": {
+                        "id": 12
+                      }
+                    },
+                    "value": {
+                      "availability_condition": 1,
+                      "conversion_condition": 1,
+                      "terminal_priority_rating": 2,
+                      "route_pin": 0,
+                      "random_condition": 1,
+                      "availability": 1.00000000000000000000e+00,
+                      "conversion": 1.00000000000000000000e+00,
+                      "blacklist_condition": 0
+                    }
                   }
                 ],
                 "limits": [
@@ -1170,11 +1321,43 @@
                       }
                     },
                     "value": []
+                  },
+                  {
+                    "key": {
+                      "provider": {
+                        "id": 5
+                      },
+                      "terminal": {
+                        "id": 12
+                      }
+                    },
+                    "value": [
+                      {
+                        "limit": {
+                          "ref": {
+                            "id": "payment_card_day_amount_kzt"
+                          },
+                          "upper_boundary": 1180000000,
+                          "domain_revision": 1523
+                        },
+                        "value": 1800000
+                      },
+                      {
+                        "limit": {
+                          "ref": {
+                            "id": "payment_card_month_amount_kzt"
+                          },
+                          "upper_boundary": 2953000000,
+                          "domain_revision": 1523
+                        },
+                        "value": 1800000
+                      }
+                    ]
                   }
                 ]
               }
             },
-            "occurred_at": "2026-03-12T21:50:26.290840Z"
+            "occurred_at": "2026-03-11T20:49:33.845927Z"
           }
         }
       ]
@@ -1182,9 +1365,9 @@
   },
   {
     "id": 15,
-    "created_at": "2026-03-12T21:50:26Z",
+    "created_at": "2026-03-11T20:49:34Z",
     "source": {
-      "invoice_id": "2EnbPdxImPo"
+      "invoice_id": "2ElsBI5GY4m"
     },
     "payload": {
       "invoice_changes": [
@@ -1205,10 +1388,10 @@
                           "type": "settlement",
                           "owner": {
                             "party_ref": {
-                              "id": "test-party-1"
+                              "id": "test-uuid-1"
                             },
                             "shop_ref": {
-                              "id": "test-shop-1"
+                              "id": "test-uuid-2"
                             }
                           }
                         }
@@ -1243,10 +1426,10 @@
                           "type": "settlement",
                           "owner": {
                             "party_ref": {
-                              "id": "test-party-1"
+                              "id": "test-uuid-1"
                             },
                             "shop_ref": {
-                              "id": "test-shop-1"
+                              "id": "test-uuid-2"
                             }
                           }
                         }
@@ -1264,7 +1447,7 @@
                       }
                     },
                     "volume": {
-                      "amount": 71625,
+                      "amount": 111000,
                       "currency": {
                         "symbolic_code": "KZT"
                       }
@@ -1275,16 +1458,16 @@
                       "account_type": {
                         "provider": "settlement"
                       },
-                      "account_id": 12204,
+                      "account_id": 70801,
                       "transaction_account": {
                         "provider": {
                           "type": "settlement",
                           "owner": {
                             "provider_ref": {
-                              "id": 254
+                              "id": 5
                             },
                             "terminal_ref": {
-                              "id": 2551
+                              "id": 12
                             }
                           }
                         }
@@ -1300,17 +1483,17 @@
                           "type": "settlement",
                           "owner": {
                             "party_ref": {
-                              "id": "test-party-1"
+                              "id": "test-uuid-1"
                             },
                             "shop_ref": {
-                              "id": "test-shop-1"
+                              "id": "test-uuid-2"
                             }
                           }
                         }
                       }
                     },
                     "volume": {
-                      "amount": 425000,
+                      "amount": 800000,
                       "currency": {
                         "symbolic_code": "KZT"
                       }
@@ -1332,23 +1515,23 @@
                       "account_type": {
                         "provider": "settlement"
                       },
-                      "account_id": 12204,
+                      "account_id": 70801,
                       "transaction_account": {
                         "provider": {
                           "type": "settlement",
                           "owner": {
                             "provider_ref": {
-                              "id": 254
+                              "id": 5
                             },
                             "terminal_ref": {
-                              "id": 2551
+                              "id": 12
                             }
                           }
                         }
                       }
                     },
                     "volume": {
-                      "amount": 31875,
+                      "amount": 56000,
                       "currency": {
                         "symbolic_code": "KZT"
                       }
@@ -1370,23 +1553,23 @@
                       "account_type": {
                         "provider": "settlement"
                       },
-                      "account_id": 12204,
+                      "account_id": 70801,
                       "transaction_account": {
                         "provider": {
                           "type": "settlement",
                           "owner": {
                             "provider_ref": {
-                              "id": 254
+                              "id": 5
                             },
                             "terminal_ref": {
-                              "id": 2551
+                              "id": 12
                             }
                           }
                         }
                       }
                     },
                     "volume": {
-                      "amount": 20400,
+                      "amount": 27000,
                       "currency": {
                         "symbolic_code": "KZT"
                       }
@@ -1395,7 +1578,7 @@
                 ]
               }
             },
-            "occurred_at": "2026-03-12T21:50:26.392986Z"
+            "occurred_at": "2026-03-11T20:49:34.515251Z"
           }
         }
       ]
@@ -1403,9 +1586,9 @@
   },
   {
     "id": 16,
-    "created_at": "2026-03-12T21:50:26Z",
+    "created_at": "2026-03-11T20:49:34Z",
     "source": {
-      "invoice_id": "2EnbPdxImPo"
+      "invoice_id": "2ElsBI5GY4m"
     },
     "payload": {
       "invoice_changes": [
@@ -1422,7 +1605,7 @@
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:50:26.440170Z"
+            "occurred_at": "2026-03-11T20:49:34.568597Z"
           }
         }
       ]
@@ -1430,9 +1613,9 @@
   },
   {
     "id": 17,
-    "created_at": "2026-03-12T21:50:30Z",
+    "created_at": "2026-03-11T20:49:35Z",
     "source": {
-      "invoice_id": "2EnbPdxImPo"
+      "invoice_id": "2ElsBI5GY4m"
     },
     "payload": {
       "invoice_changes": [
@@ -1447,17 +1630,14 @@
                 "payload": {
                   "session_transaction_bound": {
                     "trx": {
-                      "id": "test-provider-trx-1",
-                      "extra": {
-                        "kzt_to_eur_rate": "568.23",
-                        "kzt_to_eur_converted_amount": "748"
-                      }
+                      "id": "test-provider-trx-4",
+                      "extra": []
                     }
                   }
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:50:26.455724Z"
+            "occurred_at": "2026-03-11T20:49:34.584505Z"
           }
         },
         {
@@ -1470,12 +1650,12 @@
                 },
                 "payload": {
                   "session_proxy_state_changed": {
-                    "proxy_state": "{\"nextStep\":\"CHECK_STATUS\",\"providerTrxId\":\"test-provider-trx-1\"}"
+                    "proxy_state": "{\"nextStep\":\"CHECK_STATUS\",\"providerTrxId\":\"test-provider-trx-4\",\"pollingInfo\":{\"start_date_time_polling\":1773262175.699550299,\"max_date_time_polling\":1773265775.699550299}}"
                   }
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:50:26.455724Z"
+            "occurred_at": "2026-03-11T20:49:34.584505Z"
           }
         },
         {
@@ -1491,7 +1671,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/3ds/test-challenge-1"
+                          "uri": "https://example.com/test-url-17"
                         }
                       }
                     },
@@ -1502,7 +1682,7 @@
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:50:26.455724Z"
+            "occurred_at": "2026-03-11T20:49:34.584505Z"
           }
         },
         {
@@ -1515,15 +1695,15 @@
                 },
                 "payload": {
                   "session_suspended": {
-                    "tag": "transferty_2551.2EnbPdxImPo.1",
+                    "tag": "FLEXIFY-2ElsBI5GY4m-1",
                     "timeout_behaviour": {
-                      "callback": ""
+                      "callback": "{\"tag\":\"2ElsBI5GY4m-1\"}"
                     }
                   }
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:50:26.455724Z"
+            "occurred_at": "2026-03-11T20:49:34.584505Z"
           }
         }
       ]
@@ -1531,9 +1711,9 @@
   },
   {
     "id": 18,
-    "created_at": "2026-03-12T21:50:39Z",
+    "created_at": "2026-03-11T20:50:04Z",
     "source": {
-      "invoice_id": "2EnbPdxImPo"
+      "invoice_id": "2ElsBI5GY4m"
     },
     "payload": {
       "invoice_changes": [
@@ -1550,7 +1730,7 @@
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:50:39.225159Z"
+            "occurred_at": "2026-03-11T20:50:04.354734Z"
           }
         },
         {
@@ -1566,7 +1746,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/3ds/test-challenge-1"
+                          "uri": "https://example.com/test-url-18"
                         }
                       }
                     },
@@ -1577,7 +1757,7 @@
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:50:39.225159Z"
+            "occurred_at": "2026-03-11T20:50:04.354734Z"
           }
         }
       ]
@@ -1585,9 +1765,9 @@
   },
   {
     "id": 19,
-    "created_at": "2026-03-12T21:50:39Z",
+    "created_at": "2026-03-11T20:50:04Z",
     "source": {
-      "invoice_id": "2EnbPdxImPo"
+      "invoice_id": "2ElsBI5GY4m"
     },
     "payload": {
       "invoice_changes": [
@@ -1600,13 +1780,40 @@
                   "processed": []
                 },
                 "payload": {
-                  "session_proxy_state_changed": {
-                    "proxy_state": "{\"nextStep\":\"DO_NOTHING\",\"providerTrxId\":\"test-provider-trx-1\"}"
+                  "session_transaction_bound": {
+                    "trx": {
+                      "id": "test-provider-trx-4",
+                      "extra": [],
+                      "additional_info": {
+                        "rrn": "2ElsBI5GY4m-1",
+                        "extra_payment_info": {
+                          "currency": "EUR"
+                        }
+                      }
+                    }
                   }
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:50:39.277658Z"
+            "occurred_at": "2026-03-11T20:50:04.412229Z"
+          }
+        },
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_proxy_state_changed": {
+                    "proxy_state": "{\"nextStep\":\"DO_NOTHING\",\"providerTrxId\":\"test-provider-trx-4\"}"
+                  }
+                }
+              }
+            },
+            "occurred_at": "2026-03-11T20:50:04.412229Z"
           }
         },
         {
@@ -1626,7 +1833,7 @@
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:50:39.277658Z"
+            "occurred_at": "2026-03-11T20:50:04.412229Z"
           }
         }
       ]
@@ -1634,9 +1841,9 @@
   },
   {
     "id": 20,
-    "created_at": "2026-03-12T21:50:39Z",
+    "created_at": "2026-03-11T20:50:04Z",
     "source": {
-      "invoice_id": "2EnbPdxImPo"
+      "invoice_id": "2ElsBI5GY4m"
     },
     "payload": {
       "invoice_changes": [
@@ -1650,7 +1857,7 @@
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:50:39.356130Z"
+            "occurred_at": "2026-03-11T20:50:04.564375Z"
           }
         }
       ]
@@ -1658,9 +1865,9 @@
   },
   {
     "id": 21,
-    "created_at": "2026-03-12T21:50:39Z",
+    "created_at": "2026-03-11T20:50:04Z",
     "source": {
-      "invoice_id": "2EnbPdxImPo"
+      "invoice_id": "2ElsBI5GY4m"
     },
     "payload": {
       "invoice_changes": [
@@ -1672,7 +1879,7 @@
                 "data": {
                   "reason": "Timeout",
                   "cash": {
-                    "amount": 425000,
+                    "amount": 800000,
                     "currency": {
                       "symbolic_code": "KZT"
                     }
@@ -1680,7 +1887,7 @@
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:50:39.373515Z"
+            "occurred_at": "2026-03-11T20:50:04.578090Z"
           }
         },
         {
@@ -1692,7 +1899,7 @@
                   "captured": {
                     "reason": "Timeout",
                     "cost": {
-                      "amount": 425000,
+                      "amount": 800000,
                       "currency": {
                         "symbolic_code": "KZT"
                       }
@@ -1704,7 +1911,7 @@
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:50:39.373515Z"
+            "occurred_at": "2026-03-11T20:50:04.578090Z"
           }
         }
       ]
@@ -1712,9 +1919,9 @@
   },
   {
     "id": 22,
-    "created_at": "2026-03-12T21:50:39Z",
+    "created_at": "2026-03-11T20:50:04Z",
     "source": {
-      "invoice_id": "2EnbPdxImPo"
+      "invoice_id": "2ElsBI5GY4m"
     },
     "payload": {
       "invoice_changes": [
@@ -1727,7 +1934,7 @@
                   "captured": {
                     "reason": "Timeout",
                     "cost": {
-                      "amount": 425000,
+                      "amount": 800000,
                       "currency": {
                         "symbolic_code": "KZT"
                       }
@@ -1735,13 +1942,26 @@
                   }
                 },
                 "payload": {
-                  "session_proxy_state_changed": {
-                    "proxy_state": "{\"nextStep\":\"DO_NOTHING\",\"providerTrxId\":\"test-provider-trx-1\"}"
+                  "session_transaction_bound": {
+                    "trx": {
+                      "id": "test-provider-trx-4",
+                      "extra": {
+                        "kzt_to_eur_rate": "567.99",
+                        "kzt_to_eur_converted_amount": "1408"
+                      },
+                      "additional_info": {
+                        "rrn": "2ElsBI5GY4m-1",
+                        "extra_payment_info": {
+                          "kzt_to_eur_rate": "567.99",
+                          "kzt_to_eur_converted_amount": "1408"
+                        }
+                      }
+                    }
                   }
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:50:39.391316Z"
+            "occurred_at": "2026-03-11T20:50:04.594202Z"
           }
         },
         {
@@ -1753,7 +1973,33 @@
                   "captured": {
                     "reason": "Timeout",
                     "cost": {
-                      "amount": 425000,
+                      "amount": 800000,
+                      "currency": {
+                        "symbolic_code": "KZT"
+                      }
+                    }
+                  }
+                },
+                "payload": {
+                  "session_proxy_state_changed": {
+                    "proxy_state": "{\"nextStep\":\"DO_NOTHING\",\"providerTrxId\":\"test-provider-trx-4\"}"
+                  }
+                }
+              }
+            },
+            "occurred_at": "2026-03-11T20:50:04.594202Z"
+          }
+        },
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "captured": {
+                    "reason": "Timeout",
+                    "cost": {
+                      "amount": 800000,
                       "currency": {
                         "symbolic_code": "KZT"
                       }
@@ -1769,7 +2015,7 @@
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:50:39.391316Z"
+            "occurred_at": "2026-03-11T20:50:04.594202Z"
           }
         }
       ]
@@ -1777,9 +2023,9 @@
   },
   {
     "id": 23,
-    "created_at": "2026-03-12T21:50:39Z",
+    "created_at": "2026-03-11T20:50:04Z",
     "source": {
-      "invoice_id": "2EnbPdxImPo"
+      "invoice_id": "2ElsBI5GY4m"
     },
     "payload": {
       "invoice_changes": [
@@ -1792,7 +2038,7 @@
                   "captured": {
                     "reason": "Timeout",
                     "cost": {
-                      "amount": 425000,
+                      "amount": 800000,
                       "currency": {
                         "symbolic_code": "KZT"
                       }
@@ -1801,7 +2047,7 @@
                 }
               }
             },
-            "occurred_at": "2026-03-12T21:50:39.440842Z"
+            "occurred_at": "2026-03-11T20:50:04.663152Z"
           }
         },
         {

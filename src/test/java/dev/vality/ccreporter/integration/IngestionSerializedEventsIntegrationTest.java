@@ -100,6 +100,28 @@ class IngestionSerializedEventsIntegrationTest extends AbstractReportingIntegrat
     }
 
     @Test
+    void legacyPaymentShapeWithOwnerIdAndShopIdStillProjectsIntoCurrentState() {
+        paymentIngestionService.handleEvents(SerializedIngestionEventFixtures.legacyPaymentEvents());
+
+        var row = jdbcTemplate.queryForMap(
+                """
+                        SELECT party_id, shop_id, status, amount, currency, payment_tool_type
+                        FROM ccr.payment_txn_current
+                        WHERE invoice_id = ? AND payment_id = ?
+                        """,
+                SerializedIngestionEventFixtures.LEGACY_PAYMENT_INVOICE_ID,
+                SerializedIngestionEventFixtures.LEGACY_PAYMENT_ID
+        );
+
+        assertThat(row.get("party_id")).isEqualTo("test-party-1");
+        assertThat(row.get("shop_id")).isEqualTo("test-shop-1");
+        assertThat(row.get("status")).isEqualTo("failed");
+        assertThat(row.get("amount")).isEqualTo(100000L);
+        assertThat(row.get("currency")).isEqualTo("KZT");
+        assertThat(row.get("payment_tool_type")).isEqualTo("payment_terminal");
+    }
+
+    @Test
     void withdrawalEventsAreParsedFromSerializedPayloadAndProjectedIntoCurrentState() {
         withdrawalIngestionService.handleEvents(SerializedIngestionEventFixtures.withdrawalEvents());
         withdrawalSessionIngestionService.handleEvents(SerializedIngestionEventFixtures.withdrawalSessionEvents());

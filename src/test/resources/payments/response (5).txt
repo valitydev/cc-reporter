@@ -77,7 +77,7 @@
                       "resource": {
                         "payment_tool": {
                           "bank_card": {
-                            "token": "test-card-token-5",
+                            "token": "test-token",
                             "payment_system": {
                               "id": "VISA"
                             },
@@ -109,21 +109,21 @@
                         },
                         "payment_session_id": "test-payment-session-5",
                         "client_info": {
-                          "ip_address": "203.0.113.11",
+                          "ip_address": "198.51.100.37",
                           "fingerprint": "test-fingerprint-5",
-                          "peer_ip_address": "203.0.113.12",
-                          "user_ip_address": "203.0.113.13"
+                          "peer_ip_address": "198.51.100.38",
+                          "user_ip_address": "198.51.100.39"
                         }
                       },
                       "contact_info": {
-                        "email": "user5@example.com",
+                        "email": "user11@example.test",
                         "country": "KAZ",
                         "state": "Kazakhstan"
                       }
                     }
                   },
                   "payer_session_info": {
-                    "redirect_url": "https://example.com/test-redirect-5"
+                    "redirect_url": "https://example.com/test-url-31"
                   },
                   "party_revision": 51,
                   "owner_id": "test-party-3",
@@ -514,7 +514,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-5"
+                          "uri": "https://example.com/test-url-32"
                         }
                       }
                     },
@@ -552,7 +552,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-6"
+                          "uri": "https://example.com/test-url-33"
                         }
                       }
                     },
@@ -590,7 +590,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-7"
+                          "uri": "https://example.com/test-url-34"
                         }
                       }
                     },
@@ -628,7 +628,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-8"
+                          "uri": "https://example.com/test-url-35"
                         }
                       }
                     },
@@ -666,7 +666,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-9"
+                          "uri": "https://example.com/test-url-36"
                         }
                       }
                     },
@@ -704,7 +704,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-10"
+                          "uri": "https://example.com/test-url-37"
                         }
                       }
                     },
@@ -742,7 +742,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-11"
+                          "uri": "https://example.com/test-url-38"
                         }
                       }
                     },
@@ -780,7 +780,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-12"
+                          "uri": "https://example.com/test-url-39"
                         }
                       }
                     },
@@ -818,7 +818,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-13"
+                          "uri": "https://example.com/test-url-40"
                         }
                       }
                     },
@@ -856,7 +856,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-14"
+                          "uri": "https://example.com/test-url-41"
                         }
                       }
                     },
@@ -894,7 +894,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-15"
+                          "uri": "https://example.com/test-url-42"
                         }
                       }
                     },
@@ -932,7 +932,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-16"
+                          "uri": "https://example.com/test-url-43"
                         }
                       }
                     },
@@ -970,7 +970,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-17"
+                          "uri": "https://example.com/test-url-44"
                         }
                       }
                     },
@@ -1008,7 +1008,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-18"
+                          "uri": "https://example.com/test-url-45"
                         }
                       }
                     },
@@ -1046,7 +1046,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-19"
+                          "uri": "https://example.com/test-url-46"
                         }
                       }
                     },
@@ -1084,7 +1084,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-20"
+                          "uri": "https://example.com/test-url-47"
                         }
                       }
                     },
@@ -1122,7 +1122,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-21"
+                          "uri": "https://example.com/test-url-48"
                         }
                       }
                     },
@@ -1160,7 +1160,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-22"
+                          "uri": "https://example.com/test-url-49"
                         }
                       }
                     },
@@ -1198,7 +1198,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-23"
+                          "uri": "https://example.com/test-url-50"
                         }
                       }
                     },
@@ -1236,7 +1236,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-24"
+                          "uri": "https://example.com/test-url-51"
                         }
                       }
                     },
@@ -1274,7 +1274,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-25"
+                          "uri": "https://example.com/test-url-52"
                         }
                       }
                     },
@@ -1312,7 +1312,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-26"
+                          "uri": "https://example.com/test-url-53"
                         }
                       }
                     },
@@ -1350,7 +1350,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-27"
+                          "uri": "https://example.com/test-url-54"
                         }
                       }
                     },
@@ -1388,7 +1388,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-28"
+                          "uri": "https://example.com/test-url-55"
                         }
                       }
                     },
@@ -1426,7 +1426,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-29"
+                          "uri": "https://example.com/test-url-56"
                         }
                       }
                     },
@@ -1464,7 +1464,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-30"
+                          "uri": "https://example.com/test-url-57"
                         }
                       }
                     },
@@ -1502,7 +1502,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-31"
+                          "uri": "https://example.com/test-url-58"
                         }
                       }
                     },
@@ -1540,7 +1540,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-32"
+                          "uri": "https://example.com/test-url-59"
                         }
                       }
                     },
@@ -1578,7 +1578,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-33"
+                          "uri": "https://example.com/test-url-60"
                         }
                       }
                     },
@@ -1616,7 +1616,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-34"
+                          "uri": "https://example.com/test-url-61"
                         }
                       }
                     },
@@ -1654,7 +1654,7 @@
                     "interaction": {
                       "redirect": {
                         "get_request": {
-                          "uri": "https://example.com/test-uri-35"
+                          "uri": "https://example.com/test-url-62"
                         }
                       }
                     },

@@ -12,6 +12,7 @@ import dev.vality.damsel.domain.AdditionalTransactionInfo;
 import dev.vality.damsel.domain.BankCard;
 import dev.vality.damsel.domain.InvoicePayment;
 import dev.vality.damsel.domain.InvoicePaymentCaptured;
+import dev.vality.damsel.domain.InvoicePaymentFailed;
 import dev.vality.damsel.domain.InvoicePaymentFlow;
 import dev.vality.damsel.domain.InvoicePaymentFlowInstant;
 import dev.vality.damsel.domain.InvoicePaymentPending;
@@ -23,6 +24,8 @@ import dev.vality.damsel.domain.Payer;
 import dev.vality.damsel.domain.PaymentTool;
 import dev.vality.damsel.domain.PaymentResourcePayer;
 import dev.vality.damsel.domain.PaymentRoute;
+import dev.vality.damsel.domain.PaymentServiceRef;
+import dev.vality.damsel.domain.PaymentTerminal;
 import dev.vality.damsel.domain.ProviderCashFlowAccount;
 import dev.vality.damsel.domain.ProviderRef;
 import dev.vality.damsel.domain.ShopConfigRef;
@@ -32,6 +35,8 @@ import dev.vality.damsel.domain.TransactionInfo;
 import dev.vality.damsel.domain.TargetInvoicePaymentStatus;
 import dev.vality.damsel.domain.ContactInfo;
 import dev.vality.damsel.domain.DisposablePaymentResource;
+import dev.vality.damsel.domain.Failure;
+import dev.vality.damsel.domain.OperationFailure;
 import dev.vality.damsel.payment_processing.EventPayload;
 import dev.vality.damsel.payment_processing.InvoiceChange;
 import dev.vality.damsel.payment_processing.InvoicePaymentCashFlowChanged;
@@ -43,6 +48,7 @@ import dev.vality.damsel.payment_processing.InvoicePaymentStarted;
 import dev.vality.damsel.payment_processing.InvoicePaymentStatusChanged;
 import dev.vality.damsel.payment_processing.SessionChangePayload;
 import dev.vality.damsel.payment_processing.SessionTransactionBound;
+import dev.vality.damsel.domain.SubFailure;
 import dev.vality.kafka.common.serialization.ThriftSerializer;
 import dev.vality.machinegun.eventsink.MachineEvent;
 import dev.vality.machinegun.msgpack.Value;
@@ -65,8 +71,25 @@ public final class RealPaymentIngestionEventFixtures {
 
     public static final String PAYMENT_INVOICE_ID = "2EnbPdxImPo";
     public static final String PAYMENT_ID = "1";
+    public static final String LEGACY_PAYMENT_INVOICE_ID = "test-invoice-1";
+    public static final String LEGACY_PAYMENT_ID = "1";
 
-    private static final String RESOURCE_NAME = "2EnbPdxImPo_events.txt";
+    private static final String RESOURCE_NAME = "payments/2EnbPdxImPo_events.txt";
+    private static final String LEGACY_RESOURCE_NAME = "payments/response (1).txt";
+    private static final List<String> COLLECTION_RESOURCE_NAMES = List.of(
+            "payments/2EfF8NQk30a.txt",
+            "payments/2Ek6RLXFbyi.txt",
+            "payments/2El3kaBqBU0.txt",
+            "payments/2EloA78BbF2.txt",
+            "payments/2ElsBI5GY4m.txt",
+            "payments/2EnbPdxImPo_events.txt",
+            "payments/response (1).txt",
+            "payments/response (2).txt",
+            "payments/response (3).txt",
+            "payments/response (4).txt",
+            "payments/response (5).txt",
+            "payments/response (6).txt"
+    );
     private static final int INITIAL_PROVIDER_ID = 254;
     private static final int INITIAL_TERMINAL_ID = 2550;
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -76,8 +99,12 @@ public final class RealPaymentIngestionEventFixtures {
     }
 
     public static List<MachineEvent> paymentEvents() {
+        return paymentEvents(RESOURCE_NAME);
+    }
+
+    private static List<MachineEvent> paymentEvents(String resourceName) {
         try {
-            var root = (ArrayNode) OBJECT_MAPPER.readTree(extractJsonArray(readResource()));
+            var root = (ArrayNode) OBJECT_MAPPER.readTree(extractJsonArray(readResource(resourceName), resourceName));
             var machineEvents = new ArrayList<MachineEvent>(root.size());
             for (JsonNode eventNode : root) {
                 buildPayload(eventNode).ifPresent(payload ->
@@ -93,6 +120,16 @@ public final class RealPaymentIngestionEventFixtures {
         } catch (IOException ex) {
             throw new UncheckedIOException("Failed to load real payment ingestion fixture", ex);
         }
+    }
+
+    public static List<MachineEvent> legacyPaymentEvents() {
+        return paymentEvents(LEGACY_RESOURCE_NAME);
+    }
+
+    public static List<MachineEvent> paymentCollectionEvents() {
+        return COLLECTION_RESOURCE_NAMES.stream()
+                .flatMap(resourceName -> paymentEvents(resourceName).stream())
+                .toList();
     }
 
     private static byte[] serialize(TBase<?, ?> payload) {
@@ -168,10 +205,10 @@ public final class RealPaymentIngestionEventFixtures {
         payment.setCost(buildCash(paymentNode.path("cost")));
         payment.setDomainRevision(paymentNode.path("domain_revision").asLong());
         var partyRef = new PartyConfigRef();
-        partyRef.setId(paymentNode.path("party_ref").path("id").asText(null));
+        partyRef.setId(readPartyId(paymentNode));
         payment.setPartyRef(partyRef);
         var shopRef = new ShopConfigRef();
-        shopRef.setId(paymentNode.path("shop_ref").path("id").asText(null));
+        shopRef.setId(readShopId(paymentNode));
         payment.setShopRef(shopRef);
         payment.setFlow(buildPaymentFlow());
 
@@ -197,17 +234,25 @@ public final class RealPaymentIngestionEventFixtures {
     }
 
     private static DisposablePaymentResource buildDisposablePaymentResource(JsonNode payerNode) {
-        var paymentToolNode = payerNode.path("payment_resource")
+        var paymentToolRootNode = payerNode.path("payment_resource")
                 .path("resource")
-                .path("payment_tool")
-                .path("bank_card");
-        var bankCard = new BankCard();
-        bankCard.setToken(paymentToolNode.path("token").asText(null));
-        bankCard.setBin(paymentToolNode.path("bin").asText(null));
-        bankCard.setLastDigits(paymentToolNode.path("last_digits").asText(null));
-
+                .path("payment_tool");
         var paymentTool = new PaymentTool();
-        paymentTool.setBankCard(bankCard);
+        if (paymentToolRootNode.has("payment_terminal")) {
+            var paymentTerminalNode = paymentToolRootNode.path("payment_terminal");
+            var paymentServiceRef = new PaymentServiceRef();
+            paymentServiceRef.setId(paymentTerminalNode.path("payment_service").path("id").asText(null));
+            var paymentTerminal = new PaymentTerminal();
+            paymentTerminal.setPaymentService(paymentServiceRef);
+            paymentTool.setPaymentTerminal(paymentTerminal);
+        } else {
+            var paymentToolNode = paymentToolRootNode.path("bank_card");
+            var bankCard = new BankCard();
+            bankCard.setToken(paymentToolNode.path("token").asText(null));
+            bankCard.setBin(paymentToolNode.path("bin").asText(null));
+            bankCard.setLastDigits(paymentToolNode.path("last_digits").asText(null));
+            paymentTool.setBankCard(bankCard);
+        }
 
         var resource = new DisposablePaymentResource();
         resource.setPaymentTool(paymentTool);
@@ -334,6 +379,23 @@ public final class RealPaymentIngestionEventFixtures {
                 }
                 status.setCaptured(captured);
             }
+            case "failed" -> {
+                var failedNode = statusNode.path(fieldName).path("failure");
+                var failureNode = failedNode.path("failure");
+                var failure = new Failure();
+                failure.setCode(failureNode.path("code").asText(null));
+                failure.setReason(failureNode.path("reason").asText(null));
+                if (failureNode.has("sub")) {
+                    var subFailure = new SubFailure();
+                    subFailure.setCode(failureNode.path("sub").path("code").asText(null));
+                    failure.setSub(subFailure);
+                }
+                var operationFailure = new OperationFailure();
+                operationFailure.setFailure(failure);
+                var failed = new InvoicePaymentFailed();
+                failed.setFailure(operationFailure);
+                status.setFailed(failed);
+            }
             default -> {
             }
         }
@@ -362,13 +424,13 @@ public final class RealPaymentIngestionEventFixtures {
         }
     }
 
-    private static String readResource() throws IOException {
-        try (var inputStream = new ClassPathResource(RESOURCE_NAME).getInputStream()) {
+    private static String readResource(String resourceName) throws IOException {
+        try (var inputStream = new ClassPathResource(resourceName).getInputStream()) {
             return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         }
     }
 
-    private static String extractJsonArray(String content) {
+    private static String extractJsonArray(String content, String resourceName) {
         var jsonStart = content.indexOf("\n[");
         if (jsonStart >= 0) {
             jsonStart++;
@@ -376,8 +438,18 @@ public final class RealPaymentIngestionEventFixtures {
             jsonStart = content.indexOf('[');
         }
         if (jsonStart < 0) {
-            throw new IllegalArgumentException("Fixture does not contain a JSON array: " + RESOURCE_NAME);
+            throw new IllegalArgumentException("Fixture does not contain a JSON array: " + resourceName);
         }
         return content.substring(jsonStart);
+    }
+
+    private static String readPartyId(JsonNode paymentNode) {
+        var partyRefId = paymentNode.path("party_ref").path("id").asText(null);
+        return partyRefId != null ? partyRefId : paymentNode.path("owner_id").asText(null);
+    }
+
+    private static String readShopId(JsonNode paymentNode) {
+        var shopRefId = paymentNode.path("shop_ref").path("id").asText(null);
+        return shopRefId != null ? shopRefId : paymentNode.path("shop_id").asText(null);
     }
 }

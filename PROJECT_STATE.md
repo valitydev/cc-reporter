@@ -1,7 +1,9 @@
 # PROJECT_STATE.md
 
 ## Active tracks
-- None.
+- `replayable-current-state-projections`
+- `dominant-name-materialization`
+- `projector-builder-refactor`
 
 ## Completed tracks
 - `kafka-to-db-ingestion`
@@ -21,10 +23,18 @@
   populating those display-name columns and currently leaves explicit `TODO` markers at the projector gap points.
 - `payments` `trx_id` remains event-first from `SessionTransactionBound`; a separate repair/reconciliation worker is not required by
   the current primary truth and should only be revived if real ingestion streams demonstrate terminal rows that still miss `trx_id`.
+- Current-state replay semantics are still optimized for duplicate tolerance rather than projection rebuildability; newly added
+  derived fields may require a stronger replay/backfill contract than the present no-op-on-duplicate baseline.
 
 ## Cross-track dependencies
 - `kafka-to-db-ingestion` defines the read-model columns used by CSV generation and report filters.
 - `kafka-to-db-ingestion` must keep `payment_txn_current` / `withdrawal_txn_current` compatible with the completed report execution and Thrift tracks.
+- `replayable-current-state-projections` builds on top of the completed ingestion track without reopening the decision to keep
+  PostgreSQL current-state tables as the reporting truth.
+- `dominant-name-materialization` depends on the completed ingestion/report tracks and supplies a local enrichment source for
+  display-name columns still left unresolved by event-native projectors.
+- `projector-builder-refactor` depends on the completed ingestion track and should preserve both the completed report path and the
+  active replay/name-enrichment follow-up tracks while improving projector readability.
 - `plan-convergence-hardening` closed on top of the completed ingestion, Thrift, and lifecycle tracks without reopening their core
   architecture decisions.
 - `csv-cursor-hardening` closed as a narrow follow-up on the completed report execution path without reopening the CSV contract, API
@@ -35,7 +45,14 @@
   persistence API used inside DAO implementations.
 
 ## Active track snapshot
-- No active track is open right now.
+- `replayable-current-state-projections`
+  is a follow-up design/implementation track for deterministic current-state rebuilds under Kafka replay and projector evolution.
+- `dominant-name-materialization`
+  is a follow-up design/implementation track for CCR-owned local lookup tables that restore `shop_name` / `provider_name` /
+  `terminal_name` and similar display-name fields without foreign DB joins.
+- `projector-builder-refactor`
+  is a follow-up design/implementation track for Lombok/builder-based projector assembly and decomposition of large current-state
+  projectors, starting with payments and extending generic improvements to withdrawals.
 
 ## Latest completed track snapshot
 - `jooq-dsl-dao-transition` is complete. Runtime DAO code now uses a Spring-managed `DSLContext` plus generated `jOOQ` schema

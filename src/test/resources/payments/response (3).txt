@@ -1,38 +1,53 @@
 [
   {
     "id": 1,
-    "created_at": "2025-11-13T19:21:42.710810Z",
+    "created_at": "2025-11-13T12:56:05.114034Z",
     "source": {
-      "invoice_id": "test-invoice-4"
+      "invoice_id": "test-invoice-3"
     },
     "payload": {
       "invoice_changes": [
         {
           "invoice_created": {
             "invoice": {
-              "id": "2BbvFjORLQO",
-              "owner_id": "test-party-2",
-              "party_revision": 112,
-              "shop_id": "test-shop-3",
-              "created_at": "2025-11-13T19:21:42.692396Z",
+              "id": "2BbThBKxCts",
+              "owner_id": "test-party-1",
+              "party_revision": 174,
+              "shop_id": "test-shop-2",
+              "created_at": "2025-11-13T12:56:05.092898Z",
               "status": {
                 "unpaid": []
               },
               "details": {
-                "product": "125840057"
+                "product": "test",
+                "cart": {
+                  "lines": [
+                    {
+                      "product": "test",
+                      "quantity": 1,
+                      "price": {
+                        "amount": 10000,
+                        "currency": {
+                          "symbolic_code": "KZT"
+                        }
+                      },
+                      "metadata": []
+                    }
+                  ]
+                }
               },
-              "due": "2025-11-14T19:21:42Z",
+              "due": "2025-12-13T12:56:05Z",
               "cost": {
-                "amount": 200000,
+                "amount": 10000,
                 "currency": {
                   "symbolic_code": "KZT"
                 }
               },
               "context": {
                 "type": "application/json",
-                "data": "{\"X-traceparent\":\"00-00000000000000000000000000000000-0000000000000001-01\",\"transaction_id\":\"test-transaction-embedded\",\"user_id\":\"test-user-embedded\"}"
+                "data": "{}"
               },
-              "external_id": "test-external-1"
+              "template_id": "2BbT4f7zYlk"
             }
           }
         }
@@ -41,9 +56,9 @@
   },
   {
     "id": 2,
-    "created_at": "2025-11-13T19:21:43.067733Z",
+    "created_at": "2025-11-13T12:56:05.902466Z",
     "source": {
-      "invoice_id": "test-invoice-4"
+      "invoice_id": "test-invoice-3"
     },
     "payload": {
       "invoice_changes": [
@@ -54,21 +69,17 @@
               "invoice_payment_started": {
                 "payment": {
                   "id": "1",
-                  "created_at": "2025-11-13T19:21:43.060593Z",
+                  "created_at": "2025-11-13T12:56:05.895242Z",
                   "status": {
                     "pending": []
                   },
-                  "context": {
-                    "type": "application/json",
-                    "data": "{\"transaction_id\":\"test-transaction-embedded\",\"user_id\":\"test-user-embedded\"}"
-                  },
                   "cost": {
-                    "amount": 200000,
+                    "amount": 10000,
                     "currency": {
                       "symbolic_code": "KZT"
                     }
                   },
-                  "domain_revision": 72884,
+                  "domain_revision": 72879,
                   "flow": {
                     "instant": []
                   },
@@ -77,9 +88,9 @@
                       "resource": {
                         "payment_tool": {
                           "bank_card": {
-                            "token": "test-card-token-3",
+                            "token": "test-token",
                             "payment_system": {
-                              "id": "MASTERCARD"
+                              "id": "VISA"
                             },
                             "bin": "411111",
                             "last_digits": "1111",
@@ -101,43 +112,40 @@
                             },
                             "is_cvv_empty": false,
                             "exp_date": {
-                              "month": 11,
-                              "year": 2029
+                              "month": 2,
+                              "year": 2026
                             },
-                            "category": "PLATINUM"
+                            "cardholder_name": "YULIA RODIMOVA",
+                            "category": "REWARDS"
                           }
                         },
-                        "payment_session_id": "test-payment-session-4",
+                        "payment_session_id": "test-payment-session-3",
                         "client_info": {
-                          "ip_address": "198.51.100.22",
-                          "fingerprint": "test-fingerprint-4",
-                          "peer_ip_address": "198.51.100.23",
-                          "user_ip_address": "203.0.113.10"
+                          "ip_address": "198.51.100.32",
+                          "fingerprint": "test-fingerprint-3",
+                          "peer_ip_address": "198.51.100.33"
                         }
                       },
                       "contact_info": {
-                        "email": "user4@example.com",
-                        "country": "KAZ",
-                        "state": "Kazakhstan"
+                        "email": "user9@example.test"
                       }
                     }
                   },
                   "payer_session_info": {
-                    "redirect_url": "https://example.com/test-redirect-4"
+                    "redirect_url": "https://example.com/test-url-27"
                   },
-                  "party_revision": 112,
-                  "owner_id": "test-party-2",
-                  "shop_id": "test-shop-3",
+                  "party_revision": 174,
+                  "owner_id": "test-party-1",
+                  "shop_id": "test-shop-2",
                   "make_recurrent": true,
-                  "external_id": "test-external-2",
-                  "processing_deadline": "2025-11-13T19:23:43.036Z",
+                  "processing_deadline": "2025-11-13T12:58:05.869Z",
                   "registration_origin": {
                     "merchant": []
                   }
                 }
               }
             },
-            "occurred_at": "2025-11-13T19:21:43.060593Z"
+            "occurred_at": "2025-11-13T12:56:05.895242Z"
           }
         }
       ]
@@ -145,9 +153,9 @@
   },
   {
     "id": 3,
-    "created_at": "2025-11-13T19:21:43.084186Z",
+    "created_at": "2025-11-13T12:56:05.917754Z",
     "source": {
-      "invoice_id": "test-invoice-4"
+      "invoice_id": "test-invoice-3"
     },
     "payload": {
       "invoice_changes": [
@@ -157,7 +165,7 @@
             "payload": {
               "invoice_payment_shop_limit_initiated": []
             },
-            "occurred_at": "2025-11-13T19:21:43.083069Z"
+            "occurred_at": "2025-11-13T12:56:05.917147Z"
           }
         }
       ]
@@ -165,9 +173,9 @@
   },
   {
     "id": 4,
-    "created_at": "2025-11-13T19:21:43.100955Z",
+    "created_at": "2025-11-13T12:56:05.929847Z",
     "source": {
-      "invoice_id": "test-invoice-4"
+      "invoice_id": "test-invoice-3"
     },
     "payload": {
       "invoice_changes": [
@@ -177,7 +185,7 @@
             "payload": {
               "invoice_payment_shop_limit_applied": []
             },
-            "occurred_at": "2025-11-13T19:21:43.099811Z"
+            "occurred_at": "2025-11-13T12:56:05.929245Z"
           }
         }
       ]
@@ -185,9 +193,9 @@
   },
   {
     "id": 5,
-    "created_at": "2025-11-13T19:21:43.170360Z",
+    "created_at": "2025-11-13T12:56:05.951766Z",
     "source": {
-      "invoice_id": "test-invoice-4"
+      "invoice_id": "test-invoice-3"
     },
     "payload": {
       "invoice_changes": [
@@ -199,7 +207,7 @@
                 "risk_score": "high"
               }
             },
-            "occurred_at": "2025-11-13T19:21:43.117696Z"
+            "occurred_at": "2025-11-13T12:56:05.943237Z"
           }
         }
       ]
@@ -207,9 +215,9 @@
   },
   {
     "id": 6,
-    "created_at": "2025-11-13T19:21:43.276689Z",
+    "created_at": "2025-11-13T12:56:06.014047Z",
     "source": {
-      "invoice_id": "test-invoice-4"
+      "invoice_id": "test-invoice-3"
     },
     "payload": {
       "invoice_changes": [
@@ -234,65 +242,9 @@
                     "terminal": {
                       "id": 2529
                     }
-                  },
-                  {
-                    "provider": {
-                      "id": 254
-                    },
-                    "terminal": {
-                      "id": 2171
-                    }
-                  },
-                  {
-                    "provider": {
-                      "id": 275
-                    },
-                    "terminal": {
-                      "id": 2304
-                    }
                   }
                 ],
                 "scores": [
-                  {
-                    "key": {
-                      "provider": {
-                        "id": 275
-                      },
-                      "terminal": {
-                        "id": 2304
-                      }
-                    },
-                    "value": {
-                      "availability_condition": 1,
-                      "conversion_condition": 1,
-                      "terminal_priority_rating": 3000,
-                      "route_pin": 0,
-                      "random_condition": 1,
-                      "availability": 1.00000000000000000000e+00,
-                      "conversion": 1.00000000000000000000e+00,
-                      "blacklist_condition": 0
-                    }
-                  },
-                  {
-                    "key": {
-                      "provider": {
-                        "id": 254
-                      },
-                      "terminal": {
-                        "id": 2171
-                      }
-                    },
-                    "value": {
-                      "availability_condition": 1,
-                      "conversion_condition": 1,
-                      "terminal_priority_rating": 2000,
-                      "route_pin": 0,
-                      "random_condition": 1,
-                      "availability": 1.00000000000000000000e+00,
-                      "conversion": 1.00000000000000000000e+00,
-                      "blacklist_condition": 0
-                    }
-                  },
                   {
                     "key": {
                       "provider": {
@@ -305,38 +257,16 @@
                     "value": {
                       "availability_condition": 1,
                       "conversion_condition": 1,
-                      "terminal_priority_rating": 4000,
+                      "terminal_priority_rating": 1000,
                       "route_pin": 0,
-                      "random_condition": 1,
+                      "random_condition": 0,
                       "availability": 1.00000000000000000000e+00,
-                      "conversion": 9.89431333693628789483e-01,
+                      "conversion": 9.89193127314674236494e-01,
                       "blacklist_condition": 0
                     }
                   }
                 ],
                 "limits": [
-                  {
-                    "key": {
-                      "provider": {
-                        "id": 275
-                      },
-                      "terminal": {
-                        "id": 2304
-                      }
-                    },
-                    "value": []
-                  },
-                  {
-                    "key": {
-                      "provider": {
-                        "id": 254
-                      },
-                      "terminal": {
-                        "id": 2171
-                      }
-                    },
-                    "value": []
-                  },
                   {
                     "key": {
                       "provider": {
@@ -351,7 +281,7 @@
                 ]
               }
             },
-            "occurred_at": "2025-11-13T19:21:43.184055Z"
+            "occurred_at": "2025-11-13T12:56:05.967358Z"
           }
         }
       ]
@@ -359,9 +289,9 @@
   },
   {
     "id": 7,
-    "created_at": "2025-11-13T19:21:43.336665Z",
+    "created_at": "2025-11-13T12:56:06.067519Z",
     "source": {
-      "invoice_id": "test-invoice-4"
+      "invoice_id": "test-invoice-3"
     },
     "payload": {
       "invoice_changes": [
@@ -376,13 +306,13 @@
                       "account_type": {
                         "merchant": "settlement"
                       },
-                      "account_id": 82657505,
+                      "account_id": 13047173,
                       "transaction_account": {
                         "merchant": {
                           "type": "settlement",
                           "owner": {
-                            "party_id": "test-uuid-4",
-                            "shop_id": "test-shop-3"
+                            "party_id": "test-uuid-1",
+                            "shop_id": "test-shop-2"
                           }
                         }
                       }
@@ -399,7 +329,7 @@
                       }
                     },
                     "volume": {
-                      "amount": 9000,
+                      "amount": 390,
                       "currency": {
                         "symbolic_code": "KZT"
                       }
@@ -429,19 +359,19 @@
                       "account_type": {
                         "merchant": "settlement"
                       },
-                      "account_id": 82657505,
+                      "account_id": 13047173,
                       "transaction_account": {
                         "merchant": {
                           "type": "settlement",
                           "owner": {
-                            "party_id": "test-uuid-4",
-                            "shop_id": "test-shop-3"
+                            "party_id": "test-uuid-1",
+                            "shop_id": "test-shop-2"
                           }
                         }
                       }
                     },
                     "volume": {
-                      "amount": 200000,
+                      "amount": 10000,
                       "currency": {
                         "symbolic_code": "KZT"
                       }
@@ -479,7 +409,7 @@
                       }
                     },
                     "volume": {
-                      "amount": 8400,
+                      "amount": 420,
                       "currency": {
                         "symbolic_code": "KZT"
                       }
@@ -488,7 +418,7 @@
                 ]
               }
             },
-            "occurred_at": "2025-11-13T19:21:43.291110Z"
+            "occurred_at": "2025-11-13T12:56:06.028774Z"
           }
         }
       ]
@@ -496,9 +426,9 @@
   },
   {
     "id": 8,
-    "created_at": "2025-11-13T19:21:43.397769Z",
+    "created_at": "2025-11-13T12:56:06.081304Z",
     "source": {
-      "invoice_id": "test-invoice-4"
+      "invoice_id": "test-invoice-3"
     },
     "payload": {
       "invoice_changes": [
@@ -515,7 +445,7 @@
                 }
               }
             },
-            "occurred_at": "2025-11-13T19:21:43.396637Z"
+            "occurred_at": "2025-11-13T12:56:06.080620Z"
           }
         }
       ]
@@ -523,9 +453,9 @@
   },
   {
     "id": 9,
-    "created_at": "2025-11-13T19:21:43.670337Z",
+    "created_at": "2025-11-13T12:56:06.239857Z",
     "source": {
-      "invoice_id": "test-invoice-4"
+      "invoice_id": "test-invoice-3"
     },
     "payload": {
       "invoice_changes": [
@@ -540,14 +470,14 @@
                 "payload": {
                   "session_transaction_bound": {
                     "trx": {
-                      "id": "GE00002302404771",
+                      "id": "GE00002302254985",
                       "extra": []
                     }
                   }
                 }
               }
             },
-            "occurred_at": "2025-11-13T19:21:43.413913Z"
+            "occurred_at": "2025-11-13T12:56:06.096762Z"
           }
         },
         {
@@ -560,12 +490,12 @@
                 },
                 "payload": {
                   "session_proxy_state_changed": {
-                    "proxy_state": "{\"trxId\":\"test-provider-trx-alt-1\",\"step\":\"CHECK_STATUS\",\"options\":{},\"start_date_time_polling\":1763061703.659974862,\"max_date_time_polling\":1763062303.659974369}"
+                    "proxy_state": "{\"trxId\":\"test-provider-trx-alt-1\",\"step\":\"CHECK_STATUS\",\"options\":{},\"start_date_time_polling\":1763038566.231196177,\"max_date_time_polling\":1763039166.231195619}"
                   }
                 }
               }
             },
-            "occurred_at": "2025-11-13T19:21:43.413913Z"
+            "occurred_at": "2025-11-13T12:56:06.096762Z"
           }
         }
       ]
@@ -573,9 +503,85 @@
   },
   {
     "id": 10,
-    "created_at": "2025-11-13T19:21:51.155258Z",
+    "created_at": "2025-11-13T12:56:18.972176Z",
     "source": {
-      "invoice_id": "test-invoice-4"
+      "invoice_id": "test-invoice-3"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-28"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-13T12:56:18.926463Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 11,
+    "created_at": "2025-11-13T12:56:38.977157Z",
+    "source": {
+      "invoice_id": "test-invoice-3"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-29"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-13T12:56:38.925879Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 12,
+    "created_at": "2025-11-13T12:56:58.978493Z",
+    "source": {
+      "invoice_id": "test-invoice-3"
     },
     "payload": {
       "invoice_changes": [
@@ -584,10 +590,10 @@
             "id": "1",
             "payload": {
               "invoice_payment_rec_token_acquired": {
-                "token": "test-card-token-4"
+                "token": "test-token"
               }
             },
-            "occurred_at": "2025-11-13T19:21:51.108891Z"
+            "occurred_at": "2025-11-13T12:56:58.926585Z"
           }
         },
         {
@@ -607,17 +613,17 @@
                 }
               }
             },
-            "occurred_at": "2025-11-13T19:21:51.108891Z"
+            "occurred_at": "2025-11-13T12:56:58.926585Z"
           }
         }
       ]
     }
   },
   {
-    "id": 11,
-    "created_at": "2025-11-13T19:21:51.170546Z",
+    "id": 13,
+    "created_at": "2025-11-13T12:56:58.991834Z",
     "source": {
-      "invoice_id": "test-invoice-4"
+      "invoice_id": "test-invoice-3"
     },
     "payload": {
       "invoice_changes": [
@@ -631,17 +637,17 @@
                 }
               }
             },
-            "occurred_at": "2025-11-13T19:21:51.169538Z"
+            "occurred_at": "2025-11-13T12:56:58.990467Z"
           }
         }
       ]
     }
   },
   {
-    "id": 12,
-    "created_at": "2025-11-13T19:21:51.184608Z",
+    "id": 14,
+    "created_at": "2025-11-13T12:56:59.004060Z",
     "source": {
-      "invoice_id": "test-invoice-4"
+      "invoice_id": "test-invoice-3"
     },
     "payload": {
       "invoice_changes": [
@@ -653,7 +659,7 @@
                 "data": {
                   "reason": "Timeout",
                   "cash": {
-                    "amount": 200000,
+                    "amount": 10000,
                     "currency": {
                       "symbolic_code": "KZT"
                     }
@@ -661,7 +667,7 @@
                 }
               }
             },
-            "occurred_at": "2025-11-13T19:21:51.183807Z"
+            "occurred_at": "2025-11-13T12:56:59.002995Z"
           }
         },
         {
@@ -673,7 +679,7 @@
                   "captured": {
                     "reason": "Timeout",
                     "cost": {
-                      "amount": 200000,
+                      "amount": 10000,
                       "currency": {
                         "symbolic_code": "KZT"
                       }
@@ -685,17 +691,17 @@
                 }
               }
             },
-            "occurred_at": "2025-11-13T19:21:51.183807Z"
+            "occurred_at": "2025-11-13T12:56:59.002995Z"
           }
         }
       ]
     }
   },
   {
-    "id": 13,
-    "created_at": "2025-11-13T19:21:51.223656Z",
+    "id": 15,
+    "created_at": "2025-11-13T12:56:59.036362Z",
     "source": {
-      "invoice_id": "test-invoice-4"
+      "invoice_id": "test-invoice-3"
     },
     "payload": {
       "invoice_changes": [
@@ -708,7 +714,7 @@
                   "captured": {
                     "reason": "Timeout",
                     "cost": {
-                      "amount": 200000,
+                      "amount": 10000,
                       "currency": {
                         "symbolic_code": "KZT"
                       }
@@ -722,7 +728,7 @@
                 }
               }
             },
-            "occurred_at": "2025-11-13T19:21:51.199171Z"
+            "occurred_at": "2025-11-13T12:56:59.022064Z"
           }
         },
         {
@@ -734,7 +740,7 @@
                   "captured": {
                     "reason": "Timeout",
                     "cost": {
-                      "amount": 200000,
+                      "amount": 10000,
                       "currency": {
                         "symbolic_code": "KZT"
                       }
@@ -750,17 +756,17 @@
                 }
               }
             },
-            "occurred_at": "2025-11-13T19:21:51.199171Z"
+            "occurred_at": "2025-11-13T12:56:59.022064Z"
           }
         }
       ]
     }
   },
   {
-    "id": 14,
-    "created_at": "2025-11-13T19:21:51.267100Z",
+    "id": 16,
+    "created_at": "2025-11-13T12:56:59.078496Z",
     "source": {
-      "invoice_id": "test-invoice-4"
+      "invoice_id": "test-invoice-3"
     },
     "payload": {
       "invoice_changes": [
@@ -773,7 +779,7 @@
                   "captured": {
                     "reason": "Timeout",
                     "cost": {
-                      "amount": 200000,
+                      "amount": 10000,
                       "currency": {
                         "symbolic_code": "KZT"
                       }
@@ -782,7 +788,7 @@
                 }
               }
             },
-            "occurred_at": "2025-11-13T19:21:51.237551Z"
+            "occurred_at": "2025-11-13T12:56:59.051779Z"
           }
         },
         {

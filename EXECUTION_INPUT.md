@@ -10,6 +10,10 @@
 - Use three durable delivery workstreams: `kafka-to-db-ingestion`, `thrift-api-implementation`, `report-lifecycle-subsystem`.
 - Keep a separate modernization track `jooq-dsl-dao-transition` for DAO-layer persistence API changes without reopening the service
   contract or report architecture.
+- Keep three new follow-up tracks active:
+  `replayable-current-state-projections`,
+  `dominant-name-materialization`,
+  `projector-builder-refactor`.
 - Build current-state projections in PostgreSQL, not on-demand reads from `magista` / `fistful-magista`.
 - Kafka consumption must be batch-based, manual-ack, and commit offsets only after successful DB transaction commit.
 - Use DB-level idempotency with monotonic `domain_event_id` updates on business keys.
@@ -68,6 +72,8 @@ Last known baseline:
 - Internal auth is out of scope; `Wachter` remains responsible.
 - If the DAO layer is modernized, preserve the current SQL-first posture and PostgreSQL semantics; do not turn `cc-reporter`
   into an ORM-first service.
+- If replay semantics are reopened, keep the scope bounded to deterministic projection rebuildability; do not reopen the decision to
+  materialize current state in CCR.
 
 ## Known risks
 - Exact authoritative source for full `payments` FX block is still unresolved.
@@ -75,6 +81,11 @@ Last known baseline:
 - Some provider-related enrichment may arrive later than initial entity creation events.
 - Long `REPEATABLE READ` report builds can increase MVCC pressure.
 - `payments.trx_id` may still require repair flow for edge cases where transaction-bound events are missing in observed ingestion streams.
+- Rebuild-friendly replay semantics can accidentally weaken out-of-order protection if equal-event reapplication is introduced
+  without explicit safeguards.
+- Introducing local dominant enrichment adds a new CCR-owned projection pipeline that must stay consistent with report joins.
+- Builder/subclass refactors over generated `jOOQ` POJOs can become harder to maintain if inheritance boundaries are not kept
+  projector-local.
 
 ## Expected workstreams
 - likely multi-track
@@ -82,6 +93,9 @@ Last known baseline:
 - `thrift-api-implementation`
 - `report-lifecycle-subsystem`
 - `jooq-dsl-dao-transition`
+- `replayable-current-state-projections`
+- `dominant-name-materialization`
+- `projector-builder-refactor`
 
 ## Project-specific facts
 - language / stack: Java, Spring Boot, Spring Kafka, JDBC, jOOQ code generation, Flyway, PostgreSQL, Thrift, Woody,

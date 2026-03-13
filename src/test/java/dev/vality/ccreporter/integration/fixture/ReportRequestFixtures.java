@@ -49,9 +49,13 @@ public final class ReportRequestFixtures {
     }
 
     public static TimeRange defaultTimeRange() {
+        return timeRange("2026-01-01T00:00:00Z", "2026-01-02T00:00:00Z");
+    }
+
+    public static TimeRange timeRange(String from, String to) {
         return new TimeRange(
-                Instant.parse("2026-01-01T00:00:00Z").toString(),
-                Instant.parse("2026-01-02T00:00:00Z").toString()
+                Instant.parse(from).toString(),
+                Instant.parse(to).toString()
         );
     }
 }

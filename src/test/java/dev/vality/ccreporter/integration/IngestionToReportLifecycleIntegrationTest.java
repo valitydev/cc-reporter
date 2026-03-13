@@ -188,6 +188,60 @@ class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegra
         assertThat(csv).contains("2465");
     }
 
+    @Test
+    void paymentCollectionFixtureBuildsMultiRowReport() throws Exception {
+        paymentIngestionService.handleEvents(SerializedIngestionEventFixtures.paymentCollectionEvents());
+
+        var reportId = reportingHandler.createReport(paymentCollectionLifecycleRequest());
+        var processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-03-14T00:00:00Z"));
+
+        var report = reportingHandler.getReport(new GetReportRequest(reportId));
+        var csv = new String(
+                stubFileStorageClient.getStoredContent(report.getFile().getFileId()),
+                StandardCharsets.UTF_8
+        );
+
+        assertThat(processed).isTrue();
+        assertThat(report.getStatus()).isEqualTo(ReportStatus.created);
+        assertThat(report.getRowsCount()).isEqualTo(12L);
+        assertThat(csv).contains("2EfF8NQk30a,1,");
+        assertThat(csv).contains("2Ek6RLXFbyi,1,");
+        assertThat(csv).contains("2El3kaBqBU0,1,");
+        assertThat(csv).contains("2EloA78BbF2,1,");
+        assertThat(csv).contains("2ElsBI5GY4m,1,");
+        assertThat(csv).contains("2EnbPdxImPo,1,");
+        assertThat(csv).contains("test-invoice-1,1,");
+        assertThat(csv).contains("test-invoice-2,1,");
+        assertThat(csv).contains("test-invoice-3,1,");
+        assertThat(csv).contains("test-invoice-4,1,");
+        assertThat(csv).contains("test-invoice-5,1,");
+        assertThat(csv).contains("test-invoice-6,1,");
+    }
+
+    @Test
+    void withdrawalCollectionFixtureBuildsMultiRowReport() throws Exception {
+        withdrawalIngestionService.handleEvents(SerializedIngestionEventFixtures.withdrawalCollectionEvents());
+
+        var reportId = reportingHandler.createReport(withdrawalCollectionLifecycleRequest());
+        var processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-03-14T00:00:00Z"));
+
+        var report = reportingHandler.getReport(new GetReportRequest(reportId));
+        var csv = new String(
+                stubFileStorageClient.getStoredContent(report.getFile().getFileId()),
+                StandardCharsets.UTF_8
+        );
+
+        assertThat(processed).isTrue();
+        assertThat(report.getStatus()).isEqualTo(ReportStatus.created);
+        assertThat(report.getRowsCount()).isEqualTo(6L);
+        assertThat(csv).contains("211890,succeeded,");
+        assertThat(csv).contains("257060,succeeded,");
+        assertThat(csv).contains("257072,succeeded,");
+        assertThat(csv).contains("257077,succeeded,");
+        assertThat(csv).contains("257080,succeeded,");
+        assertThat(csv).contains("257085,succeeded,");
+    }
+
     private dev.vality.ccreporter.CreateReportRequest paymentsLifecycleRequest() {
         return ReportRequestFixtures.payments("ingestion-payments-lifecycle-1", new TimeRange(
                 "2025-12-31T00:00:00Z",
@@ -213,6 +267,20 @@ class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegra
         return ReportRequestFixtures.withdrawals("ingestion-real-withdrawals-lifecycle-1", new TimeRange(
                 "2026-02-17T00:00:00Z",
                 "2026-02-21T00:00:00Z"
+        ));
+    }
+
+    private dev.vality.ccreporter.CreateReportRequest paymentCollectionLifecycleRequest() {
+        return ReportRequestFixtures.payments("ingestion-payments-collection-1", new TimeRange(
+                "2025-11-01T00:00:00Z",
+                "2026-03-14T00:00:00Z"
+        ));
+    }
+
+    private dev.vality.ccreporter.CreateReportRequest withdrawalCollectionLifecycleRequest() {
+        return ReportRequestFixtures.withdrawals("ingestion-withdrawals-collection-1", new TimeRange(
+                "2026-02-17T00:00:00Z",
+                "2026-03-14T00:00:00Z"
         ));
     }
 }

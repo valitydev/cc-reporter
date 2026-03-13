@@ -41,7 +41,15 @@ public final class RealWithdrawalIngestionEventFixtures {
 
     public static final String WITHDRAWAL_ID = "211890";
 
-    private static final String RESOURCE_NAME = "211890_events.txt";
+    private static final String RESOURCE_NAME = "withdrawals/211890_events.txt";
+    private static final List<String> COLLECTION_RESOURCE_NAMES = List.of(
+            "withdrawals/211890_events.txt",
+            "withdrawals/257060.txt",
+            "withdrawals/257072.txt",
+            "withdrawals/257077.txt",
+            "withdrawals/257080.txt",
+            "withdrawals/257085.txt"
+    );
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final ThriftSerializer<TBase<?, ?>> THRIFT_SERIALIZER = new ThriftSerializer<>();
 
@@ -49,14 +57,19 @@ public final class RealWithdrawalIngestionEventFixtures {
     }
 
     public static List<MachineEvent> withdrawalEvents() {
+        return withdrawalEvents(RESOURCE_NAME);
+    }
+
+    private static List<MachineEvent> withdrawalEvents(String resourceName) {
         try {
-            var root = (ArrayNode) OBJECT_MAPPER.readTree(readResource());
+            var root = (ArrayNode) OBJECT_MAPPER.readTree(readResource(resourceName));
+            var sourceId = detectWithdrawalId(root, resourceName);
             var machineEvents = new ArrayList<MachineEvent>(root.size());
             for (JsonNode eventNode : root) {
                 buildEvent(eventNode).ifPresent(payload ->
                         machineEvents.add(new MachineEvent()
                                 .setEventId(eventNode.path("event_id").asLong())
-                                .setSourceId(WITHDRAWAL_ID)
+                                .setSourceId(sourceId)
                                 .setSourceNs("withdrawals")
                                 .setCreatedAt(eventNode.path("occured_at").asText())
                                 .setData(Value.bin(serialize(payload))))
@@ -66,6 +79,12 @@ public final class RealWithdrawalIngestionEventFixtures {
         } catch (IOException ex) {
             throw new UncheckedIOException("Failed to load real withdrawal ingestion fixture", ex);
         }
+    }
+
+    public static List<MachineEvent> withdrawalCollectionEvents() {
+        return COLLECTION_RESOURCE_NAMES.stream()
+                .flatMap(resourceName -> withdrawalEvents(resourceName).stream())
+                .toList();
     }
 
     private static Optional<Event> buildEvent(JsonNode eventNode) {
@@ -210,9 +229,19 @@ public final class RealWithdrawalIngestionEventFixtures {
         return THRIFT_SERIALIZER.serialize("", payload);
     }
 
-    private static String readResource() throws IOException {
-        try (var inputStream = new ClassPathResource(RESOURCE_NAME).getInputStream()) {
+    private static String readResource(String resourceName) throws IOException {
+        try (var inputStream = new ClassPathResource(resourceName).getInputStream()) {
             return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         }
+    }
+
+    private static String detectWithdrawalId(ArrayNode root, String resourceName) {
+        for (JsonNode eventNode : root) {
+            var createdNode = eventNode.path("change").path("created").path("withdrawal").path("id");
+            if (!createdNode.isMissingNode()) {
+                return createdNode.asText();
+            }
+        }
+        throw new IllegalArgumentException("Failed to detect withdrawal_id from fixture: " + resourceName);
     }
 }
