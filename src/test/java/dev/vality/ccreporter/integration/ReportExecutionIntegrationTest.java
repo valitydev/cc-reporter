@@ -48,9 +48,9 @@ class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
         assertThat(csvLines).containsExactly(
                 "created_date,created_time,finalized_date,finalized_time,invoice_id,payment_id,status," +
                         "amount,currency,trx_id,provider_id,terminal_id,shop_id,exchange_rate_internal," +
-                        "provider_amount,provider_currency,converted_amount",
+                        "provider_amount,provider_currency,original_amount,original_currency,converted_amount",
                 "2026-01-01,17:00:00,2026-01-01,18:00:00,invoice-1,payment-1,captured,10.00,RUB,trx-1," +
-                        "provider-1,terminal-1,shop-1,1.1000000000,9.90,EUR,10.00"
+                        "provider-1,terminal-1,shop-1,1.1000000000,9.90,EUR,11.00,USD,10.00"
         );
     }
 
@@ -79,9 +79,9 @@ class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
         assertThat(csvLines).containsExactly(
                 "created_date,created_time,finalized_date,finalized_time,withdrawal_id,status,amount,currency," +
                         "trx_id,provider_id,terminal_id,wallet_id,exchange_rate_internal,provider_amount," +
-                        "provider_currency,converted_amount",
+                        "provider_currency,original_amount,original_currency,converted_amount",
                 "2026-01-01,10:00:00,2026-01-01,11:00:00,withdrawal-1,succeeded,20.00,RUB,trx-w-1," +
-                        "provider-1,terminal-1,wallet-1,1.0500000000,19.90,EUR,20.00"
+                        "provider-1,terminal-1,wallet-1,1.0500000000,19.90,EUR,21.00,USD,20.00"
         );
     }
 

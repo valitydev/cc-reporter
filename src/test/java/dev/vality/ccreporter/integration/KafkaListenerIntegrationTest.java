@@ -136,7 +136,7 @@ class KafkaListenerIntegrationTest extends AbstractReportingIntegrationTest {
                 jdbcTemplate,
                 LISTENER_TIMEOUT,
                 """
-                        SELECT status, provider_id, terminal_id, trx_id
+                        SELECT status, provider_id, terminal_id, fee, trx_id
                         FROM ccr.withdrawal_txn_current
                         WHERE withdrawal_id = ?
                         """,
@@ -147,6 +147,7 @@ class KafkaListenerIntegrationTest extends AbstractReportingIntegrationTest {
         assertThat(row.get("status")).isEqualTo("succeeded");
         assertThat(row.get("provider_id")).isEqualTo("300");
         assertThat(row.get("terminal_id")).isEqualTo("400");
+        assertThat(row.get("fee")).isEqualTo(20L);
         assertThat(row.get("trx_id")).isEqualTo("trx-withdrawal-1");
     }
 }

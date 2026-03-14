@@ -55,6 +55,8 @@ public class ReportCsvService {
             "exchange_rate_internal",
             "provider_amount",
             "provider_currency",
+            "original_amount",
+            "original_currency",
             "converted_amount"
     );
 
@@ -74,6 +76,8 @@ public class ReportCsvService {
             "exchange_rate_internal",
             "provider_amount",
             "provider_currency",
+            "original_amount",
+            "original_currency",
             "converted_amount"
     );
 
@@ -149,6 +153,8 @@ public class ReportCsvService {
                                p.exchange_rate_internal AS exchange_rate_internal,
                                p.provider_amount AS provider_amount,
                                p.provider_currency AS provider_currency,
+                               p.original_amount AS original_amount,
+                               p.original_currency AS original_currency,
                                p.converted_amount AS converted_amount
                         FROM ccr.payment_txn_current p
                         LEFT JOIN ccr.shop_lookup sl ON sl.shop_id = p.shop_id
@@ -194,6 +200,8 @@ public class ReportCsvService {
                                w.exchange_rate_internal AS exchange_rate_internal,
                                w.provider_amount AS provider_amount,
                                w.provider_currency AS provider_currency,
+                               w.original_amount AS original_amount,
+                               w.original_currency AS original_currency,
                                w.converted_amount AS converted_amount
                         FROM ccr.withdrawal_txn_current w
                         LEFT JOIN ccr.wallet_lookup wl ON wl.wallet_id = w.wallet_id
@@ -296,6 +304,10 @@ public class ReportCsvService {
             case "provider_amount" -> renderMinorUnits(
                     resultSet.getObject("provider_amount"),
                     firstNonBlank(resultSet.getString("provider_currency"), resultSet.getString("currency"))
+            );
+            case "original_amount" -> renderMinorUnits(
+                    resultSet.getObject("original_amount"),
+                    resultSet.getString("original_currency")
             );
             case "converted_amount" -> renderMinorUnits(
                     resultSet.getObject("converted_amount"),

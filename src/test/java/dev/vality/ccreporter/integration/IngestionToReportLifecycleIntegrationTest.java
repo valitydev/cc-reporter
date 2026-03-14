@@ -71,7 +71,7 @@ class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegra
         var row = jdbcTemplate.queryForMap(
                 """
                         SELECT status, provider_id, terminal_id, amount, currency, trx_id, external_id,
-                               payment_tool_type, finalized_at,
+                               payment_tool_type, finalized_at, original_amount, original_currency,
                                converted_amount, exchange_rate_internal, provider_amount, provider_currency,
                                error_summary
                         FROM ccr.payment_txn_current
@@ -97,6 +97,8 @@ class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegra
         assertThat(row.get("trx_id")).isEqualTo("test-provider-trx-1");
         assertThat(row.get("external_id")).isEqualTo("test-external-1");
         assertThat(row.get("payment_tool_type")).isEqualTo("bank_card");
+        assertThat(row.get("original_amount")).isEqualTo(425000L);
+        assertThat(row.get("original_currency")).isEqualTo("KZT");
         assertThat(row.get("converted_amount")).isEqualTo(748L);
         assertThat((BigDecimal) row.get("exchange_rate_internal")).isEqualByComparingTo("568.23");
         assertThat(row.get("provider_amount")).isEqualTo(425000L);
@@ -151,7 +153,7 @@ class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegra
 
         var row = jdbcTemplate.queryForMap(
                 """
-                        SELECT status, provider_id, terminal_id, amount, currency, wallet_id, external_id,
+                        SELECT status, provider_id, terminal_id, amount, fee, currency, wallet_id, external_id,
                                finalized_at
                         FROM ccr.withdrawal_txn_current
                         WHERE withdrawal_id = ?
@@ -171,6 +173,7 @@ class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegra
         assertThat(row.get("provider_id")).isEqualTo("518");
         assertThat(row.get("terminal_id")).isEqualTo("2465");
         assertThat(row.get("amount")).isEqualTo(2900000L);
+        assertThat(row.get("fee")).isEqualTo(145000L);
         assertThat(row.get("currency")).isEqualTo("RUB");
         assertThat(row.get("wallet_id")).isEqualTo("3313");
         assertThat(row.get("external_id")).isEqualTo("test-withdrawal-external-1");

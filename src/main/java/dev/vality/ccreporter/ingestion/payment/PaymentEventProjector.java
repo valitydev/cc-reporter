@@ -98,7 +98,9 @@ public class PaymentEventProjector {
                 .setAmount(cost.getAmount())
                 .setCurrency(cost.getCurrency().getSymbolicCode())
                 .setExternalId(payment.getExternalId())
-                .setPaymentToolType(paymentToolType(payment)));
+                .setPaymentToolType(paymentToolType(payment))
+                .setOriginalAmount(cost.getAmount())
+                .setOriginalCurrency(cost.getCurrency().getSymbolicCode()));
     }
 
     private Optional<PaymentTxnCurrent> paymentRouteChangedUpdate(
@@ -125,6 +127,8 @@ public class PaymentEventProjector {
         return Optional.of(baseUpdate(context)
                 .setAmount(cash.getAmount())
                 .setCurrency(cash.getCurrency().getSymbolicCode())
+                .setOriginalAmount(cash.getAmount())
+                .setOriginalCurrency(cash.getCurrency().getSymbolicCode())
                 .setProviderAmount(cash.getAmount())
                 .setProviderCurrency(cash.getCurrency().getSymbolicCode()));
     }
@@ -138,7 +142,8 @@ public class PaymentEventProjector {
         }
         var postings = paymentChange.getPayload().getInvoicePaymentCashFlowChanged().getCashFlow();
         return Optional.of(baseUpdate(context)
-                .setAmount(PaymentCashFlowExtractor.extractAmount(postings)));
+                .setAmount(PaymentCashFlowExtractor.extractAmount(postings))
+                .setFee(PaymentCashFlowExtractor.extractFee(postings)));
     }
 
     private Optional<PaymentTxnCurrent> paymentStatusChangedUpdate(

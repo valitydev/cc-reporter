@@ -34,8 +34,8 @@ class IngestionSerializedEventsIntegrationTest extends AbstractReportingIntegrat
 
         var row = jdbcTemplate.queryForMap(
                 """
-                        SELECT status, provider_id, terminal_id, amount, trx_id, rrn, approval_code, finalized_at,
-                               converted_amount, exchange_rate_internal,
+                        SELECT status, provider_id, terminal_id, amount, fee, trx_id, rrn, approval_code, finalized_at,
+                               original_amount, original_currency, converted_amount, exchange_rate_internal,
                                provider_amount, provider_currency
                         FROM ccr.payment_txn_current
                         WHERE invoice_id = ? AND payment_id = ?
@@ -48,9 +48,12 @@ class IngestionSerializedEventsIntegrationTest extends AbstractReportingIntegrat
         assertThat(row.get("provider_id")).isEqualTo("100");
         assertThat(row.get("terminal_id")).isEqualTo("200");
         assertThat(row.get("amount")).isEqualTo(1000L);
+        assertThat(row.get("fee")).isEqualTo(10L);
         assertThat(row.get("trx_id")).isEqualTo("trx-payment-1");
         assertThat(row.get("rrn")).isEqualTo("rrn-payment-1");
         assertThat(row.get("approval_code")).isEqualTo("approval-payment-1");
+        assertThat(row.get("original_amount")).isEqualTo(1000L);
+        assertThat(row.get("original_currency")).isEqualTo("RUB");
         assertThat(row.get("converted_amount")).isEqualTo(900L);
         assertThat(row.get("exchange_rate_internal")).isEqualTo(new java.math.BigDecimal("0.9000000000"));
         assertThat(row.get("provider_amount")).isEqualTo(900L);
@@ -125,8 +128,8 @@ class IngestionSerializedEventsIntegrationTest extends AbstractReportingIntegrat
 
         var row = jdbcTemplate.queryForMap(
                 """
-                        SELECT status, provider_id, terminal_id, amount, trx_id, wallet_id,
-                               converted_amount, provider_amount, provider_currency
+                        SELECT status, provider_id, terminal_id, amount, fee, trx_id, wallet_id,
+                               original_amount, original_currency, converted_amount, provider_amount, provider_currency
                         FROM ccr.withdrawal_txn_current
                         WHERE withdrawal_id = ?
                         """,
@@ -137,8 +140,11 @@ class IngestionSerializedEventsIntegrationTest extends AbstractReportingIntegrat
         assertThat(row.get("provider_id")).isEqualTo("300");
         assertThat(row.get("terminal_id")).isEqualTo("400");
         assertThat(row.get("amount")).isEqualTo(1000L);
+        assertThat(row.get("fee")).isEqualTo(20L);
         assertThat(row.get("trx_id")).isEqualTo("trx-withdrawal-1");
         assertThat(row.get("wallet_id")).isEqualTo("wallet-serialized");
+        assertThat(row.get("original_amount")).isEqualTo(1200L);
+        assertThat(row.get("original_currency")).isEqualTo("USD");
         assertThat(row.get("converted_amount")).isEqualTo(1000L);
         assertThat(row.get("provider_amount")).isEqualTo(1000L);
         assertThat(row.get("provider_currency")).isEqualTo("RUB");
