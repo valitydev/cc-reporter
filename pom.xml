@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>cc-reporter</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <packaging>jar</packaging>
 
     <name>cc-reporter</name>
@@ -229,12 +229,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-remote-resources-plugin</artifactId>
-                <version>3.1.0</version>
+                <version>3.3.0</version>
                 <dependencies>
                     <dependency>
                         <groupId>org.apache.maven.shared</groupId>
                         <artifactId>maven-filtering</artifactId>
-                        <version>3.3.1</version>
+                        <version>3.5.0</version>
                     </dependency>
                 </dependencies>
                 <configuration>
