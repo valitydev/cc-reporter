@@ -5,9 +5,11 @@ import dev.vality.ccreporter.domain.tables.pojos.ReportFile;
 import dev.vality.ccreporter.domain.tables.pojos.ReportJob;
 import dev.vality.ccreporter.model.StoredReport;
 import dev.vality.ccreporter.model.StoredReportFile;
-import dev.vality.ccreporter.util.ContinuationTokenCodec.PageCursor;
-import dev.vality.ccreporter.util.ThriftQueryCodec;
+import dev.vality.ccreporter.report.ReportQueryService;
+import dev.vality.ccreporter.serde.json.ContinuationTokenJsonSerializer.PageCursor;
+import dev.vality.ccreporter.serde.json.ReportQueryJsonSerializer;
 import dev.vality.ccreporter.util.TimestampUtils;
+import lombok.RequiredArgsConstructor;
 import org.jooq.*;
 import org.jooq.Record;
 import org.springframework.dao.DuplicateKeyException;
@@ -26,15 +28,12 @@ import static dev.vality.ccreporter.domain.Tables.REPORT_FILE;
 import static dev.vality.ccreporter.domain.Tables.REPORT_JOB;
 
 @Repository
+@RequiredArgsConstructor
 public class ReportDao {
 
     private final DSLContext dslContext;
-    private final ThriftQueryCodec thriftQueryCodec;
-
-    public ReportDao(DSLContext dslContext, ThriftQueryCodec thriftQueryCodec) {
-        this.dslContext = dslContext;
-        this.thriftQueryCodec = thriftQueryCodec;
-    }
+    private final ReportQueryService reportQueryService;
+    private final ReportQueryJsonSerializer reportQueryJsonSerializer;
 
     public Optional<Long> findByIdempotencyKey(String createdBy, String idempotencyKey) {
         if (!StringUtils.hasText(idempotencyKey)) {
@@ -55,9 +54,9 @@ public class ReportDao {
             String timezone,
             String idempotencyKey
     ) {
-        var timeRange = thriftQueryCodec.extractTimeRange(query);
-        var queryJson = thriftQueryCodec.serialize(query);
-        var queryHash = thriftQueryCodec.hash(queryJson);
+        var timeRange = reportQueryService.extractTimeRange(query);
+        var queryJson = reportQueryJsonSerializer.serialize(query);
+        var queryHash = reportQueryService.hash(queryJson);
         var reportJob = new ReportJob();
         reportJob.setReportType(toJooqReportType(reportType));
         reportJob.setFileType(toJooqFileType(fileType));

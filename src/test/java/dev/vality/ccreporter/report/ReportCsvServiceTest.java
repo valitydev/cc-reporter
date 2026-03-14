@@ -4,9 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.vality.ccreporter.FileType;
 import dev.vality.ccreporter.ReportType;
 import dev.vality.ccreporter.TimeRange;
+import dev.vality.ccreporter.config.ReportTransactionConfig.ReportCsvReadOnlyTxTemplate;
 import dev.vality.ccreporter.integration.fixture.ReportRequestFixtures;
 import dev.vality.ccreporter.model.ClaimedReportJob;
-import dev.vality.ccreporter.util.ThriftQueryCodec;
+import dev.vality.ccreporter.serde.json.ReportQueryJsonSerializer;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
@@ -39,9 +40,13 @@ class ReportCsvServiceTest {
         var transactionManager = mock(PlatformTransactionManager.class);
         var transactionStatus = new SimpleTransactionStatus();
         var objectMapper = new ObjectMapper();
-        var thriftQueryCodec = new ThriftQueryCodec(objectMapper);
+        var reportQueryJsonSerializer = new ReportQueryJsonSerializer(objectMapper);
         var reportCsvService =
-                new ReportCsvService(namedParameterJdbcTemplate, thriftQueryCodec, transactionManager);
+                new ReportCsvService(
+                        namedParameterJdbcTemplate,
+                        reportQueryJsonSerializer,
+                        new ReportCsvReadOnlyTxTemplate(transactionManager)
+                );
 
         when(namedParameterJdbcTemplate.getJdbcTemplate()).thenReturn(jdbcTemplate);
         when(transactionManager.getTransaction(any(TransactionDefinition.class))).thenReturn(transactionStatus);
@@ -91,7 +96,7 @@ class ReportCsvServiceTest {
                 return null;
             }).when(jdbcTemplate).query(any(PreparedStatementCreator.class), any(RowCallbackHandler.class));
 
-            var generatedCsvReport = reportCsvService.generate(claimedPaymentsJob(thriftQueryCodec));
+            var generatedCsvReport = reportCsvService.generate(claimedPaymentsJob(reportQueryJsonSerializer));
 
             verify(connection).prepareStatement(
                     any(String.class),
@@ -109,7 +114,7 @@ class ReportCsvServiceTest {
         }
     }
 
-    private ClaimedReportJob claimedPaymentsJob(ThriftQueryCodec thriftQueryCodec) {
+    private ClaimedReportJob claimedPaymentsJob(ReportQueryJsonSerializer reportQueryJsonSerializer) {
         var request = ReportRequestFixtures.payments(
                 "cursor-fetch-size-1",
                 new TimeRange("2025-12-31T00:00:00Z", "2026-01-02T00:00:00Z")
@@ -120,7 +125,7 @@ class ReportCsvServiceTest {
                 42L,
                 ReportType.payments,
                 FileType.csv,
-                thriftQueryCodec.serialize(reportQuery),
+                reportQueryJsonSerializer.serialize(reportQuery),
                 request.getTimezone(),
                 1
         );

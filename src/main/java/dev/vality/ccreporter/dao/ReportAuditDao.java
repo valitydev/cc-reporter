@@ -3,7 +3,8 @@ package dev.vality.ccreporter.dao;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.vality.ccreporter.domain.tables.pojos.ReportAuditEvent;
-import dev.vality.ccreporter.security.RequestAuditMetadata;
+import dev.vality.ccreporter.model.RequestAuditMetadata;
+import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.jooq.JSONB;
 import org.springframework.stereotype.Repository;
@@ -14,15 +15,11 @@ import java.util.Map;
 import static dev.vality.ccreporter.domain.Tables.REPORT_AUDIT_EVENT;
 
 @Repository
+@RequiredArgsConstructor
 public class ReportAuditDao {
 
     private final DSLContext dslContext;
     private final ObjectMapper objectMapper;
-
-    public ReportAuditDao(DSLContext dslContext, ObjectMapper objectMapper) {
-        this.dslContext = dslContext;
-        this.objectMapper = objectMapper;
-    }
 
     public void insertEvent(
             long reportId,

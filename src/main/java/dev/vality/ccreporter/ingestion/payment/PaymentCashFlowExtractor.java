@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.ingestion;
+package dev.vality.ccreporter.ingestion.payment;
 
 import dev.vality.damsel.domain.FinalCashFlowPosting;
 import dev.vality.damsel.domain.MerchantCashFlowAccount;

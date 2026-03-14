@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.ingestion;
+package dev.vality.ccreporter.ingestion.withdrawal;
 
 import dev.vality.fistful.cashflow.FinalCashFlowPosting;
 

@@ -1,7 +1,8 @@
 package dev.vality.ccreporter.dao;
 
 import dev.vality.ccreporter.domain.tables.pojos.PaymentTxnCurrent;
-import dev.vality.ccreporter.ingestion.SearchValueNormalizer;
+import dev.vality.ccreporter.util.SearchValueNormalizer;
+import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.TableField;
@@ -13,16 +14,13 @@ import java.time.LocalDateTime;
 import static dev.vality.ccreporter.domain.Tables.PAYMENT_TXN_CURRENT;
 
 @Repository
+@RequiredArgsConstructor
 public class PaymentCurrentDao {
 
     private static final Field<LocalDateTime> UTC_NOW =
             DSL.field("(now() AT TIME ZONE 'utc')", LocalDateTime.class);
 
     private final DSLContext dslContext;
-
-    public PaymentCurrentDao(DSLContext dslContext) {
-        this.dslContext = dslContext;
-    }
 
     public void upsert(PaymentTxnCurrent update) {
         var updated = dslContext.update(PAYMENT_TXN_CURRENT)

@@ -4,6 +4,7 @@ import dev.vality.ccreporter.ReportStatus;
 import dev.vality.ccreporter.domain.tables.pojos.ReportFile;
 import dev.vality.ccreporter.model.ClaimedReportJob;
 import dev.vality.ccreporter.model.ReportFileMetadata;
+import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record6;
@@ -19,6 +20,7 @@ import static dev.vality.ccreporter.domain.Tables.REPORT_FILE;
 import static dev.vality.ccreporter.domain.Tables.REPORT_JOB;
 
 @Repository
+@RequiredArgsConstructor
 public class ReportLifecycleDao {
 
     private static final Field<Long> CANDIDATE_ID = DSL.field(DSL.name("candidate", "id"), Long.class);
@@ -26,10 +28,6 @@ public class ReportLifecycleDao {
             dev.vality.ccreporter.domain.enums.FileType.csv;
 
     private final DSLContext dslContext;
-
-    public ReportLifecycleDao(DSLContext dslContext) {
-        this.dslContext = dslContext;
-    }
 
     public Optional<ClaimedReportJob> claimNextPendingReport(Instant now) {
         var reportJob = REPORT_JOB.as("r");

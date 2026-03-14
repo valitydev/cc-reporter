@@ -1,6 +1,6 @@
 package dev.vality.ccreporter.integration.support;
 
-import dev.vality.kafka.common.serialization.ThriftSerializer;
+import dev.vality.ccreporter.serde.thrift.ThriftSerializer;
 import dev.vality.damsel.domain_config_v2.HistoricalCommit;
 import dev.vality.machinegun.eventsink.MachineEvent;
 import dev.vality.machinegun.eventsink.SinkEvent;

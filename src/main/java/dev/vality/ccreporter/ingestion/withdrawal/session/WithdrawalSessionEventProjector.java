@@ -1,7 +1,8 @@
-package dev.vality.ccreporter.ingestion;
+package dev.vality.ccreporter.ingestion.withdrawal.session;
 
 import dev.vality.ccreporter.domain.tables.pojos.WithdrawalSessionBindingCurrent;
 import dev.vality.ccreporter.domain.tables.pojos.WithdrawalTxnCurrent;
+import dev.vality.ccreporter.ingestion.withdrawal.WithdrawalCurrentUpdateBuilder;
 import dev.vality.ccreporter.util.TimestampUtils;
 import dev.vality.fistful.withdrawal_session.Change;
 import dev.vality.fistful.withdrawal_session.Event;
@@ -25,12 +26,12 @@ public class WithdrawalSessionEventProjector {
         var eventCreatedAt = Instant.parse(event.getCreatedAt());
         for (Change change : payload.getChanges()) {
             if (change.isSetCreated()) {
-                var binding = new WithdrawalSessionBindingCurrent();
-                binding.setSessionId(event.getSourceId());
-                binding.setWithdrawalId(change.getCreated().getWithdrawal().getId());
-                binding.setDomainEventId(event.getEventId());
-                binding.setDomainEventCreatedAt(toLocalDateTime(eventCreatedAt));
-                bindings.add(binding);
+                bindings.add(bindingUpdate(
+                        event.getSourceId(),
+                        change.getCreated().getWithdrawal().getId(),
+                        event.getEventId(),
+                        eventCreatedAt
+                ));
             }
         }
         return bindings;
@@ -48,15 +49,28 @@ public class WithdrawalSessionEventProjector {
         for (Change change : payload.getChanges()) {
             if (change.isSetTransactionBound()) {
                 var trxInfo = change.getTransactionBound().getTrxInfo();
-                var update = new WithdrawalTxnCurrent();
-                update.setWithdrawalId(withdrawalId);
-                update.setDomainEventId(event.getEventId());
-                update.setDomainEventCreatedAt(toLocalDateTime(eventCreatedAt));
-                update.setTrxId(trxInfo.getId());
-                return Optional.of(update);
+                return Optional.of(WithdrawalCurrentUpdateBuilder.builder(
+                        withdrawalId,
+                        event.getEventId(),
+                        eventCreatedAt
+                ).trxId(trxInfo.getId()).build());
             }
         }
         return Optional.empty();
+    }
+
+    private WithdrawalSessionBindingCurrent bindingUpdate(
+            String sessionId,
+            String withdrawalId,
+            long domainEventId,
+            Instant eventCreatedAt
+    ) {
+        var binding = new WithdrawalSessionBindingCurrent();
+        binding.setSessionId(sessionId);
+        binding.setWithdrawalId(withdrawalId);
+        binding.setDomainEventId(domainEventId);
+        binding.setDomainEventCreatedAt(toLocalDateTime(eventCreatedAt));
+        return binding;
     }
 
     private LocalDateTime toLocalDateTime(Instant value) {

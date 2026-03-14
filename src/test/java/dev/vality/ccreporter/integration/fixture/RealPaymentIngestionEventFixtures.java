@@ -49,7 +49,7 @@ import dev.vality.damsel.payment_processing.InvoicePaymentStatusChanged;
 import dev.vality.damsel.payment_processing.SessionChangePayload;
 import dev.vality.damsel.payment_processing.SessionTransactionBound;
 import dev.vality.damsel.domain.SubFailure;
-import dev.vality.kafka.common.serialization.ThriftSerializer;
+import dev.vality.ccreporter.serde.thrift.ThriftSerializer;
 import dev.vality.machinegun.eventsink.MachineEvent;
 import dev.vality.machinegun.msgpack.Value;
 import org.apache.thrift.TBase;

@@ -3,6 +3,7 @@ package dev.vality.ccreporter.security;
 import dev.vality.ccreporter.InvalidRequest;
 import dev.vality.ccreporter.config.properties.CcrApiProperties;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -10,18 +11,11 @@ import org.springframework.util.StringUtils;
 import java.util.List;
 
 @Component
+@RequiredArgsConstructor
 public class CurrentPrincipalResolver {
 
     private final ObjectProvider<HttpServletRequest> requestProvider;
     private final CcrApiProperties apiProperties;
-
-    public CurrentPrincipalResolver(
-            ObjectProvider<HttpServletRequest> requestProvider,
-            CcrApiProperties apiProperties
-    ) {
-        this.requestProvider = requestProvider;
-        this.apiProperties = apiProperties;
-    }
 
     public String resolveRequired() throws InvalidRequest {
         var request = requestProvider.getIfAvailable();

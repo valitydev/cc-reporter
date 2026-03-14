@@ -1,211 +1,163 @@
 package dev.vality.ccreporter.config;
 
 import dev.vality.ccreporter.config.properties.CcrKafkaProperties;
-import dev.vality.ccreporter.kafka.serde.HistoricalCommitDeserializer;
-import dev.vality.ccreporter.kafka.serde.SinkEventDeserializer;
+import dev.vality.ccreporter.serde.thrift.MachineEventParser;
+import dev.vality.ccreporter.serde.thrift.ThriftDeserializer;
 import dev.vality.damsel.domain_config_v2.HistoricalCommit;
-import dev.vality.ccreporter.serialization.MachineEventPayloadParser;
-import dev.vality.ccreporter.serialization.ThriftBinaryDeserializer;
 import dev.vality.damsel.payment_processing.EventPayload;
 import dev.vality.fistful.withdrawal.Event;
 import dev.vality.machinegun.eventsink.SinkEvent;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
+import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
-import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.util.backoff.FixedBackOff;
 
-import java.util.Map;
-
 @Configuration
 @EnableKafka
+@RequiredArgsConstructor
 @EnableConfigurationProperties(CcrKafkaProperties.class)
 public class KafkaIngestionConfig {
 
+    private final KafkaProperties kafkaProperties;
+    private final CcrKafkaProperties ccrKafkaProperties;
+
     @Bean
-    public ThriftBinaryDeserializer<EventPayload> paymentEventPayloadDeserializer() {
-        return new ThriftBinaryDeserializer<>() {
-            @Override
-            protected EventPayload newInstance() {
-                return new EventPayload();
-            }
-        };
+    public MachineEventParser<EventPayload> paymentEventPayloadMachineEventParser() {
+        return new MachineEventParser<>(new ThriftDeserializer<>(EventPayload::new));
     }
 
     @Bean
-    public MachineEventPayloadParser<EventPayload> paymentEventPayloadMachineEventParser(
-            ThriftBinaryDeserializer<EventPayload> paymentEventPayloadDeserializer
-    ) {
-        return new MachineEventPayloadParser<>(paymentEventPayloadDeserializer);
+    public MachineEventParser<Event> withdrawalEventMachineEventParser() {
+        return new MachineEventParser<>(new ThriftDeserializer<>(Event::new));
     }
 
     @Bean
-    public ThriftBinaryDeserializer<Event> withdrawalEventDeserializer() {
-        return new ThriftBinaryDeserializer<>() {
-            @Override
-            protected Event newInstance() {
-                return new Event();
-            }
-        };
+    public MachineEventParser<dev.vality.fistful.withdrawal_session.Event>
+            withdrawalSessionEventMachineEventParser() {
+        return new MachineEventParser<>(
+                new ThriftDeserializer<>(dev.vality.fistful.withdrawal_session.Event::new)
+        );
     }
 
     @Bean
-    public MachineEventPayloadParser<Event> withdrawalEventMachineEventParser(
-            ThriftBinaryDeserializer<Event> withdrawalEventDeserializer) {
-        return new MachineEventPayloadParser<>(withdrawalEventDeserializer);
+    public ConsumerFactory<String, SinkEvent> sinkEventConsumerFactory() {
+        return new DefaultKafkaConsumerFactory<>(
+                kafkaProperties.buildConsumerProperties(),
+                new StringDeserializer(),
+                new ThriftDeserializer<>(SinkEvent::new)
+        );
     }
 
     @Bean
-    public ThriftBinaryDeserializer<dev.vality.fistful.withdrawal_session.Event> withdrawalSessionEventDeserializer() {
-        return new ThriftBinaryDeserializer<>() {
-            @Override
-            protected dev.vality.fistful.withdrawal_session.Event newInstance() {
-                return new dev.vality.fistful.withdrawal_session.Event();
-            }
-        };
+    public ConsumerFactory<String, HistoricalCommit> dominantConsumerFactory() {
+        return new DefaultKafkaConsumerFactory<>(
+                kafkaProperties.buildConsumerProperties(),
+                new StringDeserializer(),
+                new ThriftDeserializer<>(HistoricalCommit::new)
+        );
     }
 
     @Bean
-    public MachineEventPayloadParser<dev.vality.fistful.withdrawal_session.Event>
-            withdrawalSessionEventMachineEventParser(
-            ThriftBinaryDeserializer<dev.vality.fistful.withdrawal_session.Event>
-                    withdrawalSessionEventDeserializer
-    ) {
-        return new MachineEventPayloadParser<>(withdrawalSessionEventDeserializer);
+    public DefaultErrorHandler kafkaErrorHandler() {
+        var consumer = ccrKafkaProperties.getConsumer();
+        return createErrorHandler(consumer.getErrorBackoffIntervalMs(), consumer.getErrorMaxAttempts());
+    }
+
+    @Bean
+    public DefaultErrorHandler dominantKafkaErrorHandler() {
+        var consumer = ccrKafkaProperties.getConsumer();
+        return createErrorHandler(
+                consumer.getDominantErrorBackoffIntervalMs(),
+                consumer.getDominantErrorMaxAttempts()
+        );
     }
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, SinkEvent> paymentsKafkaListenerContainerFactory(
-            Environment environment,
-            CcrKafkaProperties ccrKafkaProperties
+            ConsumerFactory<String, SinkEvent> sinkEventConsumerFactory,
+            @Qualifier("kafkaErrorHandler") DefaultErrorHandler kafkaErrorHandler
     ) {
         return listenerContainerFactory(
-                environment,
+                sinkEventConsumerFactory,
                 ccrKafkaProperties.getConsumer().getPaymentsConcurrency(),
-                ccrKafkaProperties
+                kafkaErrorHandler
         );
     }
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, SinkEvent> withdrawalsKafkaListenerContainerFactory(
-            Environment environment,
-            CcrKafkaProperties ccrKafkaProperties
+            ConsumerFactory<String, SinkEvent> sinkEventConsumerFactory,
+            @Qualifier("kafkaErrorHandler") DefaultErrorHandler kafkaErrorHandler
     ) {
         return listenerContainerFactory(
-                environment,
+                sinkEventConsumerFactory,
                 ccrKafkaProperties.getConsumer().getWithdrawalsConcurrency(),
-                ccrKafkaProperties
+                kafkaErrorHandler
         );
     }
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, HistoricalCommit> dominantKafkaListenerContainerFactory(
-            Environment environment,
-            CcrKafkaProperties ccrKafkaProperties
+            ConsumerFactory<String, HistoricalCommit> dominantConsumerFactory,
+            @Qualifier("dominantKafkaErrorHandler") DefaultErrorHandler dominantKafkaErrorHandler
     ) {
-        return dominantListenerContainerFactory(
-                environment,
+        return listenerContainerFactory(
+                dominantConsumerFactory,
                 ccrKafkaProperties.getConsumer().getDominantConcurrency(),
-                ccrKafkaProperties
+                dominantKafkaErrorHandler
         );
     }
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, SinkEvent> withdrawalSessionsKafkaListenerContainerFactory(
-            Environment environment,
-            CcrKafkaProperties ccrKafkaProperties
+            ConsumerFactory<String, SinkEvent> sinkEventConsumerFactory,
+            @Qualifier("kafkaErrorHandler") DefaultErrorHandler kafkaErrorHandler
     ) {
         return listenerContainerFactory(
-                environment,
-                ccrKafkaProperties.getConsumer().getWithdrawalsConcurrency(),
-                ccrKafkaProperties
+                sinkEventConsumerFactory,
+                ccrKafkaProperties.getConsumer().getWithdrawalSessionsConcurrency(),
+                kafkaErrorHandler
         );
     }
 
-    private ConcurrentKafkaListenerContainerFactory<String, SinkEvent> listenerContainerFactory(
-            Environment environment,
+    private <T> ConcurrentKafkaListenerContainerFactory<String, T> listenerContainerFactory(
+            ConsumerFactory<String, T> consumerFactory,
             int concurrency,
-            CcrKafkaProperties ccrKafkaProperties
+            DefaultErrorHandler errorHandler
     ) {
-        var factory = new ConcurrentKafkaListenerContainerFactory<String, SinkEvent>();
-        factory.setConsumerFactory(new DefaultKafkaConsumerFactory<>(consumerConfig(environment)));
+        var factory = new ConcurrentKafkaListenerContainerFactory<String, T>();
+        factory.setConsumerFactory(consumerFactory);
         factory.setBatchListener(true);
         factory.setConcurrency(concurrency);
-        factory.setCommonErrorHandler(kafkaErrorHandler(ccrKafkaProperties));
-        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
+        factory.setCommonErrorHandler(errorHandler);
+        configureListener(factory);
         return factory;
     }
 
-    private ConcurrentKafkaListenerContainerFactory<String, HistoricalCommit> dominantListenerContainerFactory(
-            Environment environment,
-            int concurrency,
-            CcrKafkaProperties ccrKafkaProperties
-    ) {
-        var factory = new ConcurrentKafkaListenerContainerFactory<String, HistoricalCommit>();
-        factory.setConsumerFactory(new DefaultKafkaConsumerFactory<>(dominantConsumerConfig(environment)));
-        factory.setBatchListener(true);
-        factory.setConcurrency(concurrency);
-        factory.setCommonErrorHandler(kafkaErrorHandler(ccrKafkaProperties));
-        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
-        return factory;
+    private void configureListener(ConcurrentKafkaListenerContainerFactory<?, ?> factory) {
+        var listener = kafkaProperties.getListener();
+        if (listener.getAckMode() != null) {
+            factory.getContainerProperties().setAckMode(listener.getAckMode());
+        }
+        if (listener.getPollTimeout() != null) {
+            factory.getContainerProperties().setPollTimeout(listener.getPollTimeout().toMillis());
+        }
     }
 
-    private DefaultErrorHandler kafkaErrorHandler(CcrKafkaProperties ccrKafkaProperties) {
-        var maxAttempts = ccrKafkaProperties.getConsumer().getErrorMaxAttempts();
-        return new DefaultErrorHandler(new FixedBackOff(
-                ccrKafkaProperties.getConsumer().getErrorBackoffIntervalMs(),
-                maxAttempts < 0 ? FixedBackOff.UNLIMITED_ATTEMPTS : maxAttempts
-        ));
+    private DefaultErrorHandler createErrorHandler(long interval, long maxAttempts) {
+        return new DefaultErrorHandler(new FixedBackOff(interval, resolveMaxAttempts(maxAttempts)));
     }
 
-    private Map<String, Object> consumerConfig(Environment environment) {
-        var config = new java.util.HashMap<String, Object>();
-        config.put(
-                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-                environment.getProperty("spring.kafka.bootstrap-servers", "localhost:9092")
-        );
-        config.put(
-                ConsumerConfig.GROUP_ID_CONFIG,
-                environment.getProperty("spring.kafka.consumer.group-id", "cc-reporter")
-        );
-        config.put(
-                ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG,
-                Boolean.parseBoolean(environment.getProperty("spring.kafka.consumer.enable-auto-commit", "false"))
-        );
-        config.put(
-                ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
-                environment.getProperty("spring.kafka.consumer.auto-offset-reset", "earliest")
-        );
-        config.put(
-                ConsumerConfig.MAX_POLL_RECORDS_CONFIG,
-                Integer.parseInt(environment.getProperty("spring.kafka.consumer.max-poll-records", "20"))
-        );
-        config.put(
-                ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG,
-                Integer.parseInt(
-                        environment.getProperty("spring.kafka.consumer.properties.max.poll.interval.ms", "30000")
-                )
-        );
-        config.put(
-                ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG,
-                Integer.parseInt(
-                        environment.getProperty("spring.kafka.consumer.properties.session.timeout.ms", "30000"))
-        );
-        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, SinkEventDeserializer.class);
-        return config;
-    }
-
-    private Map<String, Object> dominantConsumerConfig(Environment environment) {
-        var config = new java.util.HashMap<>(consumerConfig(environment));
-        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, HistoricalCommitDeserializer.class);
-        return config;
+    private long resolveMaxAttempts(long maxAttempts) {
+        return maxAttempts < 0 ? FixedBackOff.UNLIMITED_ATTEMPTS : maxAttempts;
     }
 }

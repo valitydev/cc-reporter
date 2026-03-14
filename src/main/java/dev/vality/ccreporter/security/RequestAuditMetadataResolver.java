@@ -1,11 +1,14 @@
 package dev.vality.ccreporter.security;
 
+import dev.vality.ccreporter.model.RequestAuditMetadata;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 @Component
+@RequiredArgsConstructor
 public class RequestAuditMetadataResolver {
 
     private static final String WOODY_USER_ID = "woody.meta.user-identity.id";
@@ -26,10 +29,6 @@ public class RequestAuditMetadataResolver {
     private static final String TRACE_STATE = "tracestate";
 
     private final ObjectProvider<HttpServletRequest> requestProvider;
-
-    public RequestAuditMetadataResolver(ObjectProvider<HttpServletRequest> requestProvider) {
-        this.requestProvider = requestProvider;
-    }
 
     public RequestAuditMetadata resolve() {
         var request = requestProvider.getIfAvailable();

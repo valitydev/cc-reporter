@@ -1,12 +1,10 @@
 package dev.vality.ccreporter.storage;
 
-import dev.vality.ccreporter.config.properties.FileStorageProperties;
 import dev.vality.file.storage.FileNotFound;
 import dev.vality.file.storage.FileStorageSrv;
-import dev.vality.woody.thrift.impl.http.THSpawnClientBuilder;
+import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.net.URI;
@@ -19,14 +17,11 @@ import java.time.Instant;
 import java.util.Collections;
 
 @Component
+@RequiredArgsConstructor
 public class FileStorageService {
 
     private final FileStorageSrv.Iface fileStorageClient;
-    private final HttpClient httpClient = HttpClient.newHttpClient();
-
-    public FileStorageService(FileStorageProperties fileStorageProperties) {
-        this.fileStorageClient = buildClient(fileStorageProperties);
-    }
+    private final HttpClient httpClient;
 
     public String storeFile(String fileName, String contentType, byte[] content, Instant expiresAt) {
         return uploadFile(contentType, HttpRequest.BodyPublishers.ofByteArray(content), expiresAt);
@@ -41,9 +36,6 @@ public class FileStorageService {
     }
 
     private String uploadFile(String contentType, HttpRequest.BodyPublisher bodyPublisher, Instant expiresAt) {
-        if (fileStorageClient == null) {
-            throw new IllegalStateException("ccr.storage.file-storage.url is not configured");
-        }
         try {
             var newFileResult = fileStorageClient.createNewFile(
                     Collections.emptyMap(),
@@ -75,9 +67,6 @@ public class FileStorageService {
     }
 
     public String generateDownloadUrl(String fileId, Instant expiresAt) throws NoSuchFileException {
-        if (fileStorageClient == null) {
-            throw new IllegalStateException("ccr.storage.file-storage.url is not configured");
-        }
         try {
             return fileStorageClient.generateDownloadUrl(fileId, expiresAt.toString());
         } catch (FileNotFound ex) {
@@ -88,15 +77,5 @@ public class FileStorageService {
                     ex
             );
         }
-    }
-
-    private static FileStorageSrv.Iface buildClient(FileStorageProperties properties) {
-        if (!StringUtils.hasText(properties.getUrl())) {
-            return null;
-        }
-        return new THSpawnClientBuilder()
-                .withAddress(URI.create(properties.getUrl()))
-                .withNetworkTimeout(properties.getNetworkTimeout())
-                .build(FileStorageSrv.Iface.class);
     }
 }

@@ -1,6 +1,7 @@
 package dev.vality.ccreporter.report;
 
 import dev.vality.ccreporter.*;
+import dev.vality.ccreporter.config.ReportTransactionConfig.ReportManagementTxTemplate;
 import dev.vality.ccreporter.config.properties.CcrApiProperties;
 import dev.vality.ccreporter.config.properties.ReportProperties;
 import dev.vality.ccreporter.dao.ReportAuditDao;
@@ -8,17 +9,16 @@ import dev.vality.ccreporter.dao.ReportDao;
 import dev.vality.ccreporter.model.StoredReport;
 import dev.vality.ccreporter.model.StoredReportFile;
 import dev.vality.ccreporter.security.CurrentPrincipalResolver;
-import dev.vality.ccreporter.security.RequestAuditMetadata;
+import dev.vality.ccreporter.model.RequestAuditMetadata;
 import dev.vality.ccreporter.security.RequestAuditMetadataResolver;
+import dev.vality.ccreporter.serde.json.ContinuationTokenJsonSerializer;
+import dev.vality.ccreporter.serde.json.ReportQueryJsonSerializer;
 import dev.vality.ccreporter.storage.FileStorageService;
-import dev.vality.ccreporter.util.ContinuationTokenCodec;
-import dev.vality.ccreporter.util.ThriftQueryCodec;
 import dev.vality.ccreporter.util.TimestampUtils;
+import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 
 import java.nio.file.NoSuchFileException;
@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 
 @Service
+@RequiredArgsConstructor
 public class ReportManagementService {
 
     private static final String REPORT_CREATED_EVENT = "report_created";
@@ -38,38 +39,15 @@ public class ReportManagementService {
 
     private final ReportDao reportDao;
     private final ReportAuditDao reportAuditDao;
-    private final ThriftQueryCodec thriftQueryCodec;
-    private final ContinuationTokenCodec continuationTokenCodec;
+    private final ReportQueryService reportQueryService;
+    private final ReportQueryJsonSerializer reportQueryJsonSerializer;
+    private final ContinuationTokenJsonSerializer continuationTokenJsonSerializer;
     private final CurrentPrincipalResolver currentPrincipalResolver;
     private final RequestAuditMetadataResolver requestAuditMetadataResolver;
     private final CcrApiProperties apiProperties;
     private final ReportProperties reportProperties;
     private final FileStorageService fileStorageService;
-    private final TransactionTemplate transactionTemplate;
-
-    public ReportManagementService(
-            ReportDao reportDao,
-            ReportAuditDao reportAuditDao,
-            ThriftQueryCodec thriftQueryCodec,
-            ContinuationTokenCodec continuationTokenCodec,
-            CurrentPrincipalResolver currentPrincipalResolver,
-            RequestAuditMetadataResolver requestAuditMetadataResolver,
-            CcrApiProperties apiProperties,
-            ReportProperties reportProperties,
-            FileStorageService fileStorageService,
-            PlatformTransactionManager transactionManager
-    ) {
-        this.reportDao = reportDao;
-        this.reportAuditDao = reportAuditDao;
-        this.thriftQueryCodec = thriftQueryCodec;
-        this.continuationTokenCodec = continuationTokenCodec;
-        this.currentPrincipalResolver = currentPrincipalResolver;
-        this.requestAuditMetadataResolver = requestAuditMetadataResolver;
-        this.apiProperties = apiProperties;
-        this.reportProperties = reportProperties;
-        this.fileStorageService = fileStorageService;
-        this.transactionTemplate = new TransactionTemplate(transactionManager);
-    }
+    private final ReportManagementTxTemplate transactionTemplate;
 
     public long createReport(CreateReportRequest request) throws InvalidRequest {
         validateCreateRequest(request);
@@ -113,7 +91,7 @@ public class ReportManagementService {
         var meta = safeRequest.getMeta();
         var limit = resolveLimit(meta);
         var cursor = meta != null && meta.isSetContinuationToken()
-                ? continuationTokenCodec.decode(meta.getContinuationToken())
+                ? continuationTokenJsonSerializer.deserialize(meta.getContinuationToken())
                 : null;
         var storedReports = reportDao.getReports(createdBy, safeRequest.getFilter(), cursor, limit);
 
@@ -121,7 +99,9 @@ public class ReportManagementService {
         response.setReports(storedReports.stream().map(this::toThriftReport).toList());
         if (storedReports.size() == limit) {
             var lastReport = storedReports.getLast();
-            response.setContinuationToken(continuationTokenCodec.encode(lastReport.createdAt(), lastReport.id()));
+            response.setContinuationToken(
+                    continuationTokenJsonSerializer.serialize(lastReport.createdAt(), lastReport.id())
+            );
         }
         return response;
     }
@@ -136,7 +116,7 @@ public class ReportManagementService {
             transactionTemplate.executeWithoutResult(status -> {
                 var updated = reportDao.cancelReport(createdBy, request.getReportId(), Instant.now());
                 if (!updated && !reportDao.reportExists(createdBy, request.getReportId())) {
-                    throw new ReportNotFoundRuntimeException();
+                    throw new RuntimeException("Report not found for cancellation: " + request.getReportId());
                 }
                 reportAuditDao.insertEvent(
                         request.getReportId(),
@@ -146,8 +126,11 @@ public class ReportManagementService {
                         Map.of("state_changed", updated)
                 );
             });
-        } catch (ReportNotFoundRuntimeException ex) {
-            throw new ReportNotFound();
+        } catch (RuntimeException ex) {
+            if (ex.getMessage() != null && ex.getMessage().contains("Report not found")) {
+                throw new ReportNotFound();
+            }
+            throw ex;
         }
     }
 
@@ -233,9 +216,6 @@ public class ReportManagementService {
         return details;
     }
 
-    private static final class ReportNotFoundRuntimeException extends RuntimeException {
-    }
-
     private void validateCreateRequest(CreateReportRequest request) throws InvalidRequest {
         var errors = new ArrayList<String>();
         if (request == null) {
@@ -267,7 +247,7 @@ public class ReportManagementService {
 
     private void validateQuery(CreateReportRequest request, List<String> errors) {
         var query = request.getQuery();
-        var actualType = thriftQueryCodec.resolveReportType(query);
+        var actualType = reportQueryService.resolveReportType(query);
         if (actualType == null) {
             errors.add("query must select exactly one branch");
             return;
@@ -275,7 +255,7 @@ public class ReportManagementService {
         if (request.isSetReportType() && request.getReportType() != actualType) {
             errors.add("report_type does not match query branch");
         }
-        var timeRange = thriftQueryCodec.extractTimeRange(query);
+        var timeRange = reportQueryService.extractTimeRange(query);
         if (!timeRange.to().isAfter(timeRange.from())) {
             errors.add("time_range.from_time must be before time_range.to_time");
         }
@@ -312,7 +292,7 @@ public class ReportManagementService {
         report.setReportId(storedReport.id());
         report.setReportType(storedReport.reportType());
         report.setFileType(storedReport.fileType());
-        report.setQuery(thriftQueryCodec.deserialize(storedReport.queryJson()));
+        report.setQuery(reportQueryJsonSerializer.deserialize(storedReport.queryJson()));
         report.setCreatedAt(TimestampUtils.format(storedReport.createdAt()));
         report.setStatus(storedReport.status());
         if (storedReport.startedAt() != null) {

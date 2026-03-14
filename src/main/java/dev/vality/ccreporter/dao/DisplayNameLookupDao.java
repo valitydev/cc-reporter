@@ -1,6 +1,7 @@
 package dev.vality.ccreporter.dao;
 
-import dev.vality.ccreporter.ingestion.SearchValueNormalizer;
+import dev.vality.ccreporter.util.SearchValueNormalizer;
+import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record;
@@ -17,16 +18,13 @@ import static dev.vality.ccreporter.domain.Tables.TERMINAL_LOOKUP;
 import static dev.vality.ccreporter.domain.Tables.WALLET_LOOKUP;
 
 @Repository
+@RequiredArgsConstructor
 public class DisplayNameLookupDao {
 
     private static final Field<LocalDateTime> UTC_NOW =
             DSL.field("(now() AT TIME ZONE 'utc')", LocalDateTime.class);
 
     private final DSLContext dslContext;
-
-    public DisplayNameLookupDao(DSLContext dslContext) {
-        this.dslContext = dslContext;
-    }
 
     public void upsertShop(String shopId, String shopName) {
         upsertShop(shopId, shopName, 0L);

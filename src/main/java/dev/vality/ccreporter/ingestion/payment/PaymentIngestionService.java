@@ -1,9 +1,10 @@
-package dev.vality.ccreporter.ingestion;
+package dev.vality.ccreporter.ingestion.payment;
 
 import dev.vality.ccreporter.dao.PaymentCurrentDao;
-import dev.vality.ccreporter.serialization.MachineEventPayloadParser;
+import dev.vality.ccreporter.serde.thrift.MachineEventParser;
 import dev.vality.damsel.payment_processing.EventPayload;
 import dev.vality.machinegun.eventsink.MachineEvent;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,21 +12,12 @@ import java.util.Comparator;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class PaymentIngestionService {
 
     private final PaymentCurrentDao paymentCurrentDao;
     private final PaymentEventProjector paymentEventProjector;
-    private final MachineEventPayloadParser<EventPayload> paymentEventPayloadMachineEventParser;
-
-    public PaymentIngestionService(
-            PaymentCurrentDao paymentCurrentDao,
-            PaymentEventProjector paymentEventProjector,
-            MachineEventPayloadParser<EventPayload> paymentEventPayloadMachineEventParser
-    ) {
-        this.paymentCurrentDao = paymentCurrentDao;
-        this.paymentEventProjector = paymentEventProjector;
-        this.paymentEventPayloadMachineEventParser = paymentEventPayloadMachineEventParser;
-    }
+    private final MachineEventParser<EventPayload> paymentEventPayloadMachineEventParser;
 
     @Transactional
     public void handleEvents(List<MachineEvent> machineEvents) {

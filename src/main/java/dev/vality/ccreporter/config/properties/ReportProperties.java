@@ -1,35 +1,16 @@
 package dev.vality.ccreporter.config.properties;
 
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
 
+@Data
+@Configuration
 @ConfigurationProperties(prefix = "ccr.report")
 public class ReportProperties {
 
-    private int maxAttempts = 5;
-    private int presignedUrlTtlSec = 900;
-    private long expirationSec = 604800;
+    private int maxAttempts;
+    private int presignedUrlTtlSec;
+    private long expirationSec;
 
-    public int getMaxAttempts() {
-        return maxAttempts;
-    }
-
-    public void setMaxAttempts(int maxAttempts) {
-        this.maxAttempts = maxAttempts;
-    }
-
-    public int getPresignedUrlTtlSec() {
-        return presignedUrlTtlSec;
-    }
-
-    public void setPresignedUrlTtlSec(int presignedUrlTtlSec) {
-        this.presignedUrlTtlSec = presignedUrlTtlSec;
-    }
-
-    public long getExpirationSec() {
-        return expirationSec;
-    }
-
-    public void setExpirationSec(long expirationSec) {
-        this.expirationSec = expirationSec;
-    }
 }

@@ -1,25 +1,20 @@
-package dev.vality.ccreporter.util;
+package dev.vality.ccreporter.serde.json;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import dev.vality.ccreporter.*;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.time.Instant;
 import java.util.List;
 
 @Component
-public class ThriftQueryCodec {
+@RequiredArgsConstructor
+public class ReportQueryJsonSerializer {
 
     private final ObjectMapper objectMapper;
-
-    public ThriftQueryCodec(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-    }
 
     public String serialize(ReportQuery query) {
         try {
@@ -38,7 +33,7 @@ public class ThriftQueryCodec {
             }
             return objectMapper.writeValueAsString(rootNode);
         } catch (JsonProcessingException ex) {
-            throw new IllegalArgumentException("Failed to serialize report query", ex);
+            throw new RuntimeException("Failed to serialize report query to JSON", ex);
         }
     }
 
@@ -55,57 +50,8 @@ public class ThriftQueryCodec {
             }
             return query;
         } catch (JsonProcessingException ex) {
-            throw new IllegalStateException("Failed to deserialize stored report query", ex);
+            throw new RuntimeException("Failed to deserialize report query from JSON", ex);
         }
-    }
-
-    public ReportType resolveReportType(ReportQuery query) {
-        var payments = query != null && query.isSetPayments();
-        var withdrawals = query != null && query.isSetWithdrawals();
-        if (payments == withdrawals) {
-            return null;
-        }
-        return payments ? ReportType.payments : ReportType.withdrawals;
-    }
-
-    public QueryTimeRange extractTimeRange(ReportQuery query) {
-        TimeRange timeRange;
-        if (query == null) {
-            throw new IllegalArgumentException("query is required");
-        }
-        if (query.isSetPayments()) {
-            var paymentsQuery = query.getPayments();
-            timeRange = paymentsQuery == null ? null : paymentsQuery.getTimeRange();
-        } else if (query.isSetWithdrawals()) {
-            var withdrawalsQuery = query.getWithdrawals();
-            timeRange = withdrawalsQuery == null ? null : withdrawalsQuery.getTimeRange();
-        } else {
-            throw new IllegalArgumentException("query must select exactly one branch");
-        }
-        if (timeRange == null || !timeRange.isSetFromTime() || !timeRange.isSetToTime()) {
-            throw new IllegalArgumentException("time_range with from_time and to_time is required");
-        }
-        return new QueryTimeRange(
-                TimestampUtils.parse(timeRange.getFromTime()),
-                TimestampUtils.parse(timeRange.getToTime())
-        );
-    }
-
-    public String hash(String value) {
-        try {
-            var digest = MessageDigest.getInstance("SHA-256");
-            var hashBytes = digest.digest(value.getBytes(StandardCharsets.UTF_8));
-            var stringBuilder = new StringBuilder(hashBytes.length * 2);
-            for (byte hashByte : hashBytes) {
-                stringBuilder.append(String.format("%02x", hashByte));
-            }
-            return stringBuilder.toString();
-        } catch (Exception ex) {
-            throw new IllegalStateException("Failed to hash report query", ex);
-        }
-    }
-
-    public record QueryTimeRange(Instant from, Instant to) {
     }
 
     private ObjectNode writePaymentsQuery(PaymentsQuery query) {

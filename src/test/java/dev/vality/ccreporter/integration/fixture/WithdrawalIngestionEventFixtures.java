@@ -5,7 +5,7 @@ import dev.vality.fistful.transfer.CreatedChange;
 import dev.vality.fistful.transfer.Transfer;
 import dev.vality.fistful.withdrawal.*;
 import dev.vality.fistful.withdrawal.status.Status;
-import dev.vality.kafka.common.serialization.ThriftSerializer;
+import dev.vality.ccreporter.serde.thrift.ThriftSerializer;
 import dev.vality.machinegun.eventsink.MachineEvent;
 import dev.vality.machinegun.msgpack.Value;
 import org.apache.thrift.TBase;
@@ -19,9 +19,11 @@ import java.util.Map;
 public final class WithdrawalIngestionEventFixtures {
 
     public static final String WITHDRAWAL_ID = "withdrawal-serialized";
+    public static final String WITHDRAWAL_SOURCE_ID = "withdrawal-serialized";
     public static final String WITHDRAWAL_SESSION_ID = "session-serialized";
 
     private static final ThriftSerializer<TBase<?, ?>> THRIFT_SERIALIZER = new ThriftSerializer<>();
+
 
     private WithdrawalIngestionEventFixtures() {
     }

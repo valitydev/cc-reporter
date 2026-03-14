@@ -1,10 +1,11 @@
-package dev.vality.ccreporter.ingestion;
+package dev.vality.ccreporter.ingestion.dominant;
 
 import dev.vality.ccreporter.dao.DisplayNameLookupDao;
 import dev.vality.damsel.domain.DomainObject;
 import dev.vality.damsel.domain.Reference;
 import dev.vality.damsel.domain_config_v2.FinalOperation;
 import dev.vality.damsel.domain_config_v2.HistoricalCommit;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,13 +13,10 @@ import java.util.Comparator;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class DominantLookupIngestionService {
 
     private final DisplayNameLookupDao displayNameLookupDao;
-
-    public DominantLookupIngestionService(DisplayNameLookupDao displayNameLookupDao) {
-        this.displayNameLookupDao = displayNameLookupDao;
-    }
 
     @Transactional
     public void handleCommits(List<HistoricalCommit> commits) {

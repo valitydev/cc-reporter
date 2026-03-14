@@ -20,7 +20,7 @@ import dev.vality.fistful.withdrawal.Withdrawal;
 import dev.vality.fistful.withdrawal.status.Pending;
 import dev.vality.fistful.withdrawal.status.Status;
 import dev.vality.fistful.withdrawal.status.Succeeded;
-import dev.vality.kafka.common.serialization.ThriftSerializer;
+import dev.vality.ccreporter.serde.thrift.ThriftSerializer;
 import dev.vality.machinegun.eventsink.MachineEvent;
 import dev.vality.machinegun.msgpack.Value;
 import org.apache.thrift.TBase;

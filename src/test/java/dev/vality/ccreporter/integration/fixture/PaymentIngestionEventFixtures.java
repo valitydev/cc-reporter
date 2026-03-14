@@ -4,7 +4,7 @@ import dev.vality.damsel.domain.*;
 import dev.vality.damsel.domain.InvoicePayment;
 import dev.vality.damsel.domain.InvoicePaymentPending;
 import dev.vality.damsel.payment_processing.*;
-import dev.vality.kafka.common.serialization.ThriftSerializer;
+import dev.vality.ccreporter.serde.thrift.ThriftSerializer;
 import dev.vality.machinegun.eventsink.MachineEvent;
 import dev.vality.machinegun.msgpack.Value;
 import org.apache.thrift.TBase;

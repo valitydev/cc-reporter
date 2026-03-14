@@ -1,30 +1,23 @@
-package dev.vality.ccreporter.ingestion;
+package dev.vality.ccreporter.ingestion.withdrawal;
 
 import dev.vality.ccreporter.dao.WithdrawalCurrentDao;
-import dev.vality.ccreporter.serialization.MachineEventPayloadParser;
+import dev.vality.ccreporter.serde.thrift.MachineEventParser;
 import dev.vality.fistful.withdrawal.Event;
 import dev.vality.machinegun.eventsink.MachineEvent;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class WithdrawalIngestionService {
 
     private final WithdrawalCurrentDao withdrawalCurrentDao;
     private final WithdrawalEventProjector withdrawalEventProjector;
-    private final MachineEventPayloadParser<Event> withdrawalEventMachineEventParser;
+    private final MachineEventParser<Event> withdrawalEventMachineEventParser;
 
-    public WithdrawalIngestionService(
-            WithdrawalCurrentDao withdrawalCurrentDao,
-            WithdrawalEventProjector withdrawalEventProjector,
-            MachineEventPayloadParser<Event> withdrawalEventMachineEventParser
-    ) {
-        this.withdrawalCurrentDao = withdrawalCurrentDao;
-        this.withdrawalEventProjector = withdrawalEventProjector;
-        this.withdrawalEventMachineEventParser = withdrawalEventMachineEventParser;
-    }
 
     @Transactional
     public void handleEvents(List<MachineEvent> machineEvents) {

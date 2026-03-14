@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.security;
+package dev.vality.ccreporter.model;
 
 public record RequestAuditMetadata(
         String userId,

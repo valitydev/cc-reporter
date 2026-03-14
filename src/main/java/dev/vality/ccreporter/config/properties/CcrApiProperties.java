@@ -1,44 +1,17 @@
 package dev.vality.ccreporter.config.properties;
 
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
 
+@Data
+@Configuration
 @ConfigurationProperties(prefix = "ccr.api")
 public class CcrApiProperties {
 
-    private String path = "/ccreports";
-    private String createdByHeader = "X-User-Id";
-    private int defaultPageSize = 50;
-    private int maxPageSize = 100;
+    private String path;
+    private String createdByHeader;
+    private int defaultPageSize;
+    private int maxPageSize;
 
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-
-    public String getCreatedByHeader() {
-        return createdByHeader;
-    }
-
-    public void setCreatedByHeader(String createdByHeader) {
-        this.createdByHeader = createdByHeader;
-    }
-
-    public int getDefaultPageSize() {
-        return defaultPageSize;
-    }
-
-    public void setDefaultPageSize(int defaultPageSize) {
-        this.defaultPageSize = defaultPageSize;
-    }
-
-    public int getMaxPageSize() {
-        return maxPageSize;
-    }
-
-    public void setMaxPageSize(int maxPageSize) {
-        this.maxPageSize = maxPageSize;
-    }
 }

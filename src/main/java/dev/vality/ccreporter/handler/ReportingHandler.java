@@ -2,17 +2,15 @@ package dev.vality.ccreporter.handler;
 
 import dev.vality.ccreporter.*;
 import dev.vality.ccreporter.report.ReportManagementService;
+import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class ReportingHandler implements ReportingSrv.Iface {
 
     private final ReportManagementService reportManagementService;
-
-    public ReportingHandler(ReportManagementService reportManagementService) {
-        this.reportManagementService = reportManagementService;
-    }
 
     @Override
     public long createReport(CreateReportRequest request) throws TException {

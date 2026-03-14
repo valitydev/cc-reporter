@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.ingestion;
+package dev.vality.ccreporter.util;
 
 import java.util.Locale;
 import java.util.stream.Stream;

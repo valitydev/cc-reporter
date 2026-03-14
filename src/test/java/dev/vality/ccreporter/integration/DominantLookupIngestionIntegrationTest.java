@@ -1,6 +1,6 @@
 package dev.vality.ccreporter.integration;
 
-import dev.vality.ccreporter.ingestion.DominantLookupIngestionService;
+import dev.vality.ccreporter.ingestion.dominant.DominantLookupIngestionService;
 import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
 import dev.vality.ccreporter.integration.fixture.DominantCommitFixtures;
 import org.junit.jupiter.api.Test;

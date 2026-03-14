@@ -1,11 +1,11 @@
 package dev.vality.ccreporter.integration.base;
 
 import dev.vality.ccreporter.ReportingSrv;
-import dev.vality.ccreporter.config.properties.FileStorageProperties;
 import dev.vality.ccreporter.dao.ReportLifecycleDao;
 import dev.vality.ccreporter.integration.config.ReportingIntegrationTestConfig;
 import dev.vality.ccreporter.report.ReportLifecycleService;
 import dev.vality.ccreporter.storage.FileStorageService;
+import dev.vality.file.storage.FileStorageSrv;
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -132,7 +132,7 @@ public abstract class AbstractReportingIntegrationTest {
         private volatile CountDownLatch releaseUploadLatch;
 
         public StubFileStorageService() {
-            super(new FileStorageProperties());
+            super(missingClient(), java.net.http.HttpClient.newHttpClient());
         }
 
         @Override
@@ -207,6 +207,16 @@ public abstract class AbstractReportingIntegrationTest {
         public void blockUploads(CountDownLatch uploadEnteredLatch, CountDownLatch releaseUploadLatch) {
             this.uploadEnteredLatch = uploadEnteredLatch;
             this.releaseUploadLatch = releaseUploadLatch;
+        }
+
+        private static FileStorageSrv.Iface missingClient() {
+            return (FileStorageSrv.Iface) java.lang.reflect.Proxy.newProxyInstance(
+                    FileStorageSrv.Iface.class.getClassLoader(),
+                    new Class<?>[]{FileStorageSrv.Iface.class},
+                    (proxy, method, args) -> {
+                        throw new IllegalStateException("stub file-storage client should not be called directly");
+                    }
+            );
         }
     }
 }

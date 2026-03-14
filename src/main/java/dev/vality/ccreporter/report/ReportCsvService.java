@@ -4,9 +4,11 @@ import dev.vality.ccreporter.PaymentsQuery;
 import dev.vality.ccreporter.PaymentsSearchFilter;
 import dev.vality.ccreporter.WithdrawalsQuery;
 import dev.vality.ccreporter.WithdrawalsSearchFilter;
+import dev.vality.ccreporter.config.ReportTransactionConfig.ReportCsvReadOnlyTxTemplate;
 import dev.vality.ccreporter.model.ClaimedReportJob;
 import dev.vality.ccreporter.model.GeneratedCsvReport;
-import dev.vality.ccreporter.util.ThriftQueryCodec;
+import dev.vality.ccreporter.serde.json.ReportQueryJsonSerializer;
+import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.PreparedStatementCreatorFactory;
 import org.springframework.jdbc.core.PreparedStatementSetter;
@@ -14,9 +16,6 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -32,6 +31,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
 public class ReportCsvService {
 
     private static final DateTimeFormatter CSV_DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
@@ -82,25 +82,13 @@ public class ReportCsvService {
     );
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
-    private final ThriftQueryCodec thriftQueryCodec;
-    private final TransactionTemplate readOnlyRepeatableReadTx;
-
-    public ReportCsvService(
-            NamedParameterJdbcTemplate jdbcTemplate,
-            ThriftQueryCodec thriftQueryCodec,
-            PlatformTransactionManager transactionManager
-    ) {
-        this.jdbcTemplate = jdbcTemplate;
-        this.thriftQueryCodec = thriftQueryCodec;
-        this.readOnlyRepeatableReadTx = new TransactionTemplate(transactionManager);
-        this.readOnlyRepeatableReadTx.setReadOnly(true);
-        this.readOnlyRepeatableReadTx.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);
-    }
+    private final ReportQueryJsonSerializer reportQueryJsonSerializer;
+    private final ReportCsvReadOnlyTxTemplate readOnlyRepeatableReadTx;
 
     public GeneratedCsvReport generate(ClaimedReportJob claimedReportJob) {
         return Objects.requireNonNull(readOnlyRepeatableReadTx.execute(status -> {
             var snapshotFixedAt = currentSnapshot();
-            var reportQuery = thriftQueryCodec.deserialize(claimedReportJob.queryJson());
+            var reportQuery = reportQueryJsonSerializer.deserialize(claimedReportJob.queryJson());
             var zoneId = ZoneId.of(claimedReportJob.timezone());
             var fileName = claimedReportJob.reportType().name() + "-report-" + claimedReportJob.id() + ".csv";
             var stagedFile = createTempFile(claimedReportJob.id());

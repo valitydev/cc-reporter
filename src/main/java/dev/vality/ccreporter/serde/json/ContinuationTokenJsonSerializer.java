@@ -1,7 +1,8 @@
-package dev.vality.ccreporter.util;
+package dev.vality.ccreporter.serde.json;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.vality.ccreporter.BadContinuationToken;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -9,15 +10,12 @@ import java.time.Instant;
 import java.util.Base64;
 
 @Component
-public class ContinuationTokenCodec {
+@RequiredArgsConstructor
+public class ContinuationTokenJsonSerializer {
 
     private final ObjectMapper objectMapper;
 
-    public ContinuationTokenCodec(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-    }
-
-    public String encode(Instant createdAt, long reportId) {
+    public String serialize(Instant createdAt, long reportId) {
         try {
             var node = objectMapper.createObjectNode();
             node.put("created_at", createdAt.toString());
@@ -25,11 +23,11 @@ public class ContinuationTokenCodec {
             var payload = objectMapper.writeValueAsBytes(node);
             return Base64.getUrlEncoder().withoutPadding().encodeToString(payload);
         } catch (Exception ex) {
-            throw new IllegalStateException("Failed to encode continuation token", ex);
+            throw new RuntimeException("Failed to encode continuation token to JSON/Base64", ex);
         }
     }
 
-    public PageCursor decode(String token) throws BadContinuationToken {
+    public PageCursor deserialize(String token) throws BadContinuationToken {
         try {
             var decoded = Base64.getUrlDecoder().decode(token.getBytes(StandardCharsets.UTF_8));
             var rootNode = objectMapper.readTree(decoded);
@@ -39,7 +37,7 @@ public class ContinuationTokenCodec {
             );
         } catch (Exception ex) {
             var badContinuationToken = new BadContinuationToken();
-            badContinuationToken.setReason("Malformed continuation token");
+            badContinuationToken.setReason("Malformed continuation token: " + token);
             throw badContinuationToken;
         }
     }

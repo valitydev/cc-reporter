@@ -24,15 +24,17 @@ spring:
     bootstrap-servers: localhost:9092
     client-id: cc-reporter
     consumer:
-      group-id: ${ccr.kafka.consumer.group-id}
+      group-id: cc-reporter
       enable-auto-commit: false
       auto-offset-reset: earliest
-      max-poll-records: ${ccr.kafka.consumer.max-poll-records}
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      max-poll-records: 20
       properties:
-        max.poll.interval.ms: ${ccr.kafka.consumer.max-poll-interval-ms}
-        session.timeout.ms: ${ccr.kafka.consumer.session-timeout-ms}
+        max.poll.interval.ms: 30000
+        session.timeout.ms: 30000
     listener:
       ack-mode: manual
+      poll-timeout: 3000ms
 
 management:
   server:
@@ -63,16 +65,14 @@ management:
 ccr:
   kafka:
     consumer:
-      group-id: cc-reporter
-      max-poll-records: 20
-      max-poll-interval-ms: 30000
-      session-timeout-ms: 30000
-      poll-timeout-ms: 3000
       dominant-concurrency: 1
       payments-concurrency: 1
       withdrawals-concurrency: 1
+      withdrawal-sessions-concurrency: 1
       error-backoff-interval-ms: 30000
       error-max-attempts: -1
+      dominant-error-backoff-interval-ms: 30000
+      dominant-error-max-attempts: -1
     topics:
       dominant:
         id: ""

@@ -2,7 +2,6 @@
 
 ## Active tracks
 - `replayable-current-state-projections`
-- `projector-builder-refactor`
 
 ## Completed tracks
 - `kafka-to-db-ingestion`
@@ -13,6 +12,7 @@
 - `audit-observability-hardening`
 - `jooq-dsl-dao-transition`
 - `dominant-name-materialization`
+- `projector-builder-refactor`
 
 ## Temporary cross-track exception
 - `payments` FX handling remains a temporary exception: keep the contract, allow mock+`TODO`, and do not silently degrade it to permanent `null` behavior.
@@ -46,11 +46,11 @@
 ## Active track snapshot
 - `replayable-current-state-projections`
   is a follow-up design/implementation track for deterministic current-state rebuilds under Kafka replay and projector evolution.
-- `projector-builder-refactor`
-  is a follow-up design/implementation track for Lombok/builder-based projector assembly and decomposition of large current-state
-  projectors, starting with payments and extending generic improvements to withdrawals.
 
 ## Latest completed track snapshot
+- `projector-builder-refactor` is complete. Payment, withdrawal, and withdrawal-session current-state projector assembly now uses
+  local fluent builders plus small event-branch helpers instead of the old monolithic positional/update-method style, without
+  widening dependencies to Lombok or changing ingestion semantics.
 - `dominant-name-materialization` is complete. CCR now owns local `shop` / `provider` / `terminal` / `wallet` lookup tables,
   resolves report name filters through local joins, and ingests dominant `HistoricalCommit` batches into version-aware,
   tombstone-aware lookup state without depending on `daway` DB at runtime.

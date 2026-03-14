@@ -1,6 +1,7 @@
 package dev.vality.ccreporter.dao;
 
 import dev.vality.ccreporter.domain.tables.pojos.WithdrawalSessionBindingCurrent;
+import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.springframework.stereotype.Repository;
@@ -11,16 +12,13 @@ import java.util.Optional;
 import static dev.vality.ccreporter.domain.Tables.WITHDRAWAL_SESSION_BINDING_CURRENT;
 
 @Repository
+@RequiredArgsConstructor
 public class WithdrawalSessionBindingDao {
 
     private static final org.jooq.Field<LocalDateTime> UTC_NOW =
             DSL.field("(now() AT TIME ZONE 'utc')", LocalDateTime.class);
 
     private final DSLContext dslContext;
-
-    public WithdrawalSessionBindingDao(DSLContext dslContext) {
-        this.dslContext = dslContext;
-    }
 
     public void upsert(WithdrawalSessionBindingCurrent update) {
         var record = dslContext.newRecord(WITHDRAWAL_SESSION_BINDING_CURRENT, update);
