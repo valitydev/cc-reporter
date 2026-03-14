@@ -26,6 +26,7 @@ import java.util.Optional;
 
 import static dev.vality.ccreporter.domain.Tables.REPORT_FILE;
 import static dev.vality.ccreporter.domain.Tables.REPORT_JOB;
+import static dev.vality.ccreporter.util.TimestampUtils.*;
 
 @Repository
 @RequiredArgsConstructor
@@ -121,10 +122,10 @@ public class ReportDao {
             );
         }
         if (filter != null && filter.isSetCreatedFrom()) {
-            conditions.add(REPORT_JOB.CREATED_AT.ge(toLocalDateTime(TimestampUtils.parse(filter.getCreatedFrom()))));
+            conditions.add(REPORT_JOB.CREATED_AT.ge(toLocalDateTime(parse(filter.getCreatedFrom()))));
         }
         if (filter != null && filter.isSetCreatedTo()) {
-            conditions.add(REPORT_JOB.CREATED_AT.le(toLocalDateTime(TimestampUtils.parse(filter.getCreatedTo()))));
+            conditions.add(REPORT_JOB.CREATED_AT.le(toLocalDateTime(parse(filter.getCreatedTo()))));
         }
         if (cursor != null) {
             conditions.add(
@@ -248,13 +249,13 @@ public class ReportDao {
                 record.get(REPORT_JOB.QUERY_JSON).data(),
                 record.get(REPORT_JOB.TIMEZONE),
                 fromJooqReportStatus(record.get(REPORT_JOB.STATUS)),
-                TimestampUtils.toInstant(record.get(createdAt)),
-                TimestampUtils.toInstant(record.get(updatedAt)),
-                TimestampUtils.toOptionalInstant(record.get(startedAt)),
-                TimestampUtils.toOptionalInstant(record.get(dataSnapshotFixedAt)),
-                TimestampUtils.toOptionalInstant(record.get(finishedAt)),
+                toInstant(record.get(createdAt)),
+                toInstant(record.get(updatedAt)),
+                toOptionalInstant(record.get(startedAt)),
+                toOptionalInstant(record.get(dataSnapshotFixedAt)),
+                toOptionalInstant(record.get(finishedAt)),
                 record.get(REPORT_JOB.ROWS_COUNT),
-                TimestampUtils.toOptionalInstant(record.get(expiresAt)),
+                toOptionalInstant(record.get(expiresAt)),
                 record.get(REPORT_JOB.ERROR_CODE),
                 record.get(REPORT_JOB.ERROR_MESSAGE),
                 record.get(REPORT_FILE.FILE_ID) == null ? null : mapStoredReportFile(
@@ -280,8 +281,8 @@ public class ReportDao {
         reportFile.setMd5(record.get(REPORT_FILE.MD5));
         reportFile.setSha256(record.get(REPORT_FILE.SHA256));
         reportFile.setSizeBytes(record.get(REPORT_FILE.SIZE_BYTES));
-        reportFile.setCreatedAt(TimestampUtils.toLocalDateTime(
-                TimestampUtils.toInstant(record.get(timestampField(REPORT_FILE.CREATED_AT, "created_at_ts")))
+        reportFile.setCreatedAt(toLocalDateTime(
+                toInstant(record.get(timestampField(REPORT_FILE.CREATED_AT, "created_at_ts")))
         ));
         reportFile.setBucket(record.get(REPORT_FILE.BUCKET));
         reportFile.setObjectKey(record.get(REPORT_FILE.OBJECT_KEY));
@@ -306,12 +307,8 @@ public class ReportDao {
                 md5,
                 sha256,
                 sizeBytes,
-                TimestampUtils.toInstant(createdAt)
+                toInstant(createdAt)
         );
-    }
-
-    private static LocalDateTime toLocalDateTime(Instant value) {
-        return TimestampUtils.toLocalDateTime(value);
     }
 
     private static org.jooq.Field<Timestamp> timestampField(TableField<?, ?> field, String alias) {

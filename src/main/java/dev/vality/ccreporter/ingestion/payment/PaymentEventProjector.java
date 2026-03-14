@@ -2,11 +2,7 @@ package dev.vality.ccreporter.ingestion.payment;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.vality.ccreporter.domain.tables.pojos.PaymentTxnCurrent;
-import dev.vality.damsel.domain.Cash;
-import dev.vality.damsel.domain.Failure;
-import dev.vality.damsel.domain.InvoicePaymentStatus;
-import dev.vality.damsel.domain.OperationFailure;
-import dev.vality.damsel.domain.TransactionInfo;
+import dev.vality.damsel.domain.*;
 import dev.vality.damsel.payment_processing.EventPayload;
 import dev.vality.damsel.payment_processing.InvoiceChange;
 import dev.vality.damsel.payment_processing.InvoicePaymentChange;
@@ -16,14 +12,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+
+import static dev.vality.ccreporter.util.TimestampUtils.toOptionalLocalDateTime;
 
 @Component
 @RequiredArgsConstructor
@@ -92,21 +86,21 @@ public class PaymentEventProjector {
         var cost = payment.getCost();
         var route = started.getRoute();
         var status = paymentStatus(payment);
-        return Optional.of(baseBuilder(context)
-                .partyId(payment.isSetPartyRef() ? payment.getPartyRef().getId() : null)
-                .shopId(payment.isSetShopRef() ? payment.getShopRef().getId() : null)
-                .createdAt(Instant.parse(payment.getCreatedAt()))
-                .finalizedAt(terminalFinalizedAt(payment.getStatus(), context.eventCreatedAt()))
-                .status(status)
-                .providerId(route != null ? String.valueOf(route.getProvider().getId()) : null)
-                .terminalId(route != null ? String.valueOf(route.getTerminal().getId()) : null)
-                .amount(cost.getAmount())
-                .currency(cost.getCurrency().getSymbolicCode())
-                .externalId(payment.getExternalId())
-                .paymentToolType(paymentToolType(payment))
-                .originalAmount(cost.getAmount())
-                .originalCurrency(cost.getCurrency().getSymbolicCode())
-                .build());
+        return Optional.of(baseUpdate(context)
+                .setPartyId(payment.isSetPartyRef() ? payment.getPartyRef().getId() : null)
+                .setShopId(payment.isSetShopRef() ? payment.getShopRef().getId() : null)
+                .setCreatedAt(toOptionalLocalDateTime(Instant.parse(payment.getCreatedAt())))
+                .setFinalizedAt(
+                        toOptionalLocalDateTime(terminalFinalizedAt(payment.getStatus(), context.eventCreatedAt())))
+                .setStatus(status)
+                .setProviderId(route != null ? String.valueOf(route.getProvider().getId()) : null)
+                .setTerminalId(route != null ? String.valueOf(route.getTerminal().getId()) : null)
+                .setAmount(cost.getAmount())
+                .setCurrency(cost.getCurrency().getSymbolicCode())
+                .setExternalId(payment.getExternalId())
+                .setPaymentToolType(paymentToolType(payment))
+                .setOriginalAmount(cost.getAmount())
+                .setOriginalCurrency(cost.getCurrency().getSymbolicCode()));
     }
 
     private Optional<PaymentTxnCurrent> paymentRouteChangedUpdate(
@@ -117,10 +111,9 @@ public class PaymentEventProjector {
             return Optional.empty();
         }
         var route = paymentChange.getPayload().getInvoicePaymentRouteChanged().getRoute();
-        return Optional.of(baseBuilder(context)
-                .providerId(String.valueOf(route.getProvider().getId()))
-                .terminalId(String.valueOf(route.getTerminal().getId()))
-                .build());
+        return Optional.of(baseUpdate(context)
+                .setProviderId(String.valueOf(route.getProvider().getId()))
+                .setTerminalId(String.valueOf(route.getTerminal().getId())));
     }
 
     private Optional<PaymentTxnCurrent> paymentCashChangedUpdate(
@@ -131,14 +124,13 @@ public class PaymentEventProjector {
             return Optional.empty();
         }
         var cash = paymentChange.getPayload().getInvoicePaymentCashChanged().getNewCash();
-        return Optional.of(baseBuilder(context)
-                .amount(cash.getAmount())
-                .currency(cash.getCurrency().getSymbolicCode())
-                .originalAmount(cash.getAmount())
-                .originalCurrency(cash.getCurrency().getSymbolicCode())
-                .providerAmount(cash.getAmount())
-                .providerCurrency(cash.getCurrency().getSymbolicCode())
-                .build());
+        return Optional.of(baseUpdate(context)
+                .setAmount(cash.getAmount())
+                .setCurrency(cash.getCurrency().getSymbolicCode())
+                .setOriginalAmount(cash.getAmount())
+                .setOriginalCurrency(cash.getCurrency().getSymbolicCode())
+                .setProviderAmount(cash.getAmount())
+                .setProviderCurrency(cash.getCurrency().getSymbolicCode()));
     }
 
     private Optional<PaymentTxnCurrent> paymentCashFlowChangedUpdate(
@@ -149,10 +141,9 @@ public class PaymentEventProjector {
             return Optional.empty();
         }
         var postings = paymentChange.getPayload().getInvoicePaymentCashFlowChanged().getCashFlow();
-        return Optional.of(baseBuilder(context)
-                .amount(PaymentCashFlowExtractor.extractAmount(postings))
-                .fee(PaymentCashFlowExtractor.extractFee(postings))
-                .build());
+        return Optional.of(baseUpdate(context)
+                .setAmount(PaymentCashFlowExtractor.extractAmount(postings))
+                .setFee(PaymentCashFlowExtractor.extractFee(postings)));
     }
 
     private Optional<PaymentTxnCurrent> paymentStatusChangedUpdate(
@@ -164,13 +155,12 @@ public class PaymentEventProjector {
         }
         var status = paymentChange.getPayload().getInvoicePaymentStatusChanged().getStatus();
         var capturedCost = capturedCost(status);
-        return Optional.of(baseBuilder(context)
-                .finalizedAt(terminalFinalizedAt(status, context.eventCreatedAt()))
-                .status(status.getSetField().getFieldName())
-                .errorSummary(paymentErrorSummary(status))
-                .providerAmount(capturedCost != null ? capturedCost.getAmount() : null)
-                .providerCurrency(symbolicCode(capturedCost))
-                .build());
+        return Optional.of(baseUpdate(context)
+                .setFinalizedAt(toOptionalLocalDateTime(terminalFinalizedAt(status, context.eventCreatedAt())))
+                .setStatus(status.getSetField().getFieldName())
+                .setErrorSummary(paymentErrorSummary(status))
+                .setProviderAmount(capturedCost != null ? capturedCost.getAmount() : null)
+                .setProviderCurrency(symbolicCode(capturedCost)));
     }
 
     private Optional<PaymentTxnCurrent> paymentTransactionBoundUpdate(
@@ -183,13 +173,12 @@ public class PaymentEventProjector {
         }
         var trx = sessionPayload.getSessionTransactionBound().getTrx();
         var info = trx.getAdditionalInfo();
-        return Optional.of(baseBuilder(context)
-                .trxId(trx.getId())
-                .rrn(info != null ? info.getRrn() : null)
-                .approvalCode(info != null ? info.getApprovalCode() : null)
-                .convertedAmount(convertedAmount(trx))
-                .exchangeRateInternal(exchangeRateInternal(trx))
-                .build());
+        return Optional.of(baseUpdate(context)
+                .setTrxId(trx.getId())
+                .setRrn(info != null ? info.getRrn() : null)
+                .setApprovalCode(info != null ? info.getApprovalCode() : null)
+                .setConvertedAmount(convertedAmount(trx))
+                .setExchangeRateInternal(exchangeRateInternal(trx)));
     }
 
     private Optional<PaymentTxnCurrent> paymentProxyStateFallbackUpdate(
@@ -204,18 +193,16 @@ public class PaymentEventProjector {
         if (trxId == null) {
             return Optional.empty();
         }
-        return Optional.of(baseBuilder(context)
-                .trxId(trxId)
-                .build());
+        return Optional.of(baseUpdate(context)
+                .setTrxId(trxId));
     }
 
-    private PaymentCurrentUpdateBuilder baseBuilder(PaymentChangeContext context) {
-        return PaymentCurrentUpdateBuilder.builder(
-                context.invoiceId(),
-                context.paymentId(),
-                context.domainEventId(),
-                context.eventCreatedAt()
-        );
+    private PaymentTxnCurrent baseUpdate(PaymentChangeContext context) {
+        return new PaymentTxnCurrent()
+                .setInvoiceId(context.invoiceId())
+                .setPaymentId(context.paymentId())
+                .setDomainEventId(context.domainEventId())
+                .setDomainEventCreatedAt(toOptionalLocalDateTime(context.eventCreatedAt()));
     }
 
     private String paymentStatus(dev.vality.damsel.domain.InvoicePayment payment) {

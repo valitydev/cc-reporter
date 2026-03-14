@@ -2,7 +2,6 @@ package dev.vality.ccreporter.ingestion.withdrawal.session;
 
 import dev.vality.ccreporter.domain.tables.pojos.WithdrawalSessionBindingCurrent;
 import dev.vality.ccreporter.domain.tables.pojos.WithdrawalTxnCurrent;
-import dev.vality.ccreporter.ingestion.withdrawal.WithdrawalCurrentUpdateBuilder;
 import dev.vality.ccreporter.util.TimestampUtils;
 import dev.vality.fistful.withdrawal_session.Change;
 import dev.vality.fistful.withdrawal_session.Event;
@@ -14,6 +13,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import static dev.vality.ccreporter.util.TimestampUtils.toOptionalLocalDateTime;
 
 @Component
 public class WithdrawalSessionEventProjector {
@@ -49,11 +50,11 @@ public class WithdrawalSessionEventProjector {
         for (Change change : payload.getChanges()) {
             if (change.isSetTransactionBound()) {
                 var trxInfo = change.getTransactionBound().getTrxInfo();
-                return Optional.of(WithdrawalCurrentUpdateBuilder.builder(
-                        withdrawalId,
-                        event.getEventId(),
-                        eventCreatedAt
-                ).trxId(trxInfo.getId()).build());
+                return Optional.of(new WithdrawalTxnCurrent()
+                        .setWithdrawalId(withdrawalId)
+                        .setDomainEventId(event.getEventId())
+                        .setDomainEventCreatedAt(toOptionalLocalDateTime(eventCreatedAt))
+                        .setTrxId(trxInfo.getId()));
             }
         }
         return Optional.empty();
@@ -69,11 +70,7 @@ public class WithdrawalSessionEventProjector {
         binding.setSessionId(sessionId);
         binding.setWithdrawalId(withdrawalId);
         binding.setDomainEventId(domainEventId);
-        binding.setDomainEventCreatedAt(toLocalDateTime(eventCreatedAt));
+        binding.setDomainEventCreatedAt(toOptionalLocalDateTime(eventCreatedAt));
         return binding;
-    }
-
-    private LocalDateTime toLocalDateTime(Instant value) {
-        return value == null ? null : TimestampUtils.toLocalDateTime(value);
     }
 }

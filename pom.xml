@@ -253,6 +253,7 @@
                             <pojos>true</pojos>
                             <pojosEqualsAndHashCode>true</pojosEqualsAndHashCode>
                             <pojosToString>true</pojosToString>
+                            <fluentSetters>true</fluentSetters>
                         </generate>
                         <database>
                             <name>org.jooq.meta.postgres.PostgresDatabase</name>

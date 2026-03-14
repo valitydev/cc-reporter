@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static dev.vality.ccreporter.util.TimestampUtils.toOptionalLocalDateTime;
+
 @Component
 public class WithdrawalEventProjector {
 
@@ -66,24 +68,23 @@ public class WithdrawalEventProjector {
         var body = withdrawal.getBody();
         var route = withdrawal.getRoute();
         var quote = withdrawal.getQuote();
-        return Optional.of(baseBuilder(context)
-                .partyId(withdrawal.getPartyId())
-                .walletId(withdrawal.getWalletId())
-                .destinationId(withdrawal.getDestinationId())
-                .createdAt(Instant.parse(withdrawal.getCreatedAt()))
-                .status("pending")
-                .providerId(route != null ? String.valueOf(route.getProviderId()) : null)
-                .terminalId(route != null ? String.valueOf(route.getTerminalId()) : null)
-                .amount(body.getAmount())
-                .currency(body.getCurrency().getSymbolicCode())
-                .externalId(withdrawal.getExternalId())
-                .originalAmount(quote != null ? quote.getCashFrom().getAmount() : null)
-                .originalCurrency(quote != null ? quote.getCashFrom().getCurrency().getSymbolicCode() : null)
-                .convertedAmount(quote != null ? quote.getCashTo().getAmount() : null)
-                .exchangeRateInternal(toRate(quote))
-                .providerAmount(quote != null ? quote.getCashTo().getAmount() : null)
-                .providerCurrency(quote != null ? quote.getCashTo().getCurrency().getSymbolicCode() : null)
-                .build());
+        return Optional.of(baseUpdate(context)
+                .setPartyId(withdrawal.getPartyId())
+                .setWalletId(withdrawal.getWalletId())
+                .setDestinationId(withdrawal.getDestinationId())
+                .setCreatedAt(toOptionalLocalDateTime(Instant.parse(withdrawal.getCreatedAt())))
+                .setStatus("pending")
+                .setProviderId(route != null ? String.valueOf(route.getProviderId()) : null)
+                .setTerminalId(route != null ? String.valueOf(route.getTerminalId()) : null)
+                .setAmount(body.getAmount())
+                .setCurrency(body.getCurrency().getSymbolicCode())
+                .setExternalId(withdrawal.getExternalId())
+                .setOriginalAmount(quote != null ? quote.getCashFrom().getAmount() : null)
+                .setOriginalCurrency(quote != null ? quote.getCashFrom().getCurrency().getSymbolicCode() : null)
+                .setConvertedAmount(quote != null ? quote.getCashTo().getAmount() : null)
+                .setExchangeRateInternal(toRate(quote))
+                .setProviderAmount(quote != null ? quote.getCashTo().getAmount() : null)
+                .setProviderCurrency(quote != null ? quote.getCashTo().getCurrency().getSymbolicCode() : null));
     }
 
     private Optional<WithdrawalTxnCurrent> routeChangedUpdate(WithdrawalChangeContext context, Change change) {
@@ -91,10 +92,9 @@ public class WithdrawalEventProjector {
             return Optional.empty();
         }
         var route = change.getRoute().getRoute();
-        return Optional.of(baseBuilder(context)
-                .providerId(String.valueOf(route.getProviderId()))
-                .terminalId(String.valueOf(route.getTerminalId()))
-                .build());
+        return Optional.of(baseUpdate(context)
+                .setProviderId(String.valueOf(route.getProviderId()))
+                .setTerminalId(String.valueOf(route.getTerminalId())));
     }
 
     private Optional<WithdrawalTxnCurrent> statusChangedUpdate(WithdrawalChangeContext context, Change change) {
@@ -104,13 +104,12 @@ public class WithdrawalEventProjector {
         var status = change.getStatusChanged().getStatus();
         var failure = status.isSetFailed() ? status.getFailed().getFailure() : null;
         var subFailure = failure != null ? failure.getSub() : null;
-        return Optional.of(baseBuilder(context)
-                .finalizedAt(terminalFinalizedAt(status, context.eventCreatedAt()))
-                .status(status.getSetField().getFieldName())
-                .errorCode(failure != null ? failure.getCode() : null)
-                .errorReason(failure != null ? failure.getReason() : null)
-                .errorSubFailure(subFailure != null ? subFailure.getCode() : null)
-                .build());
+        return Optional.of(baseUpdate(context)
+                .setFinalizedAt(toOptionalLocalDateTime(terminalFinalizedAt(status, context.eventCreatedAt())))
+                .setStatus(status.getSetField().getFieldName())
+                .setErrorCode(failure != null ? failure.getCode() : null)
+                .setErrorReason(failure != null ? failure.getReason() : null)
+                .setErrorSubFailure(subFailure != null ? subFailure.getCode() : null));
     }
 
     private Optional<WithdrawalTxnCurrent> transferCashFlowUpdate(WithdrawalChangeContext context, Change change) {
@@ -122,17 +121,15 @@ public class WithdrawalEventProjector {
             return Optional.empty();
         }
         var postings = change.getTransfer().getPayload().getCreated().getTransfer().getCashflow().getPostings();
-        return Optional.of(baseBuilder(context)
-                .fee(WithdrawalCashFlowExtractor.extractFee(postings))
-                .build());
+        return Optional.of(baseUpdate(context)
+                .setFee(WithdrawalCashFlowExtractor.extractFee(postings)));
     }
 
-    private WithdrawalCurrentUpdateBuilder baseBuilder(WithdrawalChangeContext context) {
-        return WithdrawalCurrentUpdateBuilder.builder(
-                context.withdrawalId(),
-                context.domainEventId(),
-                context.eventCreatedAt()
-        );
+    private WithdrawalTxnCurrent baseUpdate(WithdrawalChangeContext context) {
+        return new WithdrawalTxnCurrent()
+                .setWithdrawalId(context.withdrawalId())
+                .setDomainEventId(context.domainEventId())
+                .setDomainEventCreatedAt(toOptionalLocalDateTime(context.eventCreatedAt()));
     }
 
     private record WithdrawalChangeContext(String withdrawalId, long domainEventId, Instant eventCreatedAt) {
