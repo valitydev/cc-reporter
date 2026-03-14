@@ -29,11 +29,11 @@ public class ReportAuditDao {
             Map<String, Object> details
     ) {
         var payloadJson = serializePayload(metadata, details);
-        var auditEvent = new ReportAuditEvent();
-        auditEvent.setReportId(reportId);
-        auditEvent.setEventType(eventType);
-        auditEvent.setActor(actor);
-        auditEvent.setPayloadJson(JSONB.jsonb(payloadJson));
+        var auditEvent = new ReportAuditEvent()
+                .setReportId(reportId)
+                .setEventType(eventType)
+                .setActor(actor)
+                .setPayloadJson(JSONB.jsonb(payloadJson));
         var record = dslContext.newRecord(REPORT_AUDIT_EVENT, auditEvent);
         record.changed(REPORT_AUDIT_EVENT.ID, false);
         record.changed(REPORT_AUDIT_EVENT.CREATED_AT, false);

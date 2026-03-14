@@ -66,11 +66,10 @@ public class WithdrawalSessionEventProjector {
             long domainEventId,
             Instant eventCreatedAt
     ) {
-        var binding = new WithdrawalSessionBindingCurrent();
-        binding.setSessionId(sessionId);
-        binding.setWithdrawalId(withdrawalId);
-        binding.setDomainEventId(domainEventId);
-        binding.setDomainEventCreatedAt(toOptionalLocalDateTime(eventCreatedAt));
-        return binding;
+        return new WithdrawalSessionBindingCurrent()
+                .setSessionId(sessionId)
+                .setWithdrawalId(withdrawalId)
+                .setDomainEventId(domainEventId)
+                .setDomainEventCreatedAt(toOptionalLocalDateTime(eventCreatedAt));
     }
 }

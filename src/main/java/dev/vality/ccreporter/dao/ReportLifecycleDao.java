@@ -117,18 +117,18 @@ public class ReportLifecycleDao {
     }
 
     public boolean publishFileRecord(long reportId, ReportFileMetadata fileMetadata, Instant createdAt) {
-        var reportFile = new ReportFile();
-        reportFile.setReportId(reportId);
-        reportFile.setFileId(fileMetadata.fileId());
-        reportFile.setFileType(CSV_FILE_TYPE);
-        reportFile.setBucket(fileMetadata.bucket());
-        reportFile.setObjectKey(fileMetadata.objectKey());
-        reportFile.setFilename(fileMetadata.fileName());
-        reportFile.setContentType(fileMetadata.contentType());
-        reportFile.setSizeBytes(fileMetadata.sizeBytes());
-        reportFile.setMd5(fileMetadata.md5());
-        reportFile.setSha256(fileMetadata.sha256());
-        reportFile.setCreatedAt(LocalDateTime.ofInstant(createdAt, java.time.ZoneOffset.UTC));
+        var reportFile = new ReportFile()
+                .setReportId(reportId)
+                .setFileId(fileMetadata.fileId())
+                .setFileType(CSV_FILE_TYPE)
+                .setBucket(fileMetadata.bucket())
+                .setObjectKey(fileMetadata.objectKey())
+                .setFilename(fileMetadata.fileName())
+                .setContentType(fileMetadata.contentType())
+                .setSizeBytes(fileMetadata.sizeBytes())
+                .setMd5(fileMetadata.md5())
+                .setSha256(fileMetadata.sha256())
+                .setCreatedAt(LocalDateTime.ofInstant(createdAt, java.time.ZoneOffset.UTC));
         var record = dslContext.newRecord(REPORT_FILE, reportFile);
         record.changed(REPORT_FILE.ID, false);
         var updated = dslContext.insertInto(REPORT_FILE)

@@ -18,35 +18,34 @@ public final class CurrentStateUpdateFixtures {
     }
 
     public static PaymentTxnCurrent paymentUpdate(long eventId, String status, Instant finalizedAt) {
-        var update = new PaymentTxnCurrent();
-        update.setInvoiceId("invoice-1");
-        update.setPaymentId("payment-1");
-        update.setDomainEventId(eventId);
-        update.setDomainEventCreatedAt(TimestampUtils.toLocalDateTime(
-                Instant.parse("2026-01-01T10:00:00Z").plusSeconds(eventId)
-        ));
-        update.setPartyId("party-1");
-        update.setShopId("shop-1");
-        update.setCreatedAt(toLocalDateTime(Instant.parse("2026-01-01T10:00:00Z")));
-        update.setFinalizedAt(toLocalDateTime(finalizedAt));
-        update.setStatus(status);
-        update.setProviderId("provider-1");
-        update.setTerminalId("terminal-1");
-        update.setAmount(1000L);
-        update.setFee(10L);
-        update.setCurrency("RUB");
-        update.setTrxId("trx-1");
-        update.setExternalId("external-1");
-        update.setRrn("rrn-1");
-        update.setApprovalCode("approval-1");
-        update.setPaymentToolType("bank_card");
-        update.setOriginalAmount(1000L);
-        update.setOriginalCurrency("RUB");
-        update.setConvertedAmount(1000L);
-        update.setExchangeRateInternal(BigDecimal.ONE);
-        update.setProviderAmount(1000L);
-        update.setProviderCurrency("RUB");
-        return update;
+        return new PaymentTxnCurrent()
+                .setInvoiceId("invoice-1")
+                .setPaymentId("payment-1")
+                .setDomainEventId(eventId)
+                .setDomainEventCreatedAt(TimestampUtils.toLocalDateTime(
+                        Instant.parse("2026-01-01T10:00:00Z").plusSeconds(eventId)
+                ))
+                .setPartyId("party-1")
+                .setShopId("shop-1")
+                .setCreatedAt(toLocalDateTime(Instant.parse("2026-01-01T10:00:00Z")))
+                .setFinalizedAt(toLocalDateTime(finalizedAt))
+                .setStatus(status)
+                .setProviderId("provider-1")
+                .setTerminalId("terminal-1")
+                .setAmount(1000L)
+                .setFee(10L)
+                .setCurrency("RUB")
+                .setTrxId("trx-1")
+                .setExternalId("external-1")
+                .setRrn("rrn-1")
+                .setApprovalCode("approval-1")
+                .setPaymentToolType("bank_card")
+                .setOriginalAmount(1000L)
+                .setOriginalCurrency("RUB")
+                .setConvertedAmount(1000L)
+                .setExchangeRateInternal(BigDecimal.ONE)
+                .setProviderAmount(1000L)
+                .setProviderCurrency("RUB");
     }
 
     public static WithdrawalTxnCurrent withdrawalUpdate(
@@ -55,35 +54,34 @@ public final class CurrentStateUpdateFixtures {
             Instant finalizedAt,
             String trxId
     ) {
-        var update = new WithdrawalTxnCurrent();
-        update.setWithdrawalId("withdrawal-1");
-        update.setDomainEventId(eventId);
-        update.setDomainEventCreatedAt(TimestampUtils.toLocalDateTime(
-                Instant.parse("2026-01-01T11:00:00Z").plusSeconds(eventId)
-        ));
-        update.setPartyId("party-1");
-        update.setWalletId("wallet-1");
-        update.setDestinationId("destination-1");
-        update.setCreatedAt(toLocalDateTime(Instant.parse("2026-01-01T11:00:00Z")));
-        update.setFinalizedAt(toLocalDateTime(finalizedAt));
-        update.setStatus(status);
-        update.setProviderId("provider-1");
-        update.setTerminalId("terminal-1");
-        update.setAmount(2000L);
-        update.setFee(20L);
-        update.setCurrency("RUB");
-        update.setTrxId(trxId);
-        update.setExternalId("external-1");
-        update.setErrorCode("failure");
-        update.setErrorReason("reason");
-        update.setErrorSubFailure("sub");
-        update.setOriginalAmount(2100L);
-        update.setOriginalCurrency("USD");
-        update.setConvertedAmount(2000L);
-        update.setExchangeRateInternal(new BigDecimal("0.9523809524"));
-        update.setProviderAmount(2000L);
-        update.setProviderCurrency("RUB");
-        return update;
+        return new WithdrawalTxnCurrent()
+                .setWithdrawalId("withdrawal-1")
+                .setDomainEventId(eventId)
+                .setDomainEventCreatedAt(TimestampUtils.toLocalDateTime(
+                        Instant.parse("2026-01-01T11:00:00Z").plusSeconds(eventId)
+                ))
+                .setPartyId("party-1")
+                .setWalletId("wallet-1")
+                .setDestinationId("destination-1")
+                .setCreatedAt(toLocalDateTime(Instant.parse("2026-01-01T11:00:00Z")))
+                .setFinalizedAt(toLocalDateTime(finalizedAt))
+                .setStatus(status)
+                .setProviderId("provider-1")
+                .setTerminalId("terminal-1")
+                .setAmount(2000L)
+                .setFee(20L)
+                .setCurrency("RUB")
+                .setTrxId(trxId)
+                .setExternalId("external-1")
+                .setErrorCode("failure")
+                .setErrorReason("reason")
+                .setErrorSubFailure("sub")
+                .setOriginalAmount(2100L)
+                .setOriginalCurrency("USD")
+                .setConvertedAmount(2000L)
+                .setExchangeRateInternal(new BigDecimal("0.9523809524"))
+                .setProviderAmount(2000L)
+                .setProviderCurrency("RUB");
     }
 
     public static WithdrawalSessionBindingCurrent withdrawalSessionBindingUpdate(
@@ -92,12 +90,11 @@ public final class CurrentStateUpdateFixtures {
             long eventId,
             Instant eventCreatedAt
     ) {
-        var update = new WithdrawalSessionBindingCurrent();
-        update.setSessionId(sessionId);
-        update.setWithdrawalId(withdrawalId);
-        update.setDomainEventId(eventId);
-        update.setDomainEventCreatedAt(toLocalDateTime(eventCreatedAt));
-        return update;
+        return new WithdrawalSessionBindingCurrent()
+                .setSessionId(sessionId)
+                .setWithdrawalId(withdrawalId)
+                .setDomainEventId(eventId)
+                .setDomainEventCreatedAt(toLocalDateTime(eventCreatedAt));
     }
 
     private static LocalDateTime toLocalDateTime(Instant value) {

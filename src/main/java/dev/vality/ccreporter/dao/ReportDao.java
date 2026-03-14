@@ -58,16 +58,16 @@ public class ReportDao {
         var timeRange = reportQueryService.extractTimeRange(query);
         var queryJson = reportQueryJsonSerializer.serialize(query);
         var queryHash = reportQueryService.hash(queryJson);
-        var reportJob = new ReportJob();
-        reportJob.setReportType(toJooqReportType(reportType));
-        reportJob.setFileType(toJooqFileType(fileType));
-        reportJob.setQueryJson(JSONB.jsonb(queryJson));
-        reportJob.setQueryHash(queryHash);
-        reportJob.setRequestedTimeFrom(toLocalDateTime(timeRange.from()));
-        reportJob.setRequestedTimeTo(toLocalDateTime(timeRange.to()));
-        reportJob.setTimezone(timezone);
-        reportJob.setCreatedBy(createdBy);
-        reportJob.setIdempotencyKey(StringUtils.hasText(idempotencyKey) ? idempotencyKey : null);
+        var reportJob = new ReportJob()
+                .setReportType(toJooqReportType(reportType))
+                .setFileType(toJooqFileType(fileType))
+                .setQueryJson(JSONB.jsonb(queryJson))
+                .setQueryHash(queryHash)
+                .setRequestedTimeFrom(toLocalDateTime(timeRange.from()))
+                .setRequestedTimeTo(toLocalDateTime(timeRange.to()))
+                .setTimezone(timezone)
+                .setCreatedBy(createdBy)
+                .setIdempotencyKey(StringUtils.hasText(idempotencyKey) ? idempotencyKey : null);
 
         try {
             var record = dslContext.newRecord(REPORT_JOB, reportJob);
@@ -272,21 +272,20 @@ public class ReportDao {
     }
 
     private static ReportFile mapFile(Record record) {
-        var reportFile = new ReportFile();
-        reportFile.setReportId(record.get(REPORT_FILE.REPORT_ID));
-        reportFile.setFileId(record.get(REPORT_FILE.FILE_ID));
-        reportFile.setFileType(record.get(REPORT_FILE.FILE_TYPE));
-        reportFile.setFilename(record.get(REPORT_FILE.FILENAME));
-        reportFile.setContentType(record.get(REPORT_FILE.CONTENT_TYPE));
-        reportFile.setMd5(record.get(REPORT_FILE.MD5));
-        reportFile.setSha256(record.get(REPORT_FILE.SHA256));
-        reportFile.setSizeBytes(record.get(REPORT_FILE.SIZE_BYTES));
-        reportFile.setCreatedAt(toLocalDateTime(
-                toInstant(record.get(timestampField(REPORT_FILE.CREATED_AT, "created_at_ts")))
-        ));
-        reportFile.setBucket(record.get(REPORT_FILE.BUCKET));
-        reportFile.setObjectKey(record.get(REPORT_FILE.OBJECT_KEY));
-        return reportFile;
+        return new ReportFile()
+                .setReportId(record.get(REPORT_FILE.REPORT_ID))
+                .setFileId(record.get(REPORT_FILE.FILE_ID))
+                .setFileType(record.get(REPORT_FILE.FILE_TYPE))
+                .setFilename(record.get(REPORT_FILE.FILENAME))
+                .setContentType(record.get(REPORT_FILE.CONTENT_TYPE))
+                .setMd5(record.get(REPORT_FILE.MD5))
+                .setSha256(record.get(REPORT_FILE.SHA256))
+                .setSizeBytes(record.get(REPORT_FILE.SIZE_BYTES))
+                .setCreatedAt(toLocalDateTime(
+                        toInstant(record.get(timestampField(REPORT_FILE.CREATED_AT, "created_at_ts")))
+                ))
+                .setBucket(record.get(REPORT_FILE.BUCKET))
+                .setObjectKey(record.get(REPORT_FILE.OBJECT_KEY));
     }
 
     private static StoredReportFile mapStoredReportFile(
