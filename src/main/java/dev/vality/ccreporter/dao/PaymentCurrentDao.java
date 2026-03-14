@@ -46,7 +46,6 @@ public class PaymentCurrentDao {
                         patchValue(update.getTerminalId(), PAYMENT_TXN_CURRENT.TERMINAL_ID)
                 )
                 .set(PAYMENT_TXN_CURRENT.AMOUNT, patchValue(update.getAmount(), PAYMENT_TXN_CURRENT.AMOUNT))
-                .set(PAYMENT_TXN_CURRENT.FEE, patchValue(update.getFee(), PAYMENT_TXN_CURRENT.FEE))
                 .set(PAYMENT_TXN_CURRENT.CURRENCY, patchValue(update.getCurrency(), PAYMENT_TXN_CURRENT.CURRENCY))
                 .set(PAYMENT_TXN_CURRENT.TRX_ID, patchValue(update.getTrxId(), PAYMENT_TXN_CURRENT.TRX_ID))
                 .set(
@@ -65,14 +64,6 @@ public class PaymentCurrentDao {
                 .set(
                         PAYMENT_TXN_CURRENT.ERROR_SUMMARY,
                         patchValue(update.getErrorSummary(), PAYMENT_TXN_CURRENT.ERROR_SUMMARY)
-                )
-                .set(
-                        PAYMENT_TXN_CURRENT.ORIGINAL_AMOUNT,
-                        patchValue(update.getOriginalAmount(), PAYMENT_TXN_CURRENT.ORIGINAL_AMOUNT)
-                )
-                .set(
-                        PAYMENT_TXN_CURRENT.ORIGINAL_CURRENCY,
-                        patchValue(update.getOriginalCurrency(), PAYMENT_TXN_CURRENT.ORIGINAL_CURRENCY)
                 )
                 .set(
                         PAYMENT_TXN_CURRENT.CONVERTED_AMOUNT,

@@ -74,7 +74,6 @@ class ReportCsvServiceTest {
                         .thenReturn(Timestamp.from(Instant.parse("2026-01-01T11:00:00Z")));
                 when(resultSet.getObject("amount")).thenReturn(1000L);
                 when(resultSet.getObject("provider_amount")).thenReturn(990L);
-                when(resultSet.getObject("original_amount")).thenReturn(1100L);
                 when(resultSet.getObject("converted_amount")).thenReturn(1000L);
                 when(resultSet.getObject("invoice_id")).thenReturn("invoice-cursor-1");
                 when(resultSet.getObject("payment_id")).thenReturn("payment-cursor-1");
@@ -85,11 +84,9 @@ class ReportCsvServiceTest {
                 when(resultSet.getObject("shop_id")).thenReturn("shop-1");
                 when(resultSet.getObject("exchange_rate_internal")).thenReturn(new BigDecimal("1.1000000000"));
                 when(resultSet.getObject("provider_currency")).thenReturn("EUR");
-                when(resultSet.getObject("original_currency")).thenReturn("USD");
                 when(resultSet.getObject("currency")).thenReturn("RUB");
                 when(resultSet.getString("currency")).thenReturn("RUB");
                 when(resultSet.getString("provider_currency")).thenReturn("EUR");
-                when(resultSet.getString("original_currency")).thenReturn("USD");
 
                 var rowCallbackHandler = invocation.<RowCallbackHandler>getArgument(1);
                 rowCallbackHandler.processRow(resultSet);

@@ -79,8 +79,6 @@ public class WithdrawalEventProjector {
                 .setAmount(body.getAmount())
                 .setCurrency(body.getCurrency().getSymbolicCode())
                 .setExternalId(withdrawal.getExternalId())
-                .setOriginalAmount(quote != null ? quote.getCashFrom().getAmount() : null)
-                .setOriginalCurrency(quote != null ? quote.getCashFrom().getCurrency().getSymbolicCode() : null)
                 .setConvertedAmount(quote != null ? quote.getCashTo().getAmount() : null)
                 .setExchangeRateInternal(toRate(quote))
                 .setProviderAmount(quote != null ? quote.getCashTo().getAmount() : null)
@@ -120,9 +118,7 @@ public class WithdrawalEventProjector {
                 || !change.getTransfer().getPayload().getCreated().getTransfer().isSetCashflow()) {
             return Optional.empty();
         }
-        var postings = change.getTransfer().getPayload().getCreated().getTransfer().getCashflow().getPostings();
-        return Optional.of(baseUpdate(context)
-                .setFee(WithdrawalCashFlowExtractor.extractFee(postings)));
+        return Optional.of(baseUpdate(context));
     }
 
     private WithdrawalTxnCurrent baseUpdate(WithdrawalChangeContext context) {

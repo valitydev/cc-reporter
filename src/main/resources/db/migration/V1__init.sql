@@ -143,7 +143,6 @@ CREATE TABLE ccr.payment_txn_current (
   terminal_id VARCHAR,
 
   amount BIGINT NOT NULL,
-  fee BIGINT,
   currency VARCHAR NOT NULL,
 
   trx_id VARCHAR,
@@ -153,8 +152,6 @@ CREATE TABLE ccr.payment_txn_current (
   payment_tool_type VARCHAR,
   error_summary VARCHAR,
 
-  original_amount BIGINT,
-  original_currency VARCHAR,
   converted_amount BIGINT,
   exchange_rate_internal NUMERIC(20, 10),
   provider_amount BIGINT,
