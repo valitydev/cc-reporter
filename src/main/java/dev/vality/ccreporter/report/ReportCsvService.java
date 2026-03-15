@@ -77,8 +77,7 @@ public class ReportCsvService {
             "provider_amount",
             "provider_currency",
             "original_amount",
-            "original_currency",
-            "converted_amount"
+            "original_currency"
     );
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
@@ -201,8 +200,7 @@ public class ReportCsvService {
                                w.provider_amount AS provider_amount,
                                w.provider_currency AS provider_currency,
                                w.original_amount AS original_amount,
-                               w.original_currency AS original_currency,
-                               w.converted_amount AS converted_amount
+                               w.original_currency AS original_currency
                         FROM ccr.withdrawal_txn_current w
                         LEFT JOIN ccr.wallet_lookup wl ON wl.wallet_id = w.wallet_id
                         LEFT JOIN ccr.provider_lookup pl ON pl.provider_id = w.provider_id

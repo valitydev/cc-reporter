@@ -1,17 +1,17 @@
 package dev.vality.ccreporter.util;
 
+import lombok.experimental.UtilityClass;
+
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
-public final class TimestampUtils {
+@UtilityClass
+public class TimestampUtils {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_INSTANT;
-
-    private TimestampUtils() {
-    }
 
     public static Instant parse(String value) {
         return Instant.parse(value);

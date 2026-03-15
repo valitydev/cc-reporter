@@ -86,16 +86,8 @@ public class WithdrawalCurrentDao {
                         patchValue(update.getExternalId(), WITHDRAWAL_TXN_CURRENT.EXTERNAL_ID)
                 )
                 .set(
-                        WITHDRAWAL_TXN_CURRENT.ERROR_CODE,
-                        patchValue(update.getErrorCode(), WITHDRAWAL_TXN_CURRENT.ERROR_CODE)
-                )
-                .set(
-                        WITHDRAWAL_TXN_CURRENT.ERROR_REASON,
-                        patchValue(update.getErrorReason(), WITHDRAWAL_TXN_CURRENT.ERROR_REASON)
-                )
-                .set(
-                        WITHDRAWAL_TXN_CURRENT.ERROR_SUB_FAILURE,
-                        patchValue(update.getErrorSubFailure(), WITHDRAWAL_TXN_CURRENT.ERROR_SUB_FAILURE)
+                        WITHDRAWAL_TXN_CURRENT.ERROR_SUMMARY,
+                        patchValue(update.getErrorSummary(), WITHDRAWAL_TXN_CURRENT.ERROR_SUMMARY)
                 )
                 .set(
                         WITHDRAWAL_TXN_CURRENT.ORIGINAL_AMOUNT,
@@ -104,10 +96,6 @@ public class WithdrawalCurrentDao {
                 .set(
                         WITHDRAWAL_TXN_CURRENT.ORIGINAL_CURRENCY,
                         patchValue(update.getOriginalCurrency(), WITHDRAWAL_TXN_CURRENT.ORIGINAL_CURRENCY)
-                )
-                .set(
-                        WITHDRAWAL_TXN_CURRENT.CONVERTED_AMOUNT,
-                        patchValue(update.getConvertedAmount(), WITHDRAWAL_TXN_CURRENT.CONVERTED_AMOUNT)
                 )
                 .set(
                         WITHDRAWAL_TXN_CURRENT.EXCHANGE_RATE_INTERNAL,
@@ -172,12 +160,9 @@ public class WithdrawalCurrentDao {
                 && update.getFee() == null
                 && update.getCurrency() == null
                 && update.getExternalId() == null
-                && update.getErrorCode() == null
-                && update.getErrorReason() == null
-                && update.getErrorSubFailure() == null
+                && update.getErrorSummary() == null
                 && update.getOriginalAmount() == null
                 && update.getOriginalCurrency() == null
-                && update.getConvertedAmount() == null
                 && update.getExchangeRateInternal() == null
                 && update.getProviderAmount() == null
                 && update.getProviderCurrency() == null;

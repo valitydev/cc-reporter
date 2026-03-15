@@ -78,13 +78,12 @@ public final class CurrentStateTableFixtures {
                             withdrawal_id, domain_event_id, domain_event_created_at,
                             party_id, wallet_id, destination_id, created_at,
                             finalized_at, status, provider_id, terminal_id, amount, fee, currency, trx_id, external_id,
-                            error_code, error_reason, error_sub_failure, original_amount,
-                            original_currency, converted_amount, exchange_rate_internal,
+                            error_summary, original_amount, original_currency, exchange_rate_internal,
                             provider_amount, provider_currency, trx_search
                         )
                         VALUES (
-                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?, ?, ?
                         )
                         """,
                 withdrawalId,
@@ -104,11 +103,8 @@ public final class CurrentStateTableFixtures {
                 "trx-w-1",
                 "external-w-1",
                 null,
-                null,
-                null,
                 2100L,
                 "USD",
-                2000L,
                 new BigDecimal("1.0500000000"),
                 1990L,
                 "EUR",

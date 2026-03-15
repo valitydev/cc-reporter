@@ -1,6 +1,7 @@
 package dev.vality.ccreporter.ingestion.withdrawal;
 
 import dev.vality.ccreporter.domain.tables.pojos.WithdrawalTxnCurrent;
+import dev.vality.ccreporter.util.DomainCashFlowExtractor;
 import dev.vality.fistful.withdrawal.Change;
 import dev.vality.fistful.withdrawal.Event;
 import dev.vality.fistful.withdrawal.QuoteState;
@@ -15,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static dev.vality.ccreporter.util.DomainStatusUtils.PENDING_STATUS;
+import static dev.vality.ccreporter.util.DomainStatusUtils.extractErrorSummary;
 import static dev.vality.ccreporter.util.TimestampUtils.toOptionalLocalDateTime;
 
 @Component
@@ -73,7 +76,7 @@ public class WithdrawalEventProjector {
                 .setWalletId(withdrawal.getWalletId())
                 .setDestinationId(withdrawal.getDestinationId())
                 .setCreatedAt(toOptionalLocalDateTime(Instant.parse(withdrawal.getCreatedAt())))
-                .setStatus("pending")
+                .setStatus(PENDING_STATUS)
                 .setProviderId(route != null ? String.valueOf(route.getProviderId()) : null)
                 .setTerminalId(route != null ? String.valueOf(route.getTerminalId()) : null)
                 .setAmount(body.getAmount())
@@ -81,7 +84,6 @@ public class WithdrawalEventProjector {
                 .setExternalId(withdrawal.getExternalId())
                 .setOriginalAmount(quote != null ? quote.getCashFrom().getAmount() : null)
                 .setOriginalCurrency(quote != null ? quote.getCashFrom().getCurrency().getSymbolicCode() : null)
-                .setConvertedAmount(quote != null ? quote.getCashTo().getAmount() : null)
                 .setExchangeRateInternal(toRate(quote))
                 .setProviderAmount(quote != null ? quote.getCashTo().getAmount() : null)
                 .setProviderCurrency(quote != null ? quote.getCashTo().getCurrency().getSymbolicCode() : null));
@@ -102,14 +104,10 @@ public class WithdrawalEventProjector {
             return Optional.empty();
         }
         var status = change.getStatusChanged().getStatus();
-        var failure = status.isSetFailed() ? status.getFailed().getFailure() : null;
-        var subFailure = failure != null ? failure.getSub() : null;
         return Optional.of(baseUpdate(context)
                 .setFinalizedAt(toOptionalLocalDateTime(terminalFinalizedAt(status, context.eventCreatedAt())))
                 .setStatus(status.getSetField().getFieldName())
-                .setErrorCode(failure != null ? failure.getCode() : null)
-                .setErrorReason(failure != null ? failure.getReason() : null)
-                .setErrorSubFailure(subFailure != null ? subFailure.getCode() : null));
+                .setErrorSummary(extractErrorSummary(status)));
     }
 
     private Optional<WithdrawalTxnCurrent> transferCashFlowUpdate(WithdrawalChangeContext context, Change change) {
@@ -122,7 +120,7 @@ public class WithdrawalEventProjector {
         }
         var postings = change.getTransfer().getPayload().getCreated().getTransfer().getCashflow().getPostings();
         return Optional.of(baseUpdate(context)
-                .setFee(WithdrawalCashFlowExtractor.extractFee(postings)));
+                .setFee(DomainCashFlowExtractor.extractWithdrawalFee(postings)));
     }
 
     private WithdrawalTxnCurrent baseUpdate(WithdrawalChangeContext context) {

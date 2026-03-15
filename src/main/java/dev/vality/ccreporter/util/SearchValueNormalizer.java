@@ -1,12 +1,12 @@
 package dev.vality.ccreporter.util;
 
+import lombok.experimental.UtilityClass;
+
 import java.util.Locale;
 import java.util.stream.Stream;
 
-public final class SearchValueNormalizer {
-
-    private SearchValueNormalizer() {
-    }
+@UtilityClass
+public class SearchValueNormalizer {
 
     public static String normalize(String... values) {
         return Stream.of(values)

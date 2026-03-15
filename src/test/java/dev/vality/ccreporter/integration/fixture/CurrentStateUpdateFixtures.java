@@ -73,12 +73,8 @@ public final class CurrentStateUpdateFixtures {
                 .setCurrency("RUB")
                 .setTrxId(trxId)
                 .setExternalId("external-1")
-                .setErrorCode("failure")
-                .setErrorReason("reason")
-                .setErrorSubFailure("sub")
                 .setOriginalAmount(2100L)
                 .setOriginalCurrency("USD")
-                .setConvertedAmount(2000L)
                 .setExchangeRateInternal(new BigDecimal("0.9523809524"))
                 .setProviderAmount(2000L)
                 .setProviderCurrency("RUB");
