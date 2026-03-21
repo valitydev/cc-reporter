@@ -80,8 +80,7 @@ class KafkaListenerIntegrationTest extends AbstractReportingIntegrationTest {
         assertThat(row.get("provider_id")).isEqualTo("100");
         assertThat(row.get("terminal_id")).isEqualTo("200");
         assertThat(row.get("trx_id")).isEqualTo("trx-payment-1");
-        assertThat(((Timestamp) row.get("finalized_at")).toLocalDateTime())
-                .isEqualTo(LocalDateTime.parse("2026-01-01T00:04:00"));
+        assertThat(row.get("finalized_at")).isEqualTo(Timestamp.valueOf(LocalDateTime.parse("2026-01-01T00:04:00")));
     }
 
     @Test
@@ -132,22 +131,37 @@ class KafkaListenerIntegrationTest extends AbstractReportingIntegrationTest {
                 SerializedIngestionEventFixtures.withdrawalSessionEvents()
         );
 
-        var row = KafkaIntegrationTestSupport.waitForRow(
+        var withdrawalRow = KafkaIntegrationTestSupport.waitForRow(
                 jdbcTemplate,
                 LISTENER_TIMEOUT,
                 """
-                        SELECT status, provider_id, terminal_id, fee, trx_id
+                        SELECT status, provider_id, terminal_id, fee, finalized_at
                         FROM ccr.withdrawal_txn_current
                         WHERE withdrawal_id = ?
                         """,
-                current -> "succeeded".equals(current.get("status")) && current.get("trx_id") != null,
+                current -> "succeeded".equals(current.get("status")),
                 SerializedIngestionEventFixtures.WITHDRAWAL_ID
         );
 
-        assertThat(row.get("status")).isEqualTo("succeeded");
-        assertThat(row.get("provider_id")).isEqualTo("300");
-        assertThat(row.get("terminal_id")).isEqualTo("400");
-        assertThat(row.get("fee")).isEqualTo(20L);
-        assertThat(row.get("trx_id")).isEqualTo("trx-withdrawal-1");
+        assertThat(withdrawalRow.get("status")).isEqualTo("succeeded");
+        assertThat(withdrawalRow.get("provider_id")).isEqualTo("300");
+        assertThat(withdrawalRow.get("terminal_id")).isEqualTo("400");
+        assertThat(withdrawalRow.get("fee")).isEqualTo(20L);
+        assertThat(withdrawalRow.get("finalized_at"))
+                .isEqualTo(Timestamp.valueOf(LocalDateTime.parse("2026-01-01T00:05:00")));
+
+        var sessionRow = KafkaIntegrationTestSupport.waitForRow(
+                jdbcTemplate,
+                LISTENER_TIMEOUT,
+                """
+                        SELECT trx_id
+                        FROM ccr.withdrawal_session
+                        WHERE withdrawal_id = ?
+                        """,
+                current -> current.get("trx_id") != null,
+                SerializedIngestionEventFixtures.WITHDRAWAL_ID
+        );
+
+        assertThat(sessionRow.get("trx_id")).isEqualTo("trx-withdrawal-1");
     }
 }

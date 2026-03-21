@@ -58,6 +58,14 @@ public final class SerializedIngestionEventFixtures {
         return RealWithdrawalIngestionEventFixtures.withdrawalCollectionEvents();
     }
 
+    public static List<MachineEvent> realWithdrawalSessionEvents() {
+        return RealWithdrawalIngestionEventFixtures.withdrawalSessionEvents();
+    }
+
+    public static List<MachineEvent> withdrawalSessionCollectionEvents() {
+        return RealWithdrawalIngestionEventFixtures.withdrawalSessionCollectionEvents();
+    }
+
     public static List<MachineEvent> withdrawalSessionEvents() {
         return WithdrawalIngestionEventFixtures.withdrawalSessionEvents();
     }

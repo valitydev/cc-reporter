@@ -3,16 +3,18 @@ package dev.vality.ccreporter.integration;
 import dev.vality.ccreporter.*;
 import dev.vality.ccreporter.ingestion.payment.PaymentIngestionService;
 import dev.vality.ccreporter.ingestion.withdrawal.WithdrawalIngestionService;
-import dev.vality.ccreporter.ingestion.withdrawal.session.WithdrawalSessionIngestionService;
+import dev.vality.ccreporter.ingestion.withdrawal.WithdrawalSessionIngestionService;
 import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
 import dev.vality.ccreporter.integration.fixture.ReportRequestFixtures;
 import dev.vality.ccreporter.integration.fixture.SerializedIngestionEventFixtures;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.nio.charset.StandardCharsets;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -97,6 +99,7 @@ class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegra
         assertThat(row.get("trx_id")).isEqualTo("test-provider-trx-1");
         assertThat(row.get("external_id")).isEqualTo("test-external-1");
         assertThat(row.get("payment_tool_type")).isEqualTo("bank_card");
+        assertThat(row.get("finalized_at")).isEqualTo(Timestamp.valueOf(LocalDateTime.parse("2026-03-12T21:50:39")));
         assertThat(row.get("original_amount")).isEqualTo(425000L);
         assertThat(row.get("original_currency")).isEqualTo("KZT");
         assertThat(row.get("converted_amount")).isEqualTo(748L);
@@ -104,7 +107,6 @@ class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegra
         assertThat(row.get("provider_amount")).isEqualTo(425000L);
         assertThat(row.get("provider_currency")).isEqualTo("KZT");
         assertThat(row.get("error_summary")).isNull();
-        assertThat(row.get("finalized_at")).isNotNull();
         assertThat(processed).isTrue();
         assertThat(report.getStatus()).isEqualTo(ReportStatus.created);
         assertThat(report.getRowsCount()).isEqualTo(1L);
@@ -150,6 +152,7 @@ class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegra
     @Test
     void realWithdrawalFixtureRunsThroughIngestionAndReportLifecycle() throws Exception {
         withdrawalIngestionService.handleEvents(SerializedIngestionEventFixtures.realWithdrawalEvents());
+        withdrawalSessionIngestionService.handleEvents(SerializedIngestionEventFixtures.realWithdrawalSessionEvents());
 
         var row = jdbcTemplate.queryForMap(
                 """
@@ -158,6 +161,11 @@ class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegra
                         FROM ccr.withdrawal_txn_current
                         WHERE withdrawal_id = ?
                         """,
+                SerializedIngestionEventFixtures.REAL_WITHDRAWAL_ID
+        );
+        var sessionCount = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM ccr.withdrawal_session WHERE withdrawal_id = ?",
+                Integer.class,
                 SerializedIngestionEventFixtures.REAL_WITHDRAWAL_ID
         );
         var reportId = reportingHandler.createReport(realWithdrawalsLifecycleRequest());
@@ -177,7 +185,9 @@ class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegra
         assertThat(row.get("currency")).isEqualTo("RUB");
         assertThat(row.get("wallet_id")).isEqualTo("3313");
         assertThat(row.get("external_id")).isEqualTo("test-withdrawal-external-1");
-        assertThat(row.get("finalized_at")).isNotNull();
+        assertThat(row.get("finalized_at"))
+                .isEqualTo(Timestamp.valueOf(LocalDateTime.parse("2026-02-17T18:33:00.283712")));
+        assertThat(sessionCount).isEqualTo(2);
         assertThat(processed).isTrue();
         assertThat(report.getStatus()).isEqualTo(ReportStatus.created);
         assertThat(report.getRowsCount()).isEqualTo(1L);
@@ -221,6 +231,8 @@ class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegra
     @Test
     void withdrawalCollectionFixtureBuildsMultiRowReport() throws Exception {
         withdrawalIngestionService.handleEvents(SerializedIngestionEventFixtures.withdrawalCollectionEvents());
+        withdrawalSessionIngestionService.handleEvents(
+                SerializedIngestionEventFixtures.withdrawalSessionCollectionEvents());
 
         var reportId = reportingHandler.createReport(withdrawalCollectionLifecycleRequest());
         var processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-03-14T00:00:00Z"));

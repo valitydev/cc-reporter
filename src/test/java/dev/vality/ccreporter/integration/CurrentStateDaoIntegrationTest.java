@@ -1,9 +1,9 @@
 package dev.vality.ccreporter.integration;
 
-import dev.vality.ccreporter.dao.PaymentCurrentDao;
 import dev.vality.ccreporter.dao.DisplayNameLookupDao;
-import dev.vality.ccreporter.dao.WithdrawalCurrentDao;
-import dev.vality.ccreporter.dao.WithdrawalSessionBindingDao;
+import dev.vality.ccreporter.dao.PaymentTxnCurrentDao;
+import dev.vality.ccreporter.dao.WithdrawalSessionDao;
+import dev.vality.ccreporter.dao.WithdrawalTxnCurrentDao;
 import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
 import dev.vality.ccreporter.integration.fixture.CurrentStateUpdateFixtures;
 import org.junit.jupiter.api.Test;
@@ -23,25 +23,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CurrentStateDaoIntegrationTest extends AbstractReportingIntegrationTest {
 
     @Autowired
-    private PaymentCurrentDao paymentCurrentDao;
+    private PaymentTxnCurrentDao paymentTxnCurrentDao;
 
     @Autowired
-    private WithdrawalCurrentDao withdrawalCurrentDao;
+    private WithdrawalTxnCurrentDao withdrawalTxnCurrentDao;
 
     @Autowired
-    private WithdrawalSessionBindingDao withdrawalSessionBindingDao;
+    private WithdrawalSessionDao withdrawalSessionDao;
 
     @Autowired
     private DisplayNameLookupDao displayNameLookupDao;
 
     @Test
-    void paymentUpsertIsMonotonicAndKeepsFirstFinalizedAt() {
+    void paymentUpsertIsMonotonic() {
         var finalizedAt = Instant.parse("2026-01-01T10:10:00Z");
         var laterFinalizedAt = Instant.parse("2026-01-01T10:20:00Z");
 
-        paymentCurrentDao.upsert(CurrentStateUpdateFixtures.paymentUpdate(10L, "captured", finalizedAt));
-        paymentCurrentDao.upsert(CurrentStateUpdateFixtures.paymentUpdate(11L, "refunded", laterFinalizedAt));
-        paymentCurrentDao.upsert(CurrentStateUpdateFixtures.paymentUpdate(9L, "pending", null));
+        paymentTxnCurrentDao.upsert(CurrentStateUpdateFixtures.paymentUpdate(10L, "captured", finalizedAt));
+        paymentTxnCurrentDao.upsert(CurrentStateUpdateFixtures.paymentUpdate(11L, "refunded", laterFinalizedAt));
+        paymentTxnCurrentDao.upsert(CurrentStateUpdateFixtures.paymentUpdate(9L, "pending", null));
 
         var row = jdbcTemplate.queryForMap(
                 """
@@ -54,43 +54,72 @@ class CurrentStateDaoIntegrationTest extends AbstractReportingIntegrationTest {
         assertThat(row.get("domain_event_id")).isEqualTo(11L);
         assertThat(row.get("status")).isEqualTo("refunded");
         assertThat(((Timestamp) Objects.requireNonNull(row.get("finalized_at"))).toLocalDateTime())
-                .isEqualTo(LocalDateTime.ofInstant(finalizedAt, ZoneOffset.UTC));
+                .isEqualTo(LocalDateTime.ofInstant(laterFinalizedAt, ZoneOffset.UTC));
     }
 
     @Test
-    void withdrawalSessionBindingIsMonotonicAndResolvesWithdrawalId() {
-        withdrawalSessionBindingDao.upsert(CurrentStateUpdateFixtures.withdrawalSessionBindingUpdate(
+    void withdrawalSessionIsMonotonic() {
+        withdrawalSessionDao.upsert(CurrentStateUpdateFixtures.withdrawalSessionUpdate(
                 "session-1",
                 "withdrawal-1",
                 20L,
-                Instant.parse("2026-01-01T00:00:00Z")
+                Instant.parse("2026-01-01T00:00:00Z"),
+                null
         ));
-        withdrawalSessionBindingDao.upsert(CurrentStateUpdateFixtures.withdrawalSessionBindingUpdate(
+        withdrawalSessionDao.upsert(CurrentStateUpdateFixtures.withdrawalSessionUpdate(
                 "session-1",
                 "withdrawal-stale",
                 19L,
-                Instant.parse("2025-12-31T23:59:00Z")
+                Instant.parse("2025-12-31T23:59:00Z"),
+                null
         ));
 
-        assertThat(withdrawalSessionBindingDao.findWithdrawalId("session-1")).contains("withdrawal-1");
+        var row = jdbcTemplate.queryForMap(
+                "SELECT withdrawal_id FROM ccr.withdrawal_session WHERE session_id = 'session-1'"
+        );
+        assertThat(row.get("withdrawal_id")).isEqualTo("withdrawal-1");
     }
 
     @Test
-    void withdrawalUpsertIsMonotonicAndKeepsFirstFinalizedAt() {
+    void withdrawalSessionTrxIdIsSet() {
+        withdrawalSessionDao.upsert(CurrentStateUpdateFixtures.withdrawalSessionUpdate(
+                "session-2",
+                "withdrawal-2",
+                30L,
+                Instant.parse("2026-01-01T00:00:00Z"),
+                null
+        ));
+        withdrawalSessionDao.upsert(CurrentStateUpdateFixtures.withdrawalSessionUpdate(
+                "session-2",
+                "withdrawal-2",
+                31L,
+                Instant.parse("2026-01-01T00:01:00Z"),
+                "trx-123"
+        ));
+
+        var row = jdbcTemplate.queryForMap(
+                "SELECT trx_id, trx_search FROM ccr.withdrawal_session WHERE session_id = 'session-2'"
+        );
+        assertThat(row.get("trx_id")).isEqualTo("trx-123");
+        assertThat(row.get("trx_search")).isEqualTo("trx-123");
+    }
+
+    @Test
+    void withdrawalUpsertIsMonotonic() {
         var finalizedAt = Instant.parse("2026-01-01T11:10:00Z");
         var laterFinalizedAt = Instant.parse("2026-01-01T11:20:00Z");
 
-        withdrawalCurrentDao.upsert(
-                CurrentStateUpdateFixtures.withdrawalUpdate(30L, "succeeded", finalizedAt, "trx-1")
+        withdrawalTxnCurrentDao.upsert(
+                CurrentStateUpdateFixtures.withdrawalUpdate(30L, "succeeded", finalizedAt)
         );
-        withdrawalCurrentDao.upsert(
-                CurrentStateUpdateFixtures.withdrawalUpdate(31L, "failed", laterFinalizedAt, "trx-2")
+        withdrawalTxnCurrentDao.upsert(
+                CurrentStateUpdateFixtures.withdrawalUpdate(31L, "failed", laterFinalizedAt)
         );
-        withdrawalCurrentDao.upsert(CurrentStateUpdateFixtures.withdrawalUpdate(29L, "pending", null, "trx-stale"));
+        withdrawalTxnCurrentDao.upsert(CurrentStateUpdateFixtures.withdrawalUpdate(29L, "pending", null));
 
         var row = jdbcTemplate.queryForMap(
                 """
-                        SELECT domain_event_id, status, finalized_at, trx_id
+                        SELECT domain_event_id, status, finalized_at
                         FROM ccr.withdrawal_txn_current
                         WHERE withdrawal_id = 'withdrawal-1'
                         """
@@ -98,9 +127,8 @@ class CurrentStateDaoIntegrationTest extends AbstractReportingIntegrationTest {
 
         assertThat(row.get("domain_event_id")).isEqualTo(31L);
         assertThat(row.get("status")).isEqualTo("failed");
-        assertThat(row.get("trx_id")).isEqualTo("trx-2");
         assertThat(((Timestamp) Objects.requireNonNull(row.get("finalized_at"))).toLocalDateTime())
-                .isEqualTo(LocalDateTime.ofInstant(finalizedAt, ZoneOffset.UTC));
+                .isEqualTo(LocalDateTime.ofInstant(laterFinalizedAt, ZoneOffset.UTC));
     }
 
     @Test

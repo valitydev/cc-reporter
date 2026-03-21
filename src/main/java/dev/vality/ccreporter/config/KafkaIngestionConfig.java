@@ -5,7 +5,6 @@ import dev.vality.ccreporter.serde.thrift.MachineEventParser;
 import dev.vality.ccreporter.serde.thrift.ThriftDeserializer;
 import dev.vality.damsel.domain_config_v2.HistoricalCommit;
 import dev.vality.damsel.payment_processing.EventPayload;
-import dev.vality.fistful.withdrawal.Event;
 import dev.vality.machinegun.eventsink.SinkEvent;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -36,15 +35,15 @@ public class KafkaIngestionConfig {
     }
 
     @Bean
-    public MachineEventParser<Event> withdrawalEventMachineEventParser() {
-        return new MachineEventParser<>(new ThriftDeserializer<>(Event::new));
+    public MachineEventParser<dev.vality.fistful.withdrawal.TimestampedChange> withdrawalEventMachineEventParser() {
+        return new MachineEventParser<>(new ThriftDeserializer<>(dev.vality.fistful.withdrawal.TimestampedChange::new));
     }
 
     @Bean
-    public MachineEventParser<dev.vality.fistful.withdrawal_session.Event>
+    public MachineEventParser<dev.vality.fistful.withdrawal_session.TimestampedChange>
             withdrawalSessionEventMachineEventParser() {
         return new MachineEventParser<>(
-                new ThriftDeserializer<>(dev.vality.fistful.withdrawal_session.Event::new)
+                new ThriftDeserializer<>(dev.vality.fistful.withdrawal_session.TimestampedChange::new)
         );
     }
 

@@ -192,7 +192,7 @@ public class ReportCsvService {
                                w.status AS status,
                                w.amount AS amount,
                                w.currency AS currency,
-                               w.trx_id AS trx_id,
+                               ws.trx_id AS trx_id,
                                w.provider_id AS provider_id,
                                w.terminal_id AS terminal_id,
                                w.wallet_id AS wallet_id,
@@ -202,6 +202,13 @@ public class ReportCsvService {
                                w.original_amount AS original_amount,
                                w.original_currency AS original_currency
                         FROM ccr.withdrawal_txn_current w
+                        LEFT JOIN LATERAL (
+                            SELECT session_id, trx_id, trx_search
+                            FROM ccr.withdrawal_session ws
+                            WHERE ws.withdrawal_id = w.withdrawal_id
+                            ORDER BY ws.domain_event_created_at DESC, ws.domain_event_id DESC, ws.session_id DESC
+                            LIMIT 1
+                        ) ws ON true
                         LEFT JOIN ccr.wallet_lookup wl ON wl.wallet_id = w.wallet_id
                         LEFT JOIN ccr.provider_lookup pl ON pl.provider_id = w.provider_id
                         LEFT JOIN ccr.terminal_lookup tl ON tl.terminal_id = w.terminal_id
@@ -217,11 +224,11 @@ public class ReportCsvService {
         appendCommonFilters(sql, parameters, "w.wallet_id", "walletIds", query.getWalletIds());
         appendCommonFilters(sql, parameters, "w.provider_id", "providerIds", query.getProviderIds());
         appendCommonFilters(sql, parameters, "w.terminal_id", "terminalIds", query.getTerminalIds());
-        appendCommonFilters(sql, parameters, "w.trx_id", "trxIds", query.getTrxIds());
+        appendCommonFilters(sql, parameters, "ws.trx_id", "trxIds", query.getTrxIds());
         appendCommonFilters(sql, parameters, "w.currency", "currencies", query.getCurrencies());
         appendCommonFilters(sql, parameters, "w.status", "statuses", query.getStatuses());
         appendWithdrawalsSearchFilters(sql, parameters, query.getFilter());
-        sql.append(" ORDER BY w.created_at ASC, w.withdrawal_id ASC");
+        sql.append(" ORDER BY w.created_at ASC, w.withdrawal_id ASC, ws.session_id ASC");
         return writeRows(writer, sql.toString(), parameters, WITHDRAWAL_COLUMNS, zoneId);
     }
 
@@ -463,7 +470,7 @@ public class ReportCsvService {
                 "terminalTerm",
                 filter.getTerminalTerm()
         );
-        appendSearchFilter(sql, parameters, "lower(coalesce(w.trx_search, ''))", "trxTerm", filter.getTrxTerm());
+        appendSearchFilter(sql, parameters, "lower(coalesce(ws.trx_search, ''))", "trxTerm", filter.getTrxTerm());
     }
 
     private void appendSearchFilter(

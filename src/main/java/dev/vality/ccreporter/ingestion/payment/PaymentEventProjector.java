@@ -3,6 +3,7 @@ package dev.vality.ccreporter.ingestion.payment;
 import dev.vality.ccreporter.domain.tables.pojos.PaymentTxnCurrent;
 import dev.vality.ccreporter.util.DomainCashFlowExtractor;
 import dev.vality.ccreporter.util.ProxyStateExtractor;
+import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.damsel.payment_processing.EventPayload;
 import dev.vality.damsel.payment_processing.InvoiceChange;
 import dev.vality.damsel.payment_processing.InvoicePaymentChange;
@@ -18,6 +19,8 @@ import java.util.Optional;
 
 import static dev.vality.ccreporter.util.DomainStatusUtils.*;
 import static dev.vality.ccreporter.util.PaymentToolUtils.extractPaymentToolType;
+import static dev.vality.ccreporter.util.SearchValueNormalizer.normalize;
+import static dev.vality.ccreporter.util.TimestampUtils.toLocalDateTime;
 import static dev.vality.ccreporter.util.TimestampUtils.toOptionalLocalDateTime;
 import static dev.vality.ccreporter.util.TransactionExtraUtils.getConvertedAmount;
 import static dev.vality.ccreporter.util.TransactionExtraUtils.getExchangeRate;
@@ -47,24 +50,17 @@ public class PaymentEventProjector {
             return Optional.empty();
         }
 
-        var context = new PaymentChangeContext(
-                event.getSourceId(),
-                paymentChange.getId(),
-                event.getEventId(),
-                Instant.parse(event.getCreatedAt())
-        );
-
-        return paymentStartedUpdate(context, paymentChange)
-                .or(() -> paymentRouteChangedUpdate(context, paymentChange))
-                .or(() -> paymentCashChangedUpdate(context, paymentChange))
-                .or(() -> paymentCashFlowChangedUpdate(context, paymentChange))
-                .or(() -> paymentStatusChangedUpdate(context, paymentChange))
-                .or(() -> paymentTransactionBoundUpdate(context, paymentChange))
-                .or(() -> paymentProxyStateFallbackUpdate(context, paymentChange));
+        return paymentStartedUpdate(event, paymentChange)
+                .or(() -> paymentRouteChangedUpdate(event, paymentChange))
+                .or(() -> paymentCashChangedUpdate(event, paymentChange))
+                .or(() -> paymentCashFlowChangedUpdate(event, paymentChange))
+                .or(() -> paymentStatusChangedUpdate(event, paymentChange))
+                .or(() -> paymentTransactionBoundUpdate(event, paymentChange))
+                .or(() -> paymentProxyStateFallbackUpdate(event, paymentChange));
     }
 
     private Optional<PaymentTxnCurrent> paymentStartedUpdate(
-            PaymentChangeContext context,
+            MachineEvent event,
             InvoicePaymentChange paymentChange
     ) {
         if (!paymentChange.getPayload().isSetInvoicePaymentStarted()) {
@@ -74,10 +70,10 @@ public class PaymentEventProjector {
         var payment = started.getPayment();
         var cost = payment.getCost();
         var route = started.getRoute();
-        return Optional.of(baseUpdate(context)
+        return Optional.of(baseUpdate(event, paymentChange)
                 .setPartyId(payment.isSetPartyRef() ? payment.getPartyRef().getId() : null)
                 .setShopId(payment.isSetShopRef() ? payment.getShopRef().getId() : null)
-                .setCreatedAt(toOptionalLocalDateTime(Instant.parse(payment.getCreatedAt())))
+                .setCreatedAt(toLocalDateTime(payment.getCreatedAt()))
                 .setStatus(PENDING_STATUS)
                 .setProviderId(route != null ? String.valueOf(route.getProvider().getId()) : null)
                 .setTerminalId(route != null ? String.valueOf(route.getTerminal().getId()) : null)
@@ -90,46 +86,46 @@ public class PaymentEventProjector {
     }
 
     private Optional<PaymentTxnCurrent> paymentRouteChangedUpdate(
-            PaymentChangeContext context,
+            MachineEvent event,
             InvoicePaymentChange paymentChange
     ) {
         if (!paymentChange.getPayload().isSetInvoicePaymentRouteChanged()) {
             return Optional.empty();
         }
         var route = paymentChange.getPayload().getInvoicePaymentRouteChanged().getRoute();
-        return Optional.of(baseUpdate(context)
+        return Optional.of(baseUpdate(event, paymentChange)
                 .setProviderId(String.valueOf(route.getProvider().getId()))
                 .setTerminalId(String.valueOf(route.getTerminal().getId())));
     }
 
     private Optional<PaymentTxnCurrent> paymentCashChangedUpdate(
-            PaymentChangeContext context,
+            MachineEvent event,
             InvoicePaymentChange paymentChange
     ) {
         if (!paymentChange.getPayload().isSetInvoicePaymentCashChanged()) {
             return Optional.empty();
         }
         var cash = paymentChange.getPayload().getInvoicePaymentCashChanged().getNewCash();
-        return Optional.of(baseUpdate(context)
+        return Optional.of(baseUpdate(event, paymentChange)
                 .setAmount(cash.getAmount())
                 .setCurrency(cash.getCurrency().getSymbolicCode()));
     }
 
     private Optional<PaymentTxnCurrent> paymentCashFlowChangedUpdate(
-            PaymentChangeContext context,
+            MachineEvent event,
             InvoicePaymentChange paymentChange
     ) {
         if (!paymentChange.getPayload().isSetInvoicePaymentCashFlowChanged()) {
             return Optional.empty();
         }
         var postings = paymentChange.getPayload().getInvoicePaymentCashFlowChanged().getCashFlow();
-        return Optional.of(baseUpdate(context)
+        return Optional.of(baseUpdate(event, paymentChange)
                 .setAmount(DomainCashFlowExtractor.extractPaymentAmount(postings))
                 .setFee(DomainCashFlowExtractor.extractPaymentFee(postings)));
     }
 
     private Optional<PaymentTxnCurrent> paymentStatusChangedUpdate(
-            PaymentChangeContext context,
+            MachineEvent event,
             InvoicePaymentChange paymentChange
     ) {
         if (!paymentChange.getPayload().isSetInvoicePaymentStatusChanged()) {
@@ -137,8 +133,9 @@ public class PaymentEventProjector {
         }
         var status = paymentChange.getPayload().getInvoicePaymentStatusChanged().getStatus();
         var capturedCost = extractCapturedCost(status);
-        return Optional.of(baseUpdate(context)
-                .setFinalizedAt(toOptionalLocalDateTime(resolveTerminalFinalizedAt(status, context.eventCreatedAt())))
+        return Optional.of(baseUpdate(event, paymentChange)
+                .setFinalizedAt(
+                        toOptionalLocalDateTime(terminalFinalizedAt(status, Instant.parse(event.getCreatedAt()))))
                 .setStatus(status.getSetField().getFieldName())
                 .setErrorSummary(extractErrorSummary(status))
                 .setProviderAmount(capturedCost != null ? capturedCost.getAmount() : null)
@@ -146,7 +143,7 @@ public class PaymentEventProjector {
     }
 
     private Optional<PaymentTxnCurrent> paymentTransactionBoundUpdate(
-            PaymentChangeContext context,
+            MachineEvent event,
             InvoicePaymentChange paymentChange
     ) {
         var sessionPayload = sessionPayload(paymentChange);
@@ -155,16 +152,19 @@ public class PaymentEventProjector {
         }
         var trx = sessionPayload.getSessionTransactionBound().getTrx();
         var info = trx.getAdditionalInfo();
-        return Optional.of(baseUpdate(context)
+        var code = info != null ? info.getApprovalCode() : null;
+        var rrn = info != null ? info.getRrn() : null;
+        return Optional.of(baseUpdate(event, paymentChange)
                 .setTrxId(trx.getId())
-                .setRrn(info != null ? info.getRrn() : null)
-                .setApprovalCode(info != null ? info.getApprovalCode() : null)
+                .setRrn(rrn)
+                .setApprovalCode(code)
                 .setConvertedAmount(getConvertedAmount(trx))
-                .setExchangeRateInternal(getExchangeRate(trx)));
+                .setExchangeRateInternal(getExchangeRate(trx))
+                .setTrxSearch(normalize(trx.getId(), rrn, code)));
     }
 
     private Optional<PaymentTxnCurrent> paymentProxyStateFallbackUpdate(
-            PaymentChangeContext context,
+            MachineEvent event,
             InvoicePaymentChange paymentChange
     ) {
         var sessionPayload = sessionPayload(paymentChange);
@@ -175,16 +175,17 @@ public class PaymentEventProjector {
         if (trxId == null) {
             return Optional.empty();
         }
-        return Optional.of(baseUpdate(context)
-                .setTrxId(trxId));
+        return Optional.of(baseUpdate(event, paymentChange)
+                .setTrxId(trxId)
+                .setTrxSearch(normalize(trxId, null, null)));
     }
 
-    private PaymentTxnCurrent baseUpdate(PaymentChangeContext context) {
+    private PaymentTxnCurrent baseUpdate(MachineEvent event, InvoicePaymentChange paymentChange) {
         return new PaymentTxnCurrent()
-                .setInvoiceId(context.invoiceId())
-                .setPaymentId(context.paymentId())
-                .setDomainEventId(context.domainEventId())
-                .setDomainEventCreatedAt(toOptionalLocalDateTime(context.eventCreatedAt()));
+                .setInvoiceId(event.getSourceId())
+                .setPaymentId(paymentChange.getId())
+                .setDomainEventId(event.getEventId())
+                .setDomainEventCreatedAt(toLocalDateTime(event.getCreatedAt()));
     }
 
     private SessionChangePayload sessionPayload(InvoicePaymentChange paymentChange) {
@@ -194,11 +195,13 @@ public class PaymentEventProjector {
         return paymentChange.getPayload().getInvoicePaymentSessionChange().getPayload();
     }
 
-    private record PaymentChangeContext(
-            String invoiceId,
-            String paymentId,
-            long domainEventId,
-            Instant eventCreatedAt
-    ) {
+    private Instant terminalFinalizedAt(InvoicePaymentStatus status, Instant eventCreatedAt) {
+        if (status == null || status.getSetField() == null) {
+            return null;
+        }
+        return switch (status.getSetField()) {
+            case CAPTURED, CANCELLED, FAILED, REFUNDED, CHARGED_BACK -> eventCreatedAt;
+            default -> null;
+        };
     }
 }

@@ -3,53 +3,11 @@ package dev.vality.ccreporter.integration.fixture;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import dev.vality.damsel.domain.Cash;
-import dev.vality.damsel.domain.CashFlowAccount;
-import dev.vality.damsel.domain.CurrencyRef;
-import dev.vality.damsel.domain.FinalCashFlowAccount;
-import dev.vality.damsel.domain.FinalCashFlowPosting;
-import dev.vality.damsel.domain.AdditionalTransactionInfo;
-import dev.vality.damsel.domain.BankCard;
-import dev.vality.damsel.domain.InvoicePayment;
-import dev.vality.damsel.domain.InvoicePaymentCaptured;
-import dev.vality.damsel.domain.InvoicePaymentFailed;
-import dev.vality.damsel.domain.InvoicePaymentFlow;
-import dev.vality.damsel.domain.InvoicePaymentFlowInstant;
-import dev.vality.damsel.domain.InvoicePaymentPending;
-import dev.vality.damsel.domain.InvoicePaymentProcessed;
-import dev.vality.damsel.domain.InvoicePaymentStatus;
-import dev.vality.damsel.domain.MerchantCashFlowAccount;
-import dev.vality.damsel.domain.PartyConfigRef;
-import dev.vality.damsel.domain.Payer;
-import dev.vality.damsel.domain.PaymentTool;
-import dev.vality.damsel.domain.PaymentResourcePayer;
-import dev.vality.damsel.domain.PaymentRoute;
-import dev.vality.damsel.domain.PaymentServiceRef;
-import dev.vality.damsel.domain.PaymentTerminal;
-import dev.vality.damsel.domain.ProviderCashFlowAccount;
-import dev.vality.damsel.domain.ProviderRef;
-import dev.vality.damsel.domain.ShopConfigRef;
-import dev.vality.damsel.domain.SystemCashFlowAccount;
-import dev.vality.damsel.domain.TerminalRef;
-import dev.vality.damsel.domain.TransactionInfo;
-import dev.vality.damsel.domain.TargetInvoicePaymentStatus;
-import dev.vality.damsel.domain.ContactInfo;
-import dev.vality.damsel.domain.DisposablePaymentResource;
-import dev.vality.damsel.domain.Failure;
-import dev.vality.damsel.domain.OperationFailure;
-import dev.vality.damsel.payment_processing.EventPayload;
-import dev.vality.damsel.payment_processing.InvoiceChange;
-import dev.vality.damsel.payment_processing.InvoicePaymentCashFlowChanged;
-import dev.vality.damsel.payment_processing.InvoicePaymentChange;
-import dev.vality.damsel.payment_processing.InvoicePaymentChangePayload;
-import dev.vality.damsel.payment_processing.InvoicePaymentRouteChanged;
-import dev.vality.damsel.payment_processing.InvoicePaymentSessionChange;
-import dev.vality.damsel.payment_processing.InvoicePaymentStarted;
-import dev.vality.damsel.payment_processing.InvoicePaymentStatusChanged;
-import dev.vality.damsel.payment_processing.SessionChangePayload;
-import dev.vality.damsel.payment_processing.SessionTransactionBound;
-import dev.vality.damsel.domain.SubFailure;
 import dev.vality.ccreporter.serde.thrift.ThriftSerializer;
+import dev.vality.damsel.domain.*;
+import dev.vality.damsel.domain.InvoicePayment;
+import dev.vality.damsel.domain.InvoicePaymentPending;
+import dev.vality.damsel.payment_processing.*;
 import dev.vality.machinegun.eventsink.MachineEvent;
 import dev.vality.machinegun.msgpack.Value;
 import org.apache.thrift.TBase;
@@ -130,6 +88,10 @@ public final class RealPaymentIngestionEventFixtures {
         return COLLECTION_RESOURCE_NAMES.stream()
                 .flatMap(resourceName -> paymentEvents(resourceName).stream())
                 .toList();
+    }
+
+    static List<String> collectionResourceNames() {
+        return COLLECTION_RESOURCE_NAMES;
     }
 
     private static byte[] serialize(TBase<?, ?> payload) {

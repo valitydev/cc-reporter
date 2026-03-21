@@ -1,13 +1,15 @@
 package dev.vality.ccreporter.integration.fixture;
 
 import dev.vality.ccreporter.domain.tables.pojos.PaymentTxnCurrent;
-import dev.vality.ccreporter.domain.tables.pojos.WithdrawalSessionBindingCurrent;
+import dev.vality.ccreporter.domain.tables.pojos.WithdrawalSession;
 import dev.vality.ccreporter.domain.tables.pojos.WithdrawalTxnCurrent;
 import dev.vality.ccreporter.util.TimestampUtils;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
+
+import static dev.vality.ccreporter.util.SearchValueNormalizer.normalize;
 
 /**
  * Собирает доменные апдейты для DAO-тестов, чтобы сценарии не расползались из-за ручной сборки всех полей.
@@ -51,8 +53,7 @@ public final class CurrentStateUpdateFixtures {
     public static WithdrawalTxnCurrent withdrawalUpdate(
             long eventId,
             String status,
-            Instant finalizedAt,
-            String trxId
+            Instant finalizedAt
     ) {
         return new WithdrawalTxnCurrent()
                 .setWithdrawalId("withdrawal-1")
@@ -71,7 +72,6 @@ public final class CurrentStateUpdateFixtures {
                 .setAmount(2000L)
                 .setFee(20L)
                 .setCurrency("RUB")
-                .setTrxId(trxId)
                 .setExternalId("external-1")
                 .setOriginalAmount(2100L)
                 .setOriginalCurrency("USD")
@@ -80,17 +80,22 @@ public final class CurrentStateUpdateFixtures {
                 .setProviderCurrency("RUB");
     }
 
-    public static WithdrawalSessionBindingCurrent withdrawalSessionBindingUpdate(
+    public static WithdrawalSession withdrawalSessionUpdate(
             String sessionId,
             String withdrawalId,
             long eventId,
-            Instant eventCreatedAt
+            Instant eventCreatedAt,
+            String trxId
     ) {
-        return new WithdrawalSessionBindingCurrent()
+        var session = new WithdrawalSession()
                 .setSessionId(sessionId)
                 .setWithdrawalId(withdrawalId)
                 .setDomainEventId(eventId)
                 .setDomainEventCreatedAt(toLocalDateTime(eventCreatedAt));
+        if (trxId != null) {
+            session.setTrxId(trxId).setTrxSearch(normalize(trxId));
+        }
+        return session;
     }
 
     private static LocalDateTime toLocalDateTime(Instant value) {

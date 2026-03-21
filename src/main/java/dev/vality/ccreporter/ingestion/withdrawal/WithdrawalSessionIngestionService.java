@@ -1,8 +1,8 @@
 package dev.vality.ccreporter.ingestion.withdrawal;
 
-import dev.vality.ccreporter.dao.WithdrawalTxnCurrentDao;
+import dev.vality.ccreporter.dao.WithdrawalSessionDao;
 import dev.vality.ccreporter.serde.thrift.MachineEventParser;
-import dev.vality.fistful.withdrawal.TimestampedChange;
+import dev.vality.fistful.withdrawal_session.TimestampedChange;
 import dev.vality.machinegun.eventsink.MachineEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,11 +13,11 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class WithdrawalIngestionService {
+public class WithdrawalSessionIngestionService {
 
-    private final WithdrawalTxnCurrentDao withdrawalTxnCurrentDao;
-    private final WithdrawalEventProjector withdrawalEventProjector;
-    private final MachineEventParser<TimestampedChange> withdrawalEventMachineEventParser;
+    private final WithdrawalSessionDao withdrawalSessionDao;
+    private final WithdrawalSessionEventProjector withdrawalSessionEventProjector;
+    private final MachineEventParser<TimestampedChange> withdrawalSessionEventMachineEventParser;
 
     @Transactional
     public void handleEvents(List<MachineEvent> machineEvents) {
@@ -27,7 +27,7 @@ public class WithdrawalIngestionService {
     }
 
     private void handleEvent(MachineEvent event) {
-        var payload = withdrawalEventMachineEventParser.parse(event);
-        withdrawalEventProjector.project(event, payload).forEach(withdrawalTxnCurrentDao::upsert);
+        var payload = withdrawalSessionEventMachineEventParser.parse(event);
+        withdrawalSessionEventProjector.project(event, payload).forEach(withdrawalSessionDao::upsert);
     }
 }

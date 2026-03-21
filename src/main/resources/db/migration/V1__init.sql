@@ -124,44 +124,33 @@ CREATE TABLE ccr.wallet_lookup (
 
 CREATE TABLE ccr.payment_txn_current (
   id BIGSERIAL PRIMARY KEY,
-
   invoice_id VARCHAR NOT NULL,
   payment_id VARCHAR NOT NULL,
-
-  -- Domain event order comes from MachineEvent.eventId.
   domain_event_id BIGINT NOT NULL,
   domain_event_created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-
-  party_id VARCHAR NOT NULL,
+  party_id VARCHAR,
   shop_id VARCHAR,
-
-  created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+  created_at TIMESTAMP WITHOUT TIME ZONE,
   finalized_at TIMESTAMP WITHOUT TIME ZONE,
-  status VARCHAR NOT NULL,
-
+  status VARCHAR,
   provider_id VARCHAR,
   terminal_id VARCHAR,
-
-  amount BIGINT NOT NULL,
+  amount BIGINT,
   fee BIGINT,
-  currency VARCHAR NOT NULL,
-
+  currency VARCHAR,
   trx_id VARCHAR,
   external_id VARCHAR,
   rrn VARCHAR,
   approval_code VARCHAR,
   payment_tool_type VARCHAR,
   error_summary VARCHAR,
-
   original_amount BIGINT,
   original_currency VARCHAR,
   converted_amount BIGINT,
   exchange_rate_internal NUMERIC(20, 10),
   provider_amount BIGINT,
   provider_currency VARCHAR,
-
   trx_search VARCHAR,
-
   updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
 
   CONSTRAINT payment_txn_current_event_chk CHECK (domain_event_id > 0),
@@ -169,45 +158,42 @@ CREATE TABLE ccr.payment_txn_current (
 );
 
 CREATE TABLE ccr.withdrawal_txn_current (
-  id BIGSERIAL PRIMARY KEY,
-
-  withdrawal_id VARCHAR NOT NULL,
-
-  -- Domain event order comes from MachineEvent.eventId.
+  withdrawal_id VARCHAR PRIMARY KEY,
   domain_event_id BIGINT NOT NULL,
   domain_event_created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-
-  party_id VARCHAR NOT NULL,
+  party_id VARCHAR,
   wallet_id VARCHAR,
   destination_id VARCHAR,
-
-  created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+  created_at TIMESTAMP WITHOUT TIME ZONE,
   finalized_at TIMESTAMP WITHOUT TIME ZONE,
-  status VARCHAR NOT NULL,
-
+  status VARCHAR,
   provider_id VARCHAR,
   terminal_id VARCHAR,
-
-  amount BIGINT NOT NULL,
+  amount BIGINT,
   fee BIGINT,
-  currency VARCHAR NOT NULL,
-
-  trx_id VARCHAR,
+  currency VARCHAR,
   external_id VARCHAR,
   error_summary VARCHAR,
-
   original_amount BIGINT,
   original_currency VARCHAR,
   exchange_rate_internal NUMERIC(20, 10),
   provider_amount BIGINT,
   provider_currency VARCHAR,
-
-  trx_search VARCHAR,
-
   updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
 
-  CONSTRAINT withdrawal_txn_current_event_chk CHECK (domain_event_id > 0),
-  CONSTRAINT withdrawal_txn_current_uniq UNIQUE (withdrawal_id)
+  CONSTRAINT withdrawal_txn_current_event_chk CHECK (domain_event_id > 0)
+);
+
+CREATE TABLE ccr.withdrawal_session (
+  session_id VARCHAR PRIMARY KEY,
+  domain_event_id BIGINT NOT NULL,
+  domain_event_created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+  withdrawal_id VARCHAR,
+  trx_id VARCHAR,
+  trx_search VARCHAR,
+  updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
+
+  CONSTRAINT withdrawal_session_event_chk CHECK (domain_event_id > 0)
 );
 
 CREATE INDEX report_job_created_by_created_at_idx
@@ -276,10 +262,10 @@ CREATE INDEX payment_txn_trx_trgm_idx
   ON ccr.payment_txn_current USING gin (trx_search gin_trgm_ops);
 
 CREATE INDEX withdrawal_txn_created_at_idx
-  ON ccr.withdrawal_txn_current (created_at DESC, id DESC);
+  ON ccr.withdrawal_txn_current (created_at DESC, withdrawal_id);
 
 CREATE INDEX withdrawal_txn_finalized_at_idx
-  ON ccr.withdrawal_txn_current (finalized_at DESC, id DESC)
+  ON ccr.withdrawal_txn_current (finalized_at DESC, withdrawal_id)
   WHERE finalized_at IS NOT NULL;
 
 CREATE INDEX withdrawal_txn_filters_idx
@@ -291,35 +277,14 @@ CREATE INDEX withdrawal_txn_filters_idx
     status,
     currency,
     created_at DESC,
-    id DESC
+    withdrawal_id
   );
 
-CREATE INDEX withdrawal_txn_trx_idx
-  ON ccr.withdrawal_txn_current (trx_id);
+CREATE INDEX withdrawal_session_trx_idx
+  ON ccr.withdrawal_session (trx_id);
 
-CREATE INDEX withdrawal_txn_trx_trgm_idx
-  ON ccr.withdrawal_txn_current USING gin (trx_search gin_trgm_ops);
+CREATE INDEX withdrawal_session_trx_trgm_idx
+  ON ccr.withdrawal_session USING gin (trx_search gin_trgm_ops);
 
-CREATE TABLE ccr.withdrawal_session_binding_current (
-  id BIGSERIAL PRIMARY KEY,
-  session_id VARCHAR NOT NULL,
-  withdrawal_id VARCHAR NOT NULL,
-  domain_event_id BIGINT NOT NULL,
-  domain_event_created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-  updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
-
-  CONSTRAINT withdrawal_session_binding_current_event_chk CHECK (domain_event_id > 0),
-  CONSTRAINT withdrawal_session_binding_current_session_uniq UNIQUE (session_id)
-);
-
-CREATE INDEX withdrawal_session_binding_current_withdrawal_idx
-  ON ccr.withdrawal_session_binding_current (withdrawal_id);
-
--- Ingest contract (implemented in application code):
--- payments:
---   INSERT ... ON CONFLICT (invoice_id, payment_id) DO UPDATE
---   ... WHERE ccr.payment_txn_current.domain_event_id < EXCLUDED.domain_event_id;
---
--- withdrawals:
---   INSERT ... ON CONFLICT (withdrawal_id) DO UPDATE
---   ... WHERE ccr.withdrawal_txn_current.domain_event_id < EXCLUDED.domain_event_id;
+CREATE INDEX withdrawal_session_withdrawal_idx
+  ON ccr.withdrawal_session (withdrawal_id);

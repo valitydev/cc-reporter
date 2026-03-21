@@ -79,7 +79,7 @@ public abstract class AbstractReportingIntegrationTest {
         jdbcTemplate.update("DELETE FROM ccr.report_job");
         jdbcTemplate.update("DELETE FROM ccr.payment_txn_current");
         jdbcTemplate.update("DELETE FROM ccr.withdrawal_txn_current");
-        jdbcTemplate.update("DELETE FROM ccr.withdrawal_session_binding_current");
+        jdbcTemplate.update("DELETE FROM ccr.withdrawal_session");
         jdbcTemplate.update("DELETE FROM ccr.shop_lookup");
         jdbcTemplate.update("DELETE FROM ccr.provider_lookup");
         jdbcTemplate.update("DELETE FROM ccr.terminal_lookup");

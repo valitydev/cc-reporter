@@ -2,7 +2,7 @@ package dev.vality.ccreporter.integration;
 
 import dev.vality.ccreporter.ingestion.payment.PaymentIngestionService;
 import dev.vality.ccreporter.ingestion.withdrawal.WithdrawalIngestionService;
-import dev.vality.ccreporter.ingestion.withdrawal.session.WithdrawalSessionIngestionService;
+import dev.vality.ccreporter.ingestion.withdrawal.WithdrawalSessionIngestionService;
 import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
 import dev.vality.ccreporter.integration.fixture.SerializedIngestionEventFixtures;
 import org.junit.jupiter.api.Test;
@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -52,14 +51,13 @@ class IngestionSerializedEventsIntegrationTest extends AbstractReportingIntegrat
         assertThat(row.get("trx_id")).isEqualTo("trx-payment-1");
         assertThat(row.get("rrn")).isEqualTo("rrn-payment-1");
         assertThat(row.get("approval_code")).isEqualTo("approval-payment-1");
+        assertThat(row.get("finalized_at")).isEqualTo(Timestamp.valueOf(LocalDateTime.parse("2026-01-01T00:04:00")));
         assertThat(row.get("original_amount")).isEqualTo(1000L);
         assertThat(row.get("original_currency")).isEqualTo("RUB");
         assertThat(row.get("converted_amount")).isEqualTo(900L);
         assertThat(row.get("exchange_rate_internal")).isEqualTo(new java.math.BigDecimal("0.9000000000"));
         assertThat(row.get("provider_amount")).isEqualTo(900L);
         assertThat(row.get("provider_currency")).isEqualTo("EUR");
-        assertThat(((Timestamp) Objects.requireNonNull(row.get("finalized_at"))).toLocalDateTime())
-                .isEqualTo(LocalDateTime.parse("2026-01-01T00:04:00"));
     }
 
     @Test
@@ -126,9 +124,9 @@ class IngestionSerializedEventsIntegrationTest extends AbstractReportingIntegrat
         withdrawalIngestionService.handleEvents(SerializedIngestionEventFixtures.withdrawalEvents());
         withdrawalSessionIngestionService.handleEvents(SerializedIngestionEventFixtures.withdrawalSessionEvents());
 
-        var row = jdbcTemplate.queryForMap(
+        var withdrawalRow = jdbcTemplate.queryForMap(
                 """
-                        SELECT status, provider_id, terminal_id, amount, fee, trx_id, wallet_id,
+                        SELECT status, provider_id, terminal_id, amount, fee, wallet_id, finalized_at,
                                original_amount, original_currency, provider_amount, provider_currency
                         FROM ccr.withdrawal_txn_current
                         WHERE withdrawal_id = ?
@@ -136,16 +134,28 @@ class IngestionSerializedEventsIntegrationTest extends AbstractReportingIntegrat
                 SerializedIngestionEventFixtures.WITHDRAWAL_ID
         );
 
-        assertThat(row.get("status")).isEqualTo("succeeded");
-        assertThat(row.get("provider_id")).isEqualTo("300");
-        assertThat(row.get("terminal_id")).isEqualTo("400");
-        assertThat(row.get("amount")).isEqualTo(1000L);
-        assertThat(row.get("fee")).isEqualTo(20L);
-        assertThat(row.get("trx_id")).isEqualTo("trx-withdrawal-1");
-        assertThat(row.get("wallet_id")).isEqualTo("wallet-serialized");
-        assertThat(row.get("original_amount")).isEqualTo(1200L);
-        assertThat(row.get("original_currency")).isEqualTo("USD");
-        assertThat(row.get("provider_amount")).isEqualTo(1000L);
-        assertThat(row.get("provider_currency")).isEqualTo("RUB");
+        assertThat(withdrawalRow.get("status")).isEqualTo("succeeded");
+        assertThat(withdrawalRow.get("provider_id")).isEqualTo("300");
+        assertThat(withdrawalRow.get("terminal_id")).isEqualTo("400");
+        assertThat(withdrawalRow.get("amount")).isEqualTo(1000L);
+        assertThat(withdrawalRow.get("fee")).isEqualTo(20L);
+        assertThat(withdrawalRow.get("wallet_id")).isEqualTo("wallet-serialized");
+        assertThat(withdrawalRow.get("finalized_at"))
+                .isEqualTo(Timestamp.valueOf(LocalDateTime.parse("2026-01-01T00:05:00")));
+        assertThat(withdrawalRow.get("original_amount")).isEqualTo(1200L);
+        assertThat(withdrawalRow.get("original_currency")).isEqualTo("USD");
+        assertThat(withdrawalRow.get("provider_amount")).isEqualTo(1000L);
+        assertThat(withdrawalRow.get("provider_currency")).isEqualTo("RUB");
+
+        var sessionRow = jdbcTemplate.queryForMap(
+                """
+                        SELECT trx_id
+                        FROM ccr.withdrawal_session
+                        WHERE withdrawal_id = ?
+                        """,
+                SerializedIngestionEventFixtures.WITHDRAWAL_ID
+        );
+
+        assertThat(sessionRow.get("trx_id")).isEqualTo("trx-withdrawal-1");
     }
 }

@@ -5,12 +5,12 @@ import dev.vality.ccreporter.PaymentsSearchFilter;
 import dev.vality.ccreporter.ReportStatus;
 import dev.vality.ccreporter.WithdrawalsSearchFilter;
 import dev.vality.ccreporter.dao.DisplayNameLookupDao;
+import dev.vality.ccreporter.ingestion.payment.PaymentIngestionService;
+import dev.vality.ccreporter.ingestion.withdrawal.WithdrawalIngestionService;
 import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
 import dev.vality.ccreporter.integration.fixture.CurrentStateTableFixtures;
 import dev.vality.ccreporter.integration.fixture.ReportRequestFixtures;
 import dev.vality.ccreporter.integration.fixture.SerializedIngestionEventFixtures;
-import dev.vality.ccreporter.ingestion.payment.PaymentIngestionService;
-import dev.vality.ccreporter.ingestion.withdrawal.WithdrawalIngestionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -84,8 +84,8 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
         assertThat(processed).isTrue();
         assertThat(report.getStatus()).isEqualTo(ReportStatus.created);
         assertThat(report.getRowsCount()).isEqualTo(1L);
-        assertThat(csv).contains("invoice-filter-1,payment-filter-1");
-        assertThat(csv).doesNotContain("invoice-filter-2,payment-filter-2");
+        assertThat(csv).contains("invoice-filter-1,payment-filter-1,captured,10.00,RUB,trx-1");
+        assertThat(csv).doesNotContain("invoice-filter-2,payment-filter-2,captured,10.00,RUB,trx-2");
     }
 
     @Test
@@ -105,10 +105,18 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
         jdbcTemplate.update(
                 """
                         UPDATE ccr.withdrawal_txn_current
-                        SET wallet_id = ?, trx_id = ?, trx_search = ?
+                        SET wallet_id = ?
                         WHERE withdrawal_id = ?
                         """,
                 "wallet-2",
+                "withdrawal-filter-2"
+        );
+        jdbcTemplate.update(
+                """
+                        UPDATE ccr.withdrawal_session
+                        SET trx_id = ?, trx_search = ?
+                        WHERE withdrawal_id = ?
+                        """,
                 "trx-w-2",
                 "trx-w-2",
                 "withdrawal-filter-2"
@@ -137,6 +145,63 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
         assertThat(report.getRowsCount()).isEqualTo(1L);
         assertThat(csv).contains("withdrawal-filter-1,succeeded,20.00,RUB,trx-w-1");
         assertThat(csv).doesNotContain("withdrawal-filter-2,succeeded,20.00,RUB,trx-w-2");
+    }
+
+    @Test
+    void withdrawalsQueryUsesLatestSessionForTrxFilters() throws Exception {
+        CurrentStateTableFixtures.insertWithdrawalRow(
+                jdbcTemplate,
+                "withdrawal-filter-latest-session-1",
+                Instant.parse("2026-01-01T10:00:00Z"),
+                Instant.parse("2026-01-01T11:00:00Z")
+        );
+        CurrentStateTableFixtures.insertWithdrawalSessionRow(
+                jdbcTemplate,
+                "session-withdrawal-filter-latest-session-1-retry",
+                "withdrawal-filter-latest-session-1",
+                2L,
+                Instant.parse("2026-01-01T10:30:00Z"),
+                "trx-w-2"
+        );
+
+        var request = ReportRequestFixtures.withdrawals("withdrawals-filter-latest-session-1");
+        var filter = new WithdrawalsSearchFilter();
+        filter.setTrxTerm("trx-w-1");
+        request.getQuery().getWithdrawals().setFilter(filter);
+        var reportId = reportingHandler.createReport(request);
+
+        var processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
+
+        var report = reportingHandler.getReport(new GetReportRequest(reportId));
+        var csv = new String(
+                stubFileStorageClient.getStoredContent(report.getFile().getFileId()),
+                StandardCharsets.UTF_8
+        );
+
+        assertThat(processed).isTrue();
+        assertThat(report.getStatus()).isEqualTo(ReportStatus.created);
+        assertThat(report.getRowsCount()).isEqualTo(0L);
+        assertThat(csv.lines().count()).isEqualTo(1L);
+
+        request = ReportRequestFixtures.withdrawals("withdrawals-filter-latest-session-2");
+        filter = new WithdrawalsSearchFilter();
+        filter.setTrxTerm("trx-w-2");
+        request.getQuery().getWithdrawals().setFilter(filter);
+        reportId = reportingHandler.createReport(request);
+
+        processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:01:00Z"));
+
+        report = reportingHandler.getReport(new GetReportRequest(reportId));
+        csv = new String(
+                stubFileStorageClient.getStoredContent(report.getFile().getFileId()),
+                StandardCharsets.UTF_8
+        );
+
+        assertThat(processed).isTrue();
+        assertThat(report.getStatus()).isEqualTo(ReportStatus.created);
+        assertThat(report.getRowsCount()).isEqualTo(1L);
+        assertThat(csv).contains("withdrawal-filter-latest-session-1,succeeded,20.00,RUB,trx-w-2");
+        assertThat(csv).doesNotContain("trx-w-1");
     }
 
     @Test
@@ -205,7 +270,7 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
         assertThat(processed).isTrue();
         assertThat(report.getStatus()).isEqualTo(ReportStatus.created);
         assertThat(report.getRowsCount()).isEqualTo(1L);
-        assertThat(csv).contains("withdrawal-lookup-1,succeeded,20.00,RUB,trx-w-1");
+        assertThat(csv).contains("withdrawal-lookup-1,succeeded,20.00,RUB");
     }
 
     @Test

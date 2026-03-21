@@ -1,6 +1,6 @@
 package dev.vality.ccreporter.ingestion.payment;
 
-import dev.vality.ccreporter.dao.PaymentCurrentDao;
+import dev.vality.ccreporter.dao.PaymentTxnCurrentDao;
 import dev.vality.ccreporter.serde.thrift.MachineEventParser;
 import dev.vality.damsel.payment_processing.EventPayload;
 import dev.vality.machinegun.eventsink.MachineEvent;
@@ -15,7 +15,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PaymentIngestionService {
 
-    private final PaymentCurrentDao paymentCurrentDao;
+    private final PaymentTxnCurrentDao paymentTxnCurrentDao;
     private final PaymentEventProjector paymentEventProjector;
     private final MachineEventParser<EventPayload> paymentEventPayloadMachineEventParser;
 
@@ -28,6 +28,6 @@ public class PaymentIngestionService {
 
     private void handleEvent(MachineEvent event) {
         var payload = paymentEventPayloadMachineEventParser.parse(event);
-        paymentEventProjector.project(event, payload).forEach(paymentCurrentDao::upsert);
+        paymentEventProjector.project(event, payload).forEach(paymentTxnCurrentDao::upsert);
     }
 }

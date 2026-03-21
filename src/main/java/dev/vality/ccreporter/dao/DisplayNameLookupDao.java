@@ -1,21 +1,15 @@
 package dev.vality.ccreporter.dao;
 
-import dev.vality.ccreporter.util.SearchValueNormalizer;
 import lombok.RequiredArgsConstructor;
-import org.jooq.DSLContext;
-import org.jooq.Field;
+import org.jooq.*;
 import org.jooq.Record;
-import org.jooq.Table;
-import org.jooq.TableField;
 import org.jooq.impl.DSL;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 
-import static dev.vality.ccreporter.domain.Tables.PROVIDER_LOOKUP;
-import static dev.vality.ccreporter.domain.Tables.SHOP_LOOKUP;
-import static dev.vality.ccreporter.domain.Tables.TERMINAL_LOOKUP;
-import static dev.vality.ccreporter.domain.Tables.WALLET_LOOKUP;
+import static dev.vality.ccreporter.domain.Tables.*;
+import static dev.vality.ccreporter.util.SearchValueNormalizer.normalize;
 
 @Repository
 @RequiredArgsConstructor
@@ -180,13 +174,13 @@ public class DisplayNameLookupDao {
         dslContext.insertInto(table)
                 .set(idField, id)
                 .set(nameField, name)
-                .set(searchField, SearchValueNormalizer.normalize(id, name))
+                .set(searchField, normalize(id, name))
                 .set(versionField, dominantVersionId)
                 .set(deletedField, false)
                 .onConflict(idField)
                 .doUpdate()
                 .set(nameField, name)
-                .set(searchField, SearchValueNormalizer.normalize(id, name))
+                .set(searchField, normalize(id, name))
                 .set(versionField, dominantVersionId)
                 .set(deletedField, false)
                 .set(updatedAtField(table), UTC_NOW)
@@ -210,13 +204,13 @@ public class DisplayNameLookupDao {
         dslContext.insertInto(table)
                 .set(idField, id)
                 .set(nameField, DSL.castNull(nameField.getDataType()))
-                .set(searchField, SearchValueNormalizer.normalize(id))
+                .set(searchField, normalize(id))
                 .set(versionField, dominantVersionId)
                 .set(deletedField, true)
                 .onConflict(idField)
                 .doUpdate()
                 .set(nameField, DSL.castNull(nameField.getDataType()))
-                .set(searchField, SearchValueNormalizer.normalize(id))
+                .set(searchField, normalize(id))
                 .set(versionField, dominantVersionId)
                 .set(deletedField, true)
                 .set(updatedAtField(table), UTC_NOW)

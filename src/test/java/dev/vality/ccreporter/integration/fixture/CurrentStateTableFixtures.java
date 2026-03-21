@@ -28,13 +28,13 @@ public final class CurrentStateTableFixtures {
                             party_id, shop_id, created_at, finalized_at, status,
                             provider_id, terminal_id, amount,
                             fee, currency, trx_id, external_id, rrn, approval_code,
-                            payment_tool_type, original_amount, original_currency,
-                            converted_amount, exchange_rate_internal, provider_amount,
-                            provider_currency, trx_search
+                            payment_tool_type, error_summary, original_amount, original_currency,
+                            converted_amount, exchange_rate_internal, provider_amount, provider_currency,
+                            trx_search
                         )
                         VALUES (
-                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
                         )
                         """,
                 invoiceId,
@@ -56,6 +56,7 @@ public final class CurrentStateTableFixtures {
                 "rrn-1",
                 "approval-1",
                 "bank_card",
+                null,
                 1100L,
                 "USD",
                 1000L,
@@ -77,13 +78,13 @@ public final class CurrentStateTableFixtures {
                         INSERT INTO ccr.withdrawal_txn_current (
                             withdrawal_id, domain_event_id, domain_event_created_at,
                             party_id, wallet_id, destination_id, created_at,
-                            finalized_at, status, provider_id, terminal_id, amount, fee, currency, trx_id, external_id,
+                            finalized_at, status, provider_id, terminal_id, amount, fee, currency, external_id,
                             error_summary, original_amount, original_currency, exchange_rate_internal,
-                            provider_amount, provider_currency, trx_search
+                            provider_amount, provider_currency
                         )
                         VALUES (
-                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                            ?, ?, ?, ?, ?, ?
+                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?, ?
                         )
                         """,
                 withdrawalId,
@@ -100,15 +101,46 @@ public final class CurrentStateTableFixtures {
                 2000L,
                 20L,
                 "RUB",
-                "trx-w-1",
                 "external-w-1",
                 null,
                 2100L,
                 "USD",
                 new BigDecimal("1.0500000000"),
                 1990L,
-                "EUR",
+                "EUR"
+        );
+        insertWithdrawalSessionRow(
+                jdbcTemplate,
+                "session-" + withdrawalId,
+                withdrawalId,
+                1L,
+                createdAt,
                 "trx-w-1"
+        );
+    }
+
+    public static void insertWithdrawalSessionRow(
+            JdbcTemplate jdbcTemplate,
+            String sessionId,
+            String withdrawalId,
+            long domainEventId,
+            Instant eventCreatedAt,
+            String trxId
+    ) {
+        jdbcTemplate.update(
+                """
+                        INSERT INTO ccr.withdrawal_session (
+                            session_id, withdrawal_id, domain_event_id, domain_event_created_at,
+                            trx_id, trx_search
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        """,
+                sessionId,
+                withdrawalId,
+                domainEventId,
+                Timestamp.from(eventCreatedAt),
+                trxId,
+                trxId
         );
     }
 }

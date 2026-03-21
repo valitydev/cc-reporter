@@ -29,6 +29,10 @@ public class TimestampUtils {
         return value == null ? null : LocalDateTime.ofInstant(value, ZoneOffset.UTC);
     }
 
+    public static LocalDateTime toLocalDateTime(String value) {
+        return toLocalDateTime(Instant.parse(value));
+    }
+
     public static Instant toInstant(Timestamp timestamp) {
         return timestamp.toInstant();
     }

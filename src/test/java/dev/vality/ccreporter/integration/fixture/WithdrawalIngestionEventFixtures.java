@@ -1,17 +1,18 @@
 package dev.vality.ccreporter.integration.fixture;
 
+import dev.vality.ccreporter.serde.thrift.ThriftSerializer;
 import dev.vality.fistful.cashflow.FinalCashFlow;
 import dev.vality.fistful.transfer.CreatedChange;
 import dev.vality.fistful.transfer.Transfer;
 import dev.vality.fistful.withdrawal.*;
 import dev.vality.fistful.withdrawal.status.Status;
-import dev.vality.ccreporter.serde.thrift.ThriftSerializer;
+import dev.vality.fistful.withdrawal_session.Session;
+import dev.vality.fistful.withdrawal_session.TransactionBoundChange;
 import dev.vality.machinegun.eventsink.MachineEvent;
 import dev.vality.machinegun.msgpack.Value;
 import org.apache.thrift.TBase;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Собирает serialized events для withdrawal и withdrawal-session потока, чтобы эта рутина не жила прямо в тестах.
@@ -30,9 +31,9 @@ public final class WithdrawalIngestionEventFixtures {
 
     public static List<MachineEvent> withdrawalEvents() {
         return List.of(
-                withdrawalMachineEvent(1L, withdrawalCreatedEvent()),
-                withdrawalMachineEvent(2L, withdrawalTransferEvent()),
-                withdrawalMachineEvent(5L, withdrawalStatusEvent())
+                withdrawalMachineEvent(1L, withdrawalCreatedTimestampedChange()),
+                withdrawalMachineEvent(2L, withdrawalTransferTimestampedChange()),
+                withdrawalMachineEvent(5L, withdrawalStatusTimestampedChange())
         );
     }
 
@@ -43,7 +44,7 @@ public final class WithdrawalIngestionEventFixtures {
         );
     }
 
-    private static MachineEvent withdrawalMachineEvent(long eventId, Event payload) {
+    private static MachineEvent withdrawalMachineEvent(long eventId, TimestampedChange payload) {
         return new MachineEvent()
                 .setEventId(eventId)
                 .setSourceId(WITHDRAWAL_ID)
@@ -54,7 +55,7 @@ public final class WithdrawalIngestionEventFixtures {
 
     private static MachineEvent withdrawalSessionMachineEvent(
             long eventId,
-            dev.vality.fistful.withdrawal_session.Event payload
+            dev.vality.fistful.withdrawal_session.TimestampedChange payload
     ) {
         return new MachineEvent()
                 .setEventId(eventId)
@@ -68,7 +69,7 @@ public final class WithdrawalIngestionEventFixtures {
         return THRIFT_SERIALIZER.serialize("", payload);
     }
 
-    private static Event withdrawalCreatedEvent() {
+    private static TimestampedChange withdrawalCreatedTimestampedChange() {
         dev.vality.fistful.base.CurrencyRef rub = new dev.vality.fistful.base.CurrencyRef();
         rub.setSymbolicCode("RUB");
 
@@ -112,17 +113,16 @@ public final class WithdrawalIngestionEventFixtures {
                 new dev.vality.fistful.withdrawal.CreatedChange();
         createdChange.setWithdrawal(withdrawal);
 
-        var change = new Change();
+        var change = new dev.vality.fistful.withdrawal.Change();
         change.setCreated(createdChange);
 
-        var event = new Event();
-        event.setEventId(1L);
-        event.setOccuredAt("2026-01-01T00:01:00Z");
-        event.setChange(change);
-        return event;
+        var timestampedChange = new TimestampedChange();
+        timestampedChange.setOccuredAt("2026-01-01T00:01:00Z");
+        timestampedChange.setChange(change);
+        return timestampedChange;
     }
 
-    private static Event withdrawalTransferEvent() {
+    private static TimestampedChange withdrawalTransferTimestampedChange() {
         dev.vality.fistful.cashflow.CashFlowAccount walletAccountType =
                 new dev.vality.fistful.cashflow.CashFlowAccount();
         walletAccountType.setWallet(dev.vality.fistful.cashflow.WalletCashFlowAccount.sender_settlement);
@@ -166,34 +166,32 @@ public final class WithdrawalIngestionEventFixtures {
         var transferChange = new TransferChange();
         transferChange.setPayload(transferPayload);
 
-        var change = new Change();
+        var change = new dev.vality.fistful.withdrawal.Change();
         change.setTransfer(transferChange);
 
-        var event = new Event();
-        event.setEventId(2L);
-        event.setOccuredAt("2026-01-01T00:02:00Z");
-        event.setChange(change);
-        return event;
+        var timestampedChange = new TimestampedChange();
+        timestampedChange.setOccuredAt("2026-01-01T00:02:00Z");
+        timestampedChange.setChange(change);
+        return timestampedChange;
     }
 
-    private static Event withdrawalStatusEvent() {
+    private static TimestampedChange withdrawalStatusTimestampedChange() {
         var status = new Status();
         status.setSucceeded(new dev.vality.fistful.withdrawal.status.Succeeded());
 
         var statusChange = new StatusChange();
         statusChange.setStatus(status);
 
-        var change = new Change();
+        var change = new dev.vality.fistful.withdrawal.Change();
         change.setStatusChanged(statusChange);
 
-        var event = new Event();
-        event.setEventId(5L);
-        event.setOccuredAt("2026-01-01T00:05:00Z");
-        event.setChange(change);
-        return event;
+        var timestampedChange = new TimestampedChange();
+        timestampedChange.setOccuredAt("2026-01-01T00:05:00Z");
+        timestampedChange.setChange(change);
+        return timestampedChange;
     }
 
-    private static dev.vality.fistful.withdrawal_session.Event withdrawalSessionCreatedEvent() {
+    private static dev.vality.fistful.withdrawal_session.TimestampedChange withdrawalSessionCreatedEvent() {
         dev.vality.fistful.withdrawal_session.Route route = new dev.vality.fistful.withdrawal_session.Route();
         route.setProviderId(300);
         route.setTerminalId(400);
@@ -227,48 +225,42 @@ public final class WithdrawalIngestionEventFixtures {
         withdrawal.setCash(cash);
         withdrawal.setDestinationResource(destinationResource);
 
-        dev.vality.fistful.withdrawal_session.Session session =
-                new dev.vality.fistful.withdrawal_session.Session();
+        Session session = new Session();
         session.setId(WITHDRAWAL_SESSION_ID);
         session.setRoute(route);
         session.setStatus(sessionStatus);
         session.setWithdrawal(withdrawal);
 
-        dev.vality.fistful.withdrawal_session.Change change =
-                new dev.vality.fistful.withdrawal_session.Change();
+        var change = new dev.vality.fistful.withdrawal_session.Change();
         change.setCreated(session);
 
-        dev.vality.fistful.withdrawal_session.Event event =
-                new dev.vality.fistful.withdrawal_session.Event();
-        event.setSequence(3);
-        event.setOccuredAt("2026-01-01T00:03:00Z");
-        event.setChanges(List.of(change));
-        return event;
+        dev.vality.fistful.withdrawal_session.TimestampedChange timestampedChange =
+                new dev.vality.fistful.withdrawal_session.TimestampedChange();
+        timestampedChange.setOccuredAt("2026-01-01T00:03:00Z");
+        timestampedChange.setChange(change);
+        return timestampedChange;
     }
 
-    private static dev.vality.fistful.withdrawal_session.Event withdrawalSessionTransactionBoundEvent() {
+    private static dev.vality.fistful.withdrawal_session.TimestampedChange withdrawalSessionTransactionBoundEvent() {
         dev.vality.fistful.base.AdditionalTransactionInfo additionalInfo =
                 new dev.vality.fistful.base.AdditionalTransactionInfo();
         additionalInfo.setRrn("rrn-withdrawal-1");
 
         dev.vality.fistful.base.TransactionInfo trxInfo = new dev.vality.fistful.base.TransactionInfo();
         trxInfo.setId("trx-withdrawal-1");
-        trxInfo.setExtra(Map.of());
+        trxInfo.setExtra(java.util.Map.of());
         trxInfo.setAdditionalInfo(additionalInfo);
 
-        dev.vality.fistful.withdrawal_session.TransactionBoundChange transactionBoundChange =
-                new dev.vality.fistful.withdrawal_session.TransactionBoundChange();
+        TransactionBoundChange transactionBoundChange = new TransactionBoundChange();
         transactionBoundChange.setTrxInfo(trxInfo);
 
-        dev.vality.fistful.withdrawal_session.Change change =
-                new dev.vality.fistful.withdrawal_session.Change();
+        var change = new dev.vality.fistful.withdrawal_session.Change();
         change.setTransactionBound(transactionBoundChange);
 
-        dev.vality.fistful.withdrawal_session.Event event =
-                new dev.vality.fistful.withdrawal_session.Event();
-        event.setSequence(4);
-        event.setOccuredAt("2026-01-01T00:04:00Z");
-        event.setChanges(List.of(change));
-        return event;
+        dev.vality.fistful.withdrawal_session.TimestampedChange timestampedChange =
+                new dev.vality.fistful.withdrawal_session.TimestampedChange();
+        timestampedChange.setOccuredAt("2026-01-01T00:04:00Z");
+        timestampedChange.setChange(change);
+        return timestampedChange;
     }
 }

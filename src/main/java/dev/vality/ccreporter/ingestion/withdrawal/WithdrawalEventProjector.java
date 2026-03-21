@@ -3,8 +3,8 @@ package dev.vality.ccreporter.ingestion.withdrawal;
 import dev.vality.ccreporter.domain.tables.pojos.WithdrawalTxnCurrent;
 import dev.vality.ccreporter.util.DomainCashFlowExtractor;
 import dev.vality.fistful.withdrawal.Change;
-import dev.vality.fistful.withdrawal.Event;
 import dev.vality.fistful.withdrawal.QuoteState;
+import dev.vality.fistful.withdrawal.TimestampedChange;
 import dev.vality.fistful.withdrawal.status.Status;
 import dev.vality.machinegun.eventsink.MachineEvent;
 import org.springframework.stereotype.Component;
@@ -18,12 +18,13 @@ import java.util.Optional;
 
 import static dev.vality.ccreporter.util.DomainStatusUtils.PENDING_STATUS;
 import static dev.vality.ccreporter.util.DomainStatusUtils.extractErrorSummary;
+import static dev.vality.ccreporter.util.TimestampUtils.toLocalDateTime;
 import static dev.vality.ccreporter.util.TimestampUtils.toOptionalLocalDateTime;
 
 @Component
 public class WithdrawalEventProjector {
 
-    public List<WithdrawalTxnCurrent> project(MachineEvent event, Event payload) {
+    public List<WithdrawalTxnCurrent> project(MachineEvent event, TimestampedChange payload) {
         var updates = new ArrayList<WithdrawalTxnCurrent>();
         if (payload == null || payload.getChange() == null) {
             return updates;
@@ -33,37 +34,13 @@ public class WithdrawalEventProjector {
     }
 
     private Optional<WithdrawalTxnCurrent> projectChange(MachineEvent event, Change change) {
-        var context = new WithdrawalChangeContext(
-                event.getSourceId(),
-                event.getEventId(),
-                Instant.parse(event.getCreatedAt())
-        );
-
-        return createdUpdate(context, change)
-                .or(() -> routeChangedUpdate(context, change))
-                .or(() -> statusChangedUpdate(context, change))
-                .or(() -> transferCashFlowUpdate(context, change));
+        return createdUpdate(event, change)
+                .or(() -> routeChangedUpdate(event, change))
+                .or(() -> statusChangedUpdate(event, change))
+                .or(() -> transferCashFlowUpdate(event, change));
     }
 
-    private BigDecimal toRate(QuoteState quote) {
-        if (quote == null || quote.getCashFrom().getAmount() == 0) {
-            return null;
-        }
-        return BigDecimal.valueOf(quote.getCashTo().getAmount())
-                .divide(BigDecimal.valueOf(quote.getCashFrom().getAmount()), 10, RoundingMode.HALF_UP);
-    }
-
-    private Instant terminalFinalizedAt(Status status, Instant eventCreatedAt) {
-        if (status == null || status.getSetField() == null) {
-            return null;
-        }
-        return switch (status.getSetField()) {
-            case SUCCEEDED, FAILED -> eventCreatedAt;
-            default -> null;
-        };
-    }
-
-    private Optional<WithdrawalTxnCurrent> createdUpdate(WithdrawalChangeContext context, Change change) {
+    private Optional<WithdrawalTxnCurrent> createdUpdate(MachineEvent event, Change change) {
         if (!change.isSetCreated()) {
             return Optional.empty();
         }
@@ -71,11 +48,12 @@ public class WithdrawalEventProjector {
         var body = withdrawal.getBody();
         var route = withdrawal.getRoute();
         var quote = withdrawal.getQuote();
-        return Optional.of(baseUpdate(context)
+
+        return Optional.of(baseUpdate(event)
                 .setPartyId(withdrawal.getPartyId())
                 .setWalletId(withdrawal.getWalletId())
                 .setDestinationId(withdrawal.getDestinationId())
-                .setCreatedAt(toOptionalLocalDateTime(Instant.parse(withdrawal.getCreatedAt())))
+                .setCreatedAt(toLocalDateTime(withdrawal.getCreatedAt()))
                 .setStatus(PENDING_STATUS)
                 .setProviderId(route != null ? String.valueOf(route.getProviderId()) : null)
                 .setTerminalId(route != null ? String.valueOf(route.getTerminalId()) : null)
@@ -89,28 +67,29 @@ public class WithdrawalEventProjector {
                 .setProviderCurrency(quote != null ? quote.getCashTo().getCurrency().getSymbolicCode() : null));
     }
 
-    private Optional<WithdrawalTxnCurrent> routeChangedUpdate(WithdrawalChangeContext context, Change change) {
+    private Optional<WithdrawalTxnCurrent> routeChangedUpdate(MachineEvent event, Change change) {
         if (!change.isSetRoute()) {
             return Optional.empty();
         }
         var route = change.getRoute().getRoute();
-        return Optional.of(baseUpdate(context)
+        return Optional.of(baseUpdate(event)
                 .setProviderId(String.valueOf(route.getProviderId()))
                 .setTerminalId(String.valueOf(route.getTerminalId())));
     }
 
-    private Optional<WithdrawalTxnCurrent> statusChangedUpdate(WithdrawalChangeContext context, Change change) {
+    private Optional<WithdrawalTxnCurrent> statusChangedUpdate(MachineEvent event, Change change) {
         if (!change.isSetStatusChanged()) {
             return Optional.empty();
         }
         var status = change.getStatusChanged().getStatus();
-        return Optional.of(baseUpdate(context)
-                .setFinalizedAt(toOptionalLocalDateTime(terminalFinalizedAt(status, context.eventCreatedAt())))
+        return Optional.of(baseUpdate(event)
                 .setStatus(status.getSetField().getFieldName())
+                .setFinalizedAt(
+                        toOptionalLocalDateTime(terminalFinalizedAt(status, Instant.parse(event.getCreatedAt()))))
                 .setErrorSummary(extractErrorSummary(status)));
     }
 
-    private Optional<WithdrawalTxnCurrent> transferCashFlowUpdate(WithdrawalChangeContext context, Change change) {
+    private Optional<WithdrawalTxnCurrent> transferCashFlowUpdate(MachineEvent event, Change change) {
         if (!change.isSetTransfer()
                 || !change.getTransfer().isSetPayload()
                 || !change.getTransfer().getPayload().isSetCreated()
@@ -119,17 +98,32 @@ public class WithdrawalEventProjector {
             return Optional.empty();
         }
         var postings = change.getTransfer().getPayload().getCreated().getTransfer().getCashflow().getPostings();
-        return Optional.of(baseUpdate(context)
+        return Optional.of(baseUpdate(event)
                 .setFee(DomainCashFlowExtractor.extractWithdrawalFee(postings)));
     }
 
-    private WithdrawalTxnCurrent baseUpdate(WithdrawalChangeContext context) {
+    private WithdrawalTxnCurrent baseUpdate(MachineEvent event) {
         return new WithdrawalTxnCurrent()
-                .setWithdrawalId(context.withdrawalId())
-                .setDomainEventId(context.domainEventId())
-                .setDomainEventCreatedAt(toOptionalLocalDateTime(context.eventCreatedAt()));
+                .setWithdrawalId(event.getSourceId())
+                .setDomainEventId(event.getEventId())
+                .setDomainEventCreatedAt(toLocalDateTime(event.getCreatedAt()));
     }
 
-    private record WithdrawalChangeContext(String withdrawalId, long domainEventId, Instant eventCreatedAt) {
+    private Instant terminalFinalizedAt(Status status, Instant eventCreatedAt) {
+        if (status == null || status.getSetField() == null) {
+            return null;
+        }
+        return switch (status.getSetField()) {
+            case SUCCEEDED, FAILED -> eventCreatedAt;
+            default -> null;
+        };
+    }
+
+    private BigDecimal toRate(QuoteState quote) {
+        if (quote == null || quote.getCashFrom().getAmount() == 0) {
+            return null;
+        }
+        return BigDecimal.valueOf(quote.getCashTo().getAmount())
+                .divide(BigDecimal.valueOf(quote.getCashFrom().getAmount()), 10, RoundingMode.HALF_UP);
     }
 }

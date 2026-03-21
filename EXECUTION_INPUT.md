@@ -11,12 +11,15 @@
 - Keep a separate modernization track `jooq-dsl-dao-transition` for DAO-layer persistence API changes without reopening the service
   contract or report architecture.
 - Keep three new follow-up tracks active:
-  `replayable-current-state-projections`,
   `dominant-name-materialization`,
   `projector-builder-refactor`.
 - Build current-state projections in PostgreSQL, not on-demand reads from `magista` / `fistful-magista`.
 - Kafka consumption must be batch-based, manual-ack, and commit offsets only after successful DB transaction commit.
 - Use DB-level idempotency with monotonic `domain_event_id` updates on business keys.
+- Official projection recovery mode is operational:
+  clear CCR current-state tables and reread Kafka topics from the beginning.
+- Do not implement equal-event reapplication over already-populated projection tables unless that decision is explicitly
+  reopened.
 - Do not copy old `reporter` 1:1; reuse only ideas, not legacy structure or Hellgate-on-hot-path behavior.
 - `payments.trx_id` source: `TransactionInfo.id` from `SessionTransactionBound`; fallback, if needed, is a separate repair/reconciliation worker using full invoice reads, not ingestion path.
 - `withdrawals.trx_id` source: `TransactionBoundChange.trx_info.id`.
@@ -32,7 +35,7 @@
 
 ## Acceptance criteria
 - Re-reading Kafka messages does not create duplicates and does not move entity state backward.
-- `finalized_at` is set on first terminal status and is not overwritten later.
+- `finalized_at` reflects the latest terminal status recorded by the projection.
 - `CreateReport` is idempotent by `(created_by, idempotency_key)`.
 - `GetReport` / `GetReports` return report state from CCR DB without external query-time joins to legacy reporting services.
 - `GeneratePresignedUrl` uses configured TTL cap.
@@ -46,7 +49,7 @@ Core checks:
 - Projector tests for payment and withdrawal event-to-row mapping.
 - DB tests for upsert monotonicity on `domain_event_id`.
 - Tests for `trx_id` extraction from transaction-bound events.
-- Tests for first-write-wins `finalized_at`.
+- Tests for current `finalized_at` projection semantics.
 - API tests for create/get/list/cancel idempotency.
 - Worker test for `data_snapshot_fixed_at` capture and atomic file publication.
 
@@ -72,7 +75,8 @@ Last known baseline:
 - Internal auth is out of scope; `Wachter` remains responsible.
 - If the DAO layer is modernized, preserve the current SQL-first posture and PostgreSQL semantics; do not turn `cc-reporter`
   into an ORM-first service.
-- If replay semantics are reopened, keep the scope bounded to deterministic projection rebuildability; do not reopen the decision to
+- If projection rebuild semantics are reopened, keep the scope bounded to operational rebuildability; do not reopen the
+  decision to
   materialize current state in CCR.
 
 ## Known risks
@@ -93,7 +97,6 @@ Last known baseline:
 - `thrift-api-implementation`
 - `report-lifecycle-subsystem`
 - `jooq-dsl-dao-transition`
-- `replayable-current-state-projections`
 - `dominant-name-materialization`
 - `projector-builder-refactor`
 

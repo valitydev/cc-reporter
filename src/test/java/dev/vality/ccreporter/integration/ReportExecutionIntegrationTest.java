@@ -86,6 +86,40 @@ class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
     }
 
     @Test
+    void withdrawalsReportUsesLatestSessionAndDoesNotDuplicateRows() throws Exception {
+        CurrentStateTableFixtures.insertWithdrawalRow(
+                jdbcTemplate,
+                "withdrawal-latest-session-1",
+                Instant.parse("2026-01-01T10:00:00Z"),
+                Instant.parse("2026-01-01T11:00:00Z")
+        );
+        CurrentStateTableFixtures.insertWithdrawalSessionRow(
+                jdbcTemplate,
+                "session-withdrawal-latest-session-1-retry",
+                "withdrawal-latest-session-1",
+                2L,
+                Instant.parse("2026-01-01T10:30:00Z"),
+                "trx-w-2"
+        );
+        var reportId = reportingHandler.createReport(ReportRequestFixtures.withdrawals("exec-withdrawals-latest-1"));
+
+        var processed = reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
+
+        var report = reportingHandler.getReport(new GetReportRequest(reportId));
+        var csvLines = readCsvLines(
+                stubFileStorageClient.getStoredContent(report.getFile().getFileId()),
+                StandardCharsets.UTF_8
+        );
+
+        assertThat(processed).isTrue();
+        assertThat(report.getStatus()).isEqualTo(ReportStatus.created);
+        assertThat(report.getRowsCount()).isEqualTo(1L);
+        assertThat(csvLines).hasSize(2);
+        assertThat(csvLines.get(1)).contains("withdrawal-latest-session-1,succeeded,20.00,RUB,trx-w-2");
+        assertThat(csvLines.get(1)).doesNotContain("trx-w-1");
+    }
+
+    @Test
     void failedUploadIsRetriedAndThenMarkedFailedAtAttemptLimit() throws Exception {
         CurrentStateTableFixtures.insertPaymentRow(
                 jdbcTemplate,

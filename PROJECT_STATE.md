@@ -1,7 +1,8 @@
 # PROJECT_STATE.md
 
 ## Active tracks
-- `replayable-current-state-projections`
+
+- None
 
 ## Completed tracks
 - `kafka-to-db-ingestion`
@@ -11,6 +12,7 @@
 - `csv-cursor-hardening`
 - `audit-observability-hardening`
 - `jooq-dsl-dao-transition`
+- `replayable-current-state-projections`
 - `dominant-name-materialization`
 - `projector-builder-refactor`
 
@@ -22,14 +24,14 @@
   transaction-native search only; dominant-backed name and name-search data live exclusively in CCR lookup tables.
 - `payments` `trx_id` remains event-first from `SessionTransactionBound`; a separate repair/reconciliation worker is not required by
   the current primary truth and should only be revived if real ingestion streams demonstrate terminal rows that still miss `trx_id`.
-- Current-state replay semantics are still optimized for duplicate tolerance rather than projection rebuildability; newly added
-  derived fields may require a stronger replay/backfill contract than the present no-op-on-duplicate baseline.
+- Projection rebuild contract is fixed:
+  when projector logic or projection schema changes, CCR rebuilds current-state by clearing projection tables and
+  rereading Kafka.
+  Equal-event reapplication over already-populated projections is not part of the supported runtime contract.
 
 ## Cross-track dependencies
 - `kafka-to-db-ingestion` defines the read-model columns used by CSV generation and report filters.
 - `kafka-to-db-ingestion` must keep `payment_txn_current` / `withdrawal_txn_current` compatible with the completed report execution and Thrift tracks.
-- `replayable-current-state-projections` builds on top of the completed ingestion track without reopening the decision to keep
-  PostgreSQL current-state tables as the reporting truth.
 - `dominant-name-materialization` depends on the completed ingestion/report tracks and supplies a local enrichment source for
   display-name columns still left unresolved by event-native projectors.
 - `projector-builder-refactor` depends on the completed ingestion track and should preserve both the completed report path and the
@@ -43,11 +45,13 @@
 - `jooq-dsl-dao-transition` must preserve the completed ingestion, Thrift, lifecycle, CSV, and audit tracks while changing only the
   persistence API used inside DAO implementations.
 
-## Active track snapshot
-- `replayable-current-state-projections`
-  is a follow-up design/implementation track for deterministic current-state rebuilds under Kafka replay and projector evolution.
-
 ## Latest completed track snapshot
+
+- `replayable-current-state-projections` is complete as a design decision. CCR current-state rebuilds are officially
+  supported via
+  clearing projection tables and rereading Kafka from the beginning; equal-event reapplication over already-populated
+  projections
+  is intentionally not part of the contract.
 - `projector-builder-refactor` is complete. Payment, withdrawal, and withdrawal-session current-state projector assembly now uses
   local fluent builders plus small event-branch helpers instead of the old monolithic positional/update-method style, without
   widening dependencies to Lombok or changing ingestion semantics.

@@ -5,8 +5,6 @@ import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.fistful.withdrawal.status.Status;
 import lombok.experimental.UtilityClass;
 
-import java.time.Instant;
-
 import static dev.vality.ccreporter.util.DomainFailureUtils.summary;
 
 @UtilityClass
@@ -37,15 +35,5 @@ public class DomainStatusUtils {
 
     public static String extractSymbolicCode(Cash cash) {
         return cash != null && cash.isSetCurrency() ? cash.getCurrency().getSymbolicCode() : null;
-    }
-
-    public static Instant resolveTerminalFinalizedAt(InvoicePaymentStatus status, Instant eventCreatedAt) {
-        if (status == null || status.getSetField() == null) {
-            return null;
-        }
-        return switch (status.getSetField()) {
-            case CAPTURED, CANCELLED, FAILED, REFUNDED, CHARGED_BACK -> eventCreatedAt;
-            default -> null;
-        };
     }
 }
