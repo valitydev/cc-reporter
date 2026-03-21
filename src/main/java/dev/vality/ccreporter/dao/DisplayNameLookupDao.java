@@ -1,5 +1,9 @@
 package dev.vality.ccreporter.dao;
 
+import dev.vality.ccreporter.domain.tables.pojos.ProviderLookup;
+import dev.vality.ccreporter.domain.tables.pojos.ShopLookup;
+import dev.vality.ccreporter.domain.tables.pojos.TerminalLookup;
+import dev.vality.ccreporter.domain.tables.pojos.WalletLookup;
 import lombok.RequiredArgsConstructor;
 import org.jooq.*;
 import org.jooq.Record;
@@ -9,217 +13,127 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 
 import static dev.vality.ccreporter.domain.Tables.*;
+import static dev.vality.ccreporter.util.DaoUpsertUtils.buildLookupUpsertMap;
 import static dev.vality.ccreporter.util.SearchValueNormalizer.normalize;
 
 @Repository
 @RequiredArgsConstructor
 public class DisplayNameLookupDao {
 
-    private static final Field<LocalDateTime> UTC_NOW =
-            DSL.field("(now() AT TIME ZONE 'utc')", LocalDateTime.class);
-
     private final DSLContext dslContext;
 
-    public void upsertShop(String shopId, String shopName) {
-        upsertShop(shopId, shopName, 0L);
+    public void upsert(LookupType lookupType, String id, String name, long dominantVersionId, boolean deleted) {
+        switch (lookupType) {
+            case SHOP -> insertShop(id, name, dominantVersionId, deleted);
+            case PROVIDER -> insertProvider(id, name, dominantVersionId, deleted);
+            case TERMINAL -> insertTerminal(id, name, dominantVersionId, deleted);
+            case WALLET -> insertWallet(id, name, dominantVersionId, deleted);
+        }
     }
 
-    public void upsertShop(String shopId, String shopName, long dominantVersionId) {
-        if (isBlank(shopId) || isBlank(shopName)) {
+    private void insertShop(String shopId, String shopName, long dominantVersionId, boolean deleted) {
+        if (isBlank(shopId)) {
             return;
         }
         upsert(
                 SHOP_LOOKUP,
                 SHOP_LOOKUP.SHOP_ID,
-                shopId,
-                SHOP_LOOKUP.SHOP_NAME,
-                shopName,
-                SHOP_LOOKUP.SHOP_SEARCH,
                 SHOP_LOOKUP.DOMINANT_VERSION_ID,
-                SHOP_LOOKUP.DELETED,
-                dominantVersionId
+                SHOP_LOOKUP.UPDATED_AT,
+                new ShopLookup()
+                        .setShopId(shopId)
+                        .setShopName(shopName)
+                        .setShopSearch(searchValue(shopId, shopName))
+                        .setDominantVersionId(dominantVersionId)
+                        .setDeleted(deleted)
         );
     }
 
-    public void deleteShop(String shopId, long dominantVersionId) {
-        delete(
-                SHOP_LOOKUP,
-                SHOP_LOOKUP.SHOP_ID,
-                shopId,
-                SHOP_LOOKUP.SHOP_NAME,
-                SHOP_LOOKUP.SHOP_SEARCH,
-                SHOP_LOOKUP.DOMINANT_VERSION_ID,
-                SHOP_LOOKUP.DELETED,
-                dominantVersionId
-        );
-    }
-
-    public void upsertProvider(String providerId, String providerName) {
-        upsertProvider(providerId, providerName, 0L);
-    }
-
-    public void upsertProvider(String providerId, String providerName, long dominantVersionId) {
-        if (isBlank(providerId) || isBlank(providerName)) {
+    private void insertProvider(String providerId, String providerName, long dominantVersionId, boolean deleted) {
+        if (isBlank(providerId)) {
             return;
         }
         upsert(
                 PROVIDER_LOOKUP,
                 PROVIDER_LOOKUP.PROVIDER_ID,
-                providerId,
-                PROVIDER_LOOKUP.PROVIDER_NAME,
-                providerName,
-                PROVIDER_LOOKUP.PROVIDER_SEARCH,
                 PROVIDER_LOOKUP.DOMINANT_VERSION_ID,
-                PROVIDER_LOOKUP.DELETED,
-                dominantVersionId
+                PROVIDER_LOOKUP.UPDATED_AT,
+                new ProviderLookup()
+                        .setProviderId(providerId)
+                        .setProviderName(providerName)
+                        .setProviderSearch(searchValue(providerId, providerName))
+                        .setDominantVersionId(dominantVersionId)
+                        .setDeleted(deleted)
         );
     }
 
-    public void deleteProvider(String providerId, long dominantVersionId) {
-        delete(
-                PROVIDER_LOOKUP,
-                PROVIDER_LOOKUP.PROVIDER_ID,
-                providerId,
-                PROVIDER_LOOKUP.PROVIDER_NAME,
-                PROVIDER_LOOKUP.PROVIDER_SEARCH,
-                PROVIDER_LOOKUP.DOMINANT_VERSION_ID,
-                PROVIDER_LOOKUP.DELETED,
-                dominantVersionId
-        );
-    }
-
-    public void upsertTerminal(String terminalId, String terminalName) {
-        upsertTerminal(terminalId, terminalName, 0L);
-    }
-
-    public void upsertTerminal(String terminalId, String terminalName, long dominantVersionId) {
-        if (isBlank(terminalId) || isBlank(terminalName)) {
+    private void insertTerminal(String terminalId, String terminalName, long dominantVersionId, boolean deleted) {
+        if (isBlank(terminalId)) {
             return;
         }
         upsert(
                 TERMINAL_LOOKUP,
                 TERMINAL_LOOKUP.TERMINAL_ID,
-                terminalId,
-                TERMINAL_LOOKUP.TERMINAL_NAME,
-                terminalName,
-                TERMINAL_LOOKUP.TERMINAL_SEARCH,
                 TERMINAL_LOOKUP.DOMINANT_VERSION_ID,
-                TERMINAL_LOOKUP.DELETED,
-                dominantVersionId
+                TERMINAL_LOOKUP.UPDATED_AT,
+                new TerminalLookup()
+                        .setTerminalId(terminalId)
+                        .setTerminalName(terminalName)
+                        .setTerminalSearch(searchValue(terminalId, terminalName))
+                        .setDominantVersionId(dominantVersionId)
+                        .setDeleted(deleted)
         );
     }
 
-    public void deleteTerminal(String terminalId, long dominantVersionId) {
-        delete(
-                TERMINAL_LOOKUP,
-                TERMINAL_LOOKUP.TERMINAL_ID,
-                terminalId,
-                TERMINAL_LOOKUP.TERMINAL_NAME,
-                TERMINAL_LOOKUP.TERMINAL_SEARCH,
-                TERMINAL_LOOKUP.DOMINANT_VERSION_ID,
-                TERMINAL_LOOKUP.DELETED,
-                dominantVersionId
-        );
-    }
-
-    public void upsertWallet(String walletId, String walletName) {
-        upsertWallet(walletId, walletName, 0L);
-    }
-
-    public void upsertWallet(String walletId, String walletName, long dominantVersionId) {
-        if (isBlank(walletId) || isBlank(walletName)) {
+    private void insertWallet(String walletId, String walletName, long dominantVersionId, boolean deleted) {
+        if (isBlank(walletId)) {
             return;
         }
         upsert(
                 WALLET_LOOKUP,
                 WALLET_LOOKUP.WALLET_ID,
-                walletId,
-                WALLET_LOOKUP.WALLET_NAME,
-                walletName,
-                WALLET_LOOKUP.WALLET_SEARCH,
                 WALLET_LOOKUP.DOMINANT_VERSION_ID,
-                WALLET_LOOKUP.DELETED,
-                dominantVersionId
+                WALLET_LOOKUP.UPDATED_AT,
+                new WalletLookup()
+                        .setWalletId(walletId)
+                        .setWalletName(walletName)
+                        .setWalletSearch(searchValue(walletId, walletName))
+                        .setDominantVersionId(dominantVersionId)
+                        .setDeleted(deleted)
         );
     }
 
-    public void deleteWallet(String walletId, long dominantVersionId) {
-        delete(
-                WALLET_LOOKUP,
-                WALLET_LOOKUP.WALLET_ID,
-                walletId,
-                WALLET_LOOKUP.WALLET_NAME,
-                WALLET_LOOKUP.WALLET_SEARCH,
-                WALLET_LOOKUP.DOMINANT_VERSION_ID,
-                WALLET_LOOKUP.DELETED,
-                dominantVersionId
-        );
+    private <R extends Record, P> void upsert(
+            Table<R> table,
+            TableField<R, String> idField,
+            TableField<R, Long> versionField,
+            Field<LocalDateTime> updatedAtField,
+            P update
+    ) {
+        var record = dslContext.newRecord(table, update);
+        record.changed(updatedAtField, false);
+
+        dslContext.insertInto(table)
+                .set(record)
+                .onConflict(idField)
+                .doUpdate()
+                .set(buildLookupUpsertMap(table, idField, updatedAtField))
+                .where(versionField.le(DSL.excluded(versionField)))
+                .execute();
     }
 
     private boolean isBlank(String value) {
         return value == null || value.isBlank();
     }
 
-    private <R extends Record> void upsert(
-            Table<R> table,
-            TableField<R, String> idField,
-            String id,
-            TableField<R, String> nameField,
-            String name,
-            TableField<R, String> searchField,
-            TableField<R, Long> versionField,
-            TableField<R, Boolean> deletedField,
-            long dominantVersionId
-    ) {
-        dslContext.insertInto(table)
-                .set(idField, id)
-                .set(nameField, name)
-                .set(searchField, normalize(id, name))
-                .set(versionField, dominantVersionId)
-                .set(deletedField, false)
-                .onConflict(idField)
-                .doUpdate()
-                .set(nameField, name)
-                .set(searchField, normalize(id, name))
-                .set(versionField, dominantVersionId)
-                .set(deletedField, false)
-                .set(updatedAtField(table), UTC_NOW)
-                .where(versionField.le(dominantVersionId))
-                .execute();
+    private String searchValue(String id, String name) {
+        return isBlank(name) ? normalize(id) : normalize(id, name);
     }
 
-    private <R extends Record> void delete(
-            Table<R> table,
-            TableField<R, String> idField,
-            String id,
-            TableField<R, String> nameField,
-            TableField<R, String> searchField,
-            TableField<R, Long> versionField,
-            TableField<R, Boolean> deletedField,
-            long dominantVersionId
-    ) {
-        if (isBlank(id)) {
-            return;
-        }
-        dslContext.insertInto(table)
-                .set(idField, id)
-                .set(nameField, DSL.castNull(nameField.getDataType()))
-                .set(searchField, normalize(id))
-                .set(versionField, dominantVersionId)
-                .set(deletedField, true)
-                .onConflict(idField)
-                .doUpdate()
-                .set(nameField, DSL.castNull(nameField.getDataType()))
-                .set(searchField, normalize(id))
-                .set(versionField, dominantVersionId)
-                .set(deletedField, true)
-                .set(updatedAtField(table), UTC_NOW)
-                .where(versionField.le(dominantVersionId))
-                .execute();
-    }
-
-    private <R extends Record> Field<LocalDateTime> updatedAtField(Table<R> table) {
-        var updatedAtField = table.field("updated_at", LocalDateTime.class);
-        return updatedAtField;
+    public enum LookupType {
+        SHOP,
+        PROVIDER,
+        TERMINAL,
+        WALLET
     }
 }

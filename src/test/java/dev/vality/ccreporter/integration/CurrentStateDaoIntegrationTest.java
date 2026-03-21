@@ -133,11 +133,11 @@ class CurrentStateDaoIntegrationTest extends AbstractReportingIntegrationTest {
 
     @Test
     void displayNameLookupUpsertOverwritesExistingDominantName() {
-        displayNameLookupDao.upsertShop("shop-1", "Shop One");
-        displayNameLookupDao.upsertShop("shop-1", "Shop Uno");
-        displayNameLookupDao.upsertProvider("provider-1", "Provider One");
-        displayNameLookupDao.upsertTerminal("terminal-1", "Terminal One");
-        displayNameLookupDao.upsertWallet("wallet-1", "Wallet One");
+        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.SHOP, "shop-1", "Shop One", 0L, false);
+        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.SHOP, "shop-1", "Shop Uno", 0L, false);
+        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.PROVIDER, "provider-1", "Provider One", 0L, false);
+        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.TERMINAL, "terminal-1", "Terminal One", 0L, false);
+        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.WALLET, "wallet-1", "Wallet One", 0L, false);
 
         assertThat(jdbcTemplate.queryForObject(
                 "SELECT shop_name FROM ccr.shop_lookup WHERE shop_id = 'shop-1'",
@@ -171,5 +171,24 @@ class CurrentStateDaoIntegrationTest extends AbstractReportingIntegrationTest {
                 "SELECT wallet_search FROM ccr.wallet_lookup WHERE wallet_id = 'wallet-1'",
                 String.class
         )).isEqualTo("wallet-1 wallet one");
+    }
+
+    @Test
+    void displayNameLookupUpsertWithBlankNameStillAdvancesVersion() {
+        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.SHOP, "shop-blank-name", "Shop One", 10L, false);
+        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.SHOP, "shop-blank-name", null, 11L, false);
+
+        var row = jdbcTemplate.queryForMap(
+                """
+                        SELECT shop_name, shop_search, dominant_version_id, deleted
+                        FROM ccr.shop_lookup
+                        WHERE shop_id = 'shop-blank-name'
+                        """
+        );
+
+        assertThat(row.get("shop_name")).isNull();
+        assertThat(row.get("shop_search")).isEqualTo("shop-blank-name");
+        assertThat(row.get("dominant_version_id")).isEqualTo(11L);
+        assertThat(row.get("deleted")).isEqualTo(false);
     }
 }

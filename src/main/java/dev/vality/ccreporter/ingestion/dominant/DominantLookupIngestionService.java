@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Comparator;
 import java.util.List;
 
+import static dev.vality.ccreporter.dao.DisplayNameLookupDao.LookupType.*;
+
 @Service
 @RequiredArgsConstructor
 public class DominantLookupIngestionService {
@@ -47,17 +49,25 @@ public class DominantLookupIngestionService {
         if (object.isSetShopConfig()) {
             var shop = object.getShopConfig();
             if (shop.getRef() != null && shop.getData() != null) {
-                displayNameLookupDao.upsertShop(shop.getRef().getId(), shop.getData().getName(), version);
+                displayNameLookupDao.upsert(
+                        SHOP,
+                        shop.getRef().getId(),
+                        shop.getData().getName(),
+                        version,
+                        false
+                );
             }
             return;
         }
         if (object.isSetProvider()) {
             var provider = object.getProvider();
             if (provider.getRef() != null && provider.getData() != null) {
-                displayNameLookupDao.upsertProvider(
+                displayNameLookupDao.upsert(
+                        PROVIDER,
                         String.valueOf(provider.getRef().getId()),
                         provider.getData().getName(),
-                        version
+                        version,
+                        false
                 );
             }
             return;
@@ -65,10 +75,12 @@ public class DominantLookupIngestionService {
         if (object.isSetTerminal()) {
             var terminal = object.getTerminal();
             if (terminal.getRef() != null && terminal.getData() != null) {
-                displayNameLookupDao.upsertTerminal(
+                displayNameLookupDao.upsert(
+                        TERMINAL,
                         String.valueOf(terminal.getRef().getId()),
                         terminal.getData().getName(),
-                        version
+                        version,
+                        false
                 );
             }
             return;
@@ -76,7 +88,13 @@ public class DominantLookupIngestionService {
         if (object.isSetWalletConfig()) {
             var wallet = object.getWalletConfig();
             if (wallet.getRef() != null && wallet.getData() != null) {
-                displayNameLookupDao.upsertWallet(wallet.getRef().getId(), wallet.getData().getName(), version);
+                displayNameLookupDao.upsert(
+                        WALLET,
+                        wallet.getRef().getId(),
+                        wallet.getData().getName(),
+                        version,
+                        false
+                );
             }
         }
     }
@@ -86,19 +104,43 @@ public class DominantLookupIngestionService {
             return;
         }
         if (reference.isSetShopConfig()) {
-            displayNameLookupDao.deleteShop(reference.getShopConfig().getId(), version);
+            displayNameLookupDao.upsert(
+                    SHOP,
+                    reference.getShopConfig().getId(),
+                    null,
+                    version,
+                    true
+            );
             return;
         }
         if (reference.isSetProvider()) {
-            displayNameLookupDao.deleteProvider(String.valueOf(reference.getProvider().getId()), version);
+            displayNameLookupDao.upsert(
+                    PROVIDER,
+                    String.valueOf(reference.getProvider().getId()),
+                    null,
+                    version,
+                    true
+            );
             return;
         }
         if (reference.isSetTerminal()) {
-            displayNameLookupDao.deleteTerminal(String.valueOf(reference.getTerminal().getId()), version);
+            displayNameLookupDao.upsert(
+                    TERMINAL,
+                    String.valueOf(reference.getTerminal().getId()),
+                    null,
+                    version,
+                    true
+            );
             return;
         }
         if (reference.isSetWalletConfig()) {
-            displayNameLookupDao.deleteWallet(reference.getWalletConfig().getId(), version);
+            displayNameLookupDao.upsert(
+                    WALLET,
+                    reference.getWalletConfig().getId(),
+                    null,
+                    version,
+                    true
+            );
         }
     }
 }

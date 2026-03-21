@@ -62,8 +62,8 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
                 "invoice-filter-2",
                 "payment-filter-2"
         );
-        displayNameLookupDao.upsertShop("shop-1", "Shop One");
-        displayNameLookupDao.upsertShop("shop-2", "Other Shop");
+        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.SHOP, "shop-1", "Shop One", 0L, false);
+        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.SHOP, "shop-2", "Other Shop", 0L, false);
 
         var request = ReportRequestFixtures.payments("payments-filter-1");
         request.getQuery().getPayments().setShopIds(List.of("shop-1"));
@@ -121,8 +121,8 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
                 "trx-w-2",
                 "withdrawal-filter-2"
         );
-        displayNameLookupDao.upsertWallet("wallet-1", "Wallet One");
-        displayNameLookupDao.upsertWallet("wallet-2", "Other Wallet");
+        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.WALLET, "wallet-1", "Wallet One", 0L, false);
+        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.WALLET, "wallet-2", "Other Wallet", 0L, false);
 
         var request = ReportRequestFixtures.withdrawals("withdrawals-filter-1");
         request.getQuery().getWithdrawals().setWalletIds(List.of("wallet-1"));
@@ -213,9 +213,11 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
                 Instant.parse("2026-01-01T10:00:00Z"),
                 Instant.parse("2026-01-01T11:00:00Z")
         );
-        displayNameLookupDao.upsertShop("shop-1", "Lookup Shop");
-        displayNameLookupDao.upsertProvider("provider-1", "Lookup Provider");
-        displayNameLookupDao.upsertTerminal("terminal-1", "Lookup Terminal");
+        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.SHOP, "shop-1", "Lookup Shop", 0L, false);
+        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.PROVIDER, "provider-1", "Lookup Provider", 0L,
+                false);
+        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.TERMINAL, "terminal-1", "Lookup Terminal", 0L,
+                false);
 
         final var request = ReportRequestFixtures.payments("payments-lookup-1");
         var filter = new PaymentsSearchFilter();
@@ -247,9 +249,11 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
                 Instant.parse("2026-01-01T10:00:00Z"),
                 Instant.parse("2026-01-01T11:00:00Z")
         );
-        displayNameLookupDao.upsertWallet("wallet-1", "Lookup Wallet");
-        displayNameLookupDao.upsertProvider("provider-1", "Lookup Provider");
-        displayNameLookupDao.upsertTerminal("terminal-1", "Lookup Terminal");
+        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.WALLET, "wallet-1", "Lookup Wallet", 0L, false);
+        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.PROVIDER, "provider-1", "Lookup Provider", 0L,
+                false);
+        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.TERMINAL, "terminal-1", "Lookup Terminal", 0L,
+                false);
 
         final var request = ReportRequestFixtures.withdrawals("withdrawals-lookup-1");
         var filter = new WithdrawalsSearchFilter();

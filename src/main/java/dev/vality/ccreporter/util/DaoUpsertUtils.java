@@ -7,9 +7,11 @@ import org.jooq.TableField;
 import org.jooq.impl.DSL;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @UtilityClass
 public class DaoUpsertUtils {
@@ -40,6 +42,21 @@ public class DaoUpsertUtils {
         }
         result.putAll(explicitAssignments);
         return result;
+    }
+
+    public static Map<Field<?>, Object> buildLookupUpsertMap(
+            Table<?> table,
+            Field<?> idField,
+            Field<LocalDateTime> updatedAtField
+    ) {
+        return buildUpsertMap(
+                table,
+                Set.of(idField, updatedAtField),
+                Arrays.stream(table.fields())
+                        .filter(field -> !field.equals(idField) && !field.equals(updatedAtField))
+                        .collect(Collectors.toSet()),
+                Map.of(updatedAtField, UTC_NOW)
+        );
     }
 
     public static org.jooq.Condition isIncomingEventNewer(
