@@ -6,6 +6,8 @@ import dev.vality.ccreporter.integration.config.ReportingIntegrationTestConfig;
 import dev.vality.ccreporter.report.ReportLifecycleService;
 import dev.vality.ccreporter.storage.FileStorageService;
 import dev.vality.file.storage.FileStorageSrv;
+import dev.vality.woody.api.trace.TraceData;
+import dev.vality.woody.api.trace.context.TraceContext;
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,11 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -90,27 +89,48 @@ public abstract class AbstractReportingIntegrationTest {
 
     @AfterEach
     void tearDownRequestContext() {
-        RequestContextHolder.resetRequestAttributes();
+        TraceContext.setCurrentTraceData(null);
     }
 
     protected void bindCaller(String callerId) {
-        var request = new MockHttpServletRequest();
-        request.addHeader("X-User-Id", callerId);
-        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+        bindTraceContext(null, callerId, callerId, callerId, null, null, null, null);
     }
 
     protected void bindCallerWithAuditMetadata(String callerId) {
-        var request = new MockHttpServletRequest();
-        request.addHeader("X-User-Id", callerId);
-        request.addHeader("woody.meta.user-identity.id", "user-id-42");
-        request.addHeader("woody.meta.user-identity.username", "alice");
-        request.addHeader("woody.meta.user-identity.email", "alice@example.com");
-        request.addHeader("woody.meta.user-identity.realm", "external");
-        request.addHeader("woody.meta.user-identity.X-Request-ID", "req-123");
-        request.addHeader("woody.meta.user-identity.X-Request-Deadline", "2026-01-05T10:15:30Z");
-        request.addHeader("traceparent", "00-4bf92f3577b34da6a3ce929d0e0e4736-00aa0ba902b7-01");
-        request.addHeader("tracestate", "rojo=00f067aa0ba902b7");
-        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+        bindTraceContext(
+                "00-4bf92f3577b34da6a3ce929d0e0e4736-00aa0ba902b7-01",
+                "user-id-42",
+                "alice",
+                "alice@example.com",
+                "external",
+                "req-123",
+                "2026-01-05T10:15:30Z",
+                "rojo=00f067aa0ba902b7"
+        );
+    }
+
+    private void bindTraceContext(
+            String traceparent,
+            String userId,
+            String username,
+            String email,
+            String realm,
+            String requestId,
+            String requestDeadline,
+            String tracestate
+    ) {
+        var traceData = new TraceData();
+        traceData.getActiveSpan().getSpan().setTraceId("audit-trace-id");
+        var metadata = traceData.getActiveSpan().getCustomMetadata();
+        metadata.putValue("user-identity.id", userId);
+        metadata.putValue("user-identity.username", username);
+        metadata.putValue("user-identity.email", email);
+        metadata.putValue("user-identity.realm", realm);
+        metadata.putValue("user-identity.X-Request-ID", requestId);
+        metadata.putValue("user-identity.X-Request-Deadline", requestDeadline);
+        traceData.setInboundTraceParent(traceparent);
+        traceData.setInboundTraceState(tracestate);
+        TraceContext.setCurrentTraceData(traceData);
     }
 
     private static EmbeddedPostgres startPostgres() {

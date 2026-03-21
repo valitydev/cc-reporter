@@ -23,18 +23,17 @@ class ReportAuditIntegrationTest extends AbstractReportingIntegrationTest {
 
         var auditRow = findLatestAudit(reportId, "report_created");
 
-        assertThat(auditRow.get("actor")).isEqualTo("user-7");
+        assertThat(auditRow.get("actor")).isEqualTo("alice@example.com");
         assertThat(auditRow.get("event_type")).isEqualTo("report_created");
-        assertThat(jsonText(reportId, "report_created", "{actor,id}")).isEqualTo("user-id-42");
-        assertThat(jsonText(reportId, "report_created", "{actor,username}")).isEqualTo("alice");
-        assertThat(jsonText(reportId, "report_created", "{actor,email}")).isEqualTo("alice@example.com");
-        assertThat(jsonText(reportId, "report_created", "{request,id}")).isEqualTo("req-123");
-        assertThat(jsonText(reportId, "report_created", "{trace,traceparent}"))
+        assertThat(jsonText(reportId, "report_created", "{userId}")).isEqualTo("user-id-42");
+        assertThat(jsonText(reportId, "report_created", "{username}")).isEqualTo("alice");
+        assertThat(jsonText(reportId, "report_created", "{email}")).isEqualTo("alice@example.com");
+        assertThat(jsonText(reportId, "report_created", "{traceId}")).isEqualTo("audit-trace-id");
+        assertThat(jsonText(reportId, "report_created", "{traceparent}"))
                 .isEqualTo("00-4bf92f3577b34da6a3ce929d0e0e4736-00aa0ba902b7-01");
         assertThat(
                 jsonText(reportId, "report_created", "{details,idempotencyKey}")
         ).isEqualTo("audit-create-1");
-        assertThat(jsonText(reportId, "report_created", "{details,idempotentReplay}")).isEqualTo("false");
     }
 
     @Test
@@ -53,12 +52,11 @@ class ReportAuditIntegrationTest extends AbstractReportingIntegrationTest {
         reportingHandler.generatePresignedUrl(request);
 
         var cancelAudit = findLatestAudit(reportId, "report_canceled");
-        assertThat(cancelAudit.get("actor")).isEqualTo("user-9");
-        assertThat(jsonText(reportId, "report_canceled", "{details,state_changed}")).isEqualTo("true");
-        assertThat(jsonText(reportId, "report_canceled", "{request,deadline}")).isEqualTo("2026-01-05T10:15:30Z");
+        assertThat(cancelAudit.get("actor")).isEqualTo("alice@example.com");
+        assertThat(jsonText(reportId, "report_canceled", "{details,stateChanged}")).isEqualTo("true");
 
         var presignedAudit = findLatestAudit(reportId, "presigned_url_generated");
-        assertThat(presignedAudit.get("actor")).isEqualTo("user-9");
+        assertThat(presignedAudit.get("actor")).isEqualTo("alice@example.com");
         assertThat(jsonText(reportId, "presigned_url_generated", "{details,fileId}")).isEqualTo("file-audit-1");
         assertThat(jsonText(reportId, "presigned_url_generated", "{details,requestedExpiresAt}")).isNotBlank();
         assertThat(presignedAudit.get("created_at")).isNotNull();

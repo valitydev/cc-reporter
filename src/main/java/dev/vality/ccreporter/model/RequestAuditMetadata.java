@@ -5,8 +5,7 @@ public record RequestAuditMetadata(
         String username,
         String email,
         String realm,
-        String requestId,
-        String requestDeadline,
+        String traceId,
         String traceparent,
         String tracestate
 ) {

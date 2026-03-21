@@ -4,18 +4,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.vality.ccreporter.FileType;
 import dev.vality.ccreporter.ReportType;
 import dev.vality.ccreporter.TimeRange;
-import dev.vality.ccreporter.config.ReportTransactionConfig.ReportCsvReadOnlyTxTemplate;
 import dev.vality.ccreporter.fixture.ReportRequestFixtures;
 import dev.vality.ccreporter.model.ClaimedReportJob;
-import dev.vality.ccreporter.serde.json.ReportQueryJsonSerializer;
+import dev.vality.ccreporter.serde.json.ThriftJsonCodec;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.support.SimpleTransactionStatus;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -37,20 +33,11 @@ class ReportCsvServiceTest {
     void paymentsCsvQueryUsesForwardOnlyCursorFetchSize() throws Exception {
         var namedParameterJdbcTemplate = mock(NamedParameterJdbcTemplate.class);
         var jdbcTemplate = mock(JdbcTemplate.class);
-        var transactionManager = mock(PlatformTransactionManager.class);
-        var transactionStatus = new SimpleTransactionStatus();
         var objectMapper = new ObjectMapper();
-        var reportQueryJsonSerializer = new ReportQueryJsonSerializer(objectMapper);
-        var reportCsvService =
-                new ReportCsvService(
-                        namedParameterJdbcTemplate,
-                        reportQueryJsonSerializer,
-                        new ReportCsvReadOnlyTxTemplate(transactionManager)
-                );
+        var thriftJsonCodec = new ThriftJsonCodec(objectMapper);
+        var reportCsvService = new ReportCsvService(namedParameterJdbcTemplate, thriftJsonCodec);
 
         when(namedParameterJdbcTemplate.getJdbcTemplate()).thenReturn(jdbcTemplate);
-        when(transactionManager.getTransaction(any(TransactionDefinition.class))).thenReturn(transactionStatus);
-        doNothing().when(transactionManager).commit(transactionStatus);
         when(jdbcTemplate.queryForObject("SELECT EXTRACT(EPOCH FROM now())", BigDecimal.class))
                 .thenReturn(new BigDecimal("1700000000.123456789"));
 
@@ -96,7 +83,7 @@ class ReportCsvServiceTest {
                 return null;
             }).when(jdbcTemplate).query(any(PreparedStatementCreator.class), any(RowCallbackHandler.class));
 
-            var generatedCsvReport = reportCsvService.generate(claimedPaymentsJob(reportQueryJsonSerializer));
+            var generatedCsvReport = reportCsvService.generate(claimedPaymentsJob(thriftJsonCodec));
 
             verify(connection).prepareStatement(
                     any(String.class),
@@ -114,7 +101,7 @@ class ReportCsvServiceTest {
         }
     }
 
-    private ClaimedReportJob claimedPaymentsJob(ReportQueryJsonSerializer reportQueryJsonSerializer) {
+    private ClaimedReportJob claimedPaymentsJob(ThriftJsonCodec thriftJsonCodec) {
         var request = ReportRequestFixtures.payments(
                 "cursor-fetch-size-1",
                 new TimeRange("2025-12-31T00:00:00Z", "2026-01-02T00:00:00Z")
@@ -125,7 +112,7 @@ class ReportCsvServiceTest {
                 42L,
                 ReportType.payments,
                 FileType.csv,
-                reportQueryJsonSerializer.serialize(reportQuery),
+                thriftJsonCodec.serialize(reportQuery),
                 request.getTimezone(),
                 1
         );

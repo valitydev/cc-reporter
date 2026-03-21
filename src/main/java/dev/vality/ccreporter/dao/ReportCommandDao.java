@@ -5,10 +5,11 @@ import dev.vality.ccreporter.ReportQuery;
 import dev.vality.ccreporter.ReportType;
 import dev.vality.ccreporter.domain.tables.pojos.ReportJob;
 import dev.vality.ccreporter.report.ReportQueryService;
-import dev.vality.ccreporter.serde.json.ReportQueryJsonSerializer;
+import dev.vality.ccreporter.serde.json.ThriftJsonCodec;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.jooq.JSONB;
+import org.jooq.exception.IntegrityConstraintViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
@@ -25,7 +26,7 @@ public class ReportCommandDao {
 
     private final DSLContext dslContext;
     private final ReportQueryService reportQueryService;
-    private final ReportQueryJsonSerializer reportQueryJsonSerializer;
+    private final ThriftJsonCodec thriftJsonCodec;
 
     public Optional<Long> findByIdempotencyKey(String createdBy, String idempotencyKey) {
         if (!StringUtils.hasText(idempotencyKey)) {
@@ -46,16 +47,16 @@ public class ReportCommandDao {
             String timezone,
             String idempotencyKey
     ) {
-        var timeRange = reportQueryService.extractTimeRange(query);
-        var queryJson = reportQueryJsonSerializer.serialize(query);
+        var querySpec = reportQueryService.resolveQuerySpec(query);
+        var queryJson = thriftJsonCodec.serialize(query);
         var queryHash = reportQueryService.hash(queryJson);
         var reportJob = new ReportJob()
                 .setReportType(ReportRecordMapper.toJooqReportType(reportType))
                 .setFileType(ReportRecordMapper.toJooqFileType(fileType))
                 .setQueryJson(JSONB.jsonb(queryJson))
                 .setQueryHash(queryHash)
-                .setRequestedTimeFrom(toLocalDateTime(timeRange.from()))
-                .setRequestedTimeTo(toLocalDateTime(timeRange.to()))
+                .setRequestedTimeFrom(toLocalDateTime(querySpec.timeRange().from()))
+                .setRequestedTimeTo(toLocalDateTime(querySpec.timeRange().to()))
                 .setTimezone(timezone)
                 .setCreatedBy(createdBy)
                 .setIdempotencyKey(StringUtils.hasText(idempotencyKey) ? idempotencyKey : null);
@@ -74,7 +75,7 @@ public class ReportCommandDao {
                             .fetchOne(REPORT_JOB.ID),
                     "Report creation must return an id"
             );
-        } catch (org.jooq.exception.IntegrityConstraintViolationException ex) {
+        } catch (IntegrityConstraintViolationException ex) {
             throw new DuplicateKeyException("Report idempotency key already exists", ex);
         }
     }

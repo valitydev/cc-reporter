@@ -1,5 +1,6 @@
 package dev.vality.ccreporter.dao;
 
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.vality.ccreporter.domain.tables.pojos.ReportAuditEvent;
@@ -8,9 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.jooq.JSONB;
 import org.springframework.stereotype.Repository;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 import static dev.vality.ccreporter.domain.Tables.REPORT_AUDIT_EVENT;
 
@@ -26,7 +24,7 @@ public class ReportAuditDao {
             String eventType,
             String actor,
             RequestAuditMetadata metadata,
-            Map<String, Object> details
+            Object details
     ) {
         var payloadJson = serializePayload(metadata, details);
         var auditEvent = new ReportAuditEvent()
@@ -42,39 +40,20 @@ public class ReportAuditDao {
                 .execute();
     }
 
-    private String serializePayload(RequestAuditMetadata metadata, Map<String, Object> details) {
-        var payload = new LinkedHashMap<String, Object>();
-        payload.put("actor", actorPayload(metadata));
-        payload.put("request", requestPayload(metadata));
-        payload.put("trace", tracePayload(metadata));
-        payload.put("details", details == null ? Map.of() : details);
+    private String serializePayload(RequestAuditMetadata metadata, Object details) {
         try {
-            return objectMapper.writeValueAsString(payload);
+            return objectMapper.writeValueAsString(new AuditPayload(
+                    metadata,
+                    details
+            ));
         } catch (JsonProcessingException ex) {
             throw new IllegalStateException("Failed to serialize report audit payload", ex);
         }
     }
 
-    private Map<String, Object> actorPayload(RequestAuditMetadata metadata) {
-        var actor = new LinkedHashMap<String, Object>();
-        actor.put("id", metadata.userId());
-        actor.put("username", metadata.username());
-        actor.put("email", metadata.email());
-        actor.put("realm", metadata.realm());
-        return actor;
-    }
-
-    private Map<String, Object> requestPayload(RequestAuditMetadata metadata) {
-        var request = new LinkedHashMap<String, Object>();
-        request.put("id", metadata.requestId());
-        request.put("deadline", metadata.requestDeadline());
-        return request;
-    }
-
-    private Map<String, Object> tracePayload(RequestAuditMetadata metadata) {
-        var trace = new LinkedHashMap<String, Object>();
-        trace.put("traceparent", metadata.traceparent());
-        trace.put("tracestate", metadata.tracestate());
-        return trace;
+    private record AuditPayload(
+            @JsonUnwrapped RequestAuditMetadata metadata,
+            Object details
+    ) {
     }
 }

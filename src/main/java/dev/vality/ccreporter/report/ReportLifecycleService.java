@@ -1,6 +1,5 @@
 package dev.vality.ccreporter.report;
 
-import dev.vality.ccreporter.config.ReportTransactionConfig.ReportLifecycleTxTemplate;
 import dev.vality.ccreporter.config.properties.ReportProperties;
 import dev.vality.ccreporter.config.properties.ReportSchedulerProperties;
 import dev.vality.ccreporter.dao.ReportLifecycleDao;
@@ -25,9 +24,9 @@ public class ReportLifecycleService {
     private final ReportLifecycleDao reportLifecycleDao;
     private final ReportCsvService reportCsvService;
     private final FileStorageService fileStorageService;
+    private final ReportLifecycleTransactionService reportLifecycleTransactionService;
     private final ReportProperties reportProperties;
     private final ReportSchedulerProperties reportSchedulerProperties;
-    private final ReportLifecycleTxTemplate transactionTemplate;
 
     public void processNextPendingReport() {
         processNextPendingReport(Instant.now());
@@ -72,25 +71,13 @@ public class ReportLifecycleService {
             );
             var finishedAt = Instant.now();
             var fileMetadata = buildFileMetadata(fileId, generatedCsvReport);
-            var completedReport = generatedCsvReport;
-            transactionTemplate.executeWithoutResult(status -> {
-                var published = reportLifecycleDao.publishFileRecord(
-                        claimedReportJob.id(),
-                        fileMetadata,
-                        finishedAt
-                );
-                var markedCreated = reportLifecycleDao.markCreated(
-                        claimedReportJob.id(),
-                        completedReport.dataSnapshotFixedAt(),
-                        finishedAt,
-                        expiresAt,
-                        completedReport.rowsCount()
-                );
-                if (!published || !markedCreated) {
-                    status.setRollbackOnly();
-                    throw new IllegalStateException("Failed to publish created report " + claimedReportJob.id());
-                }
-            });
+            reportLifecycleTransactionService.publishCompletedReport(
+                    claimedReportJob.id(),
+                    fileMetadata,
+                    finishedAt,
+                    expiresAt,
+                    generatedCsvReport
+            );
         } catch (Exception ex) {
             handleProcessingFailure(claimedReportJob, processingTime, ex);
         } finally {

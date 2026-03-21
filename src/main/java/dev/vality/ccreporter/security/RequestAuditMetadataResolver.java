@@ -1,59 +1,88 @@
 package dev.vality.ccreporter.security;
 
 import dev.vality.ccreporter.model.RequestAuditMetadata;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.ObjectProvider;
+import dev.vality.woody.api.trace.Metadata;
+import dev.vality.woody.api.trace.TraceData;
+import dev.vality.woody.api.trace.context.TraceContext;
+import dev.vality.woody.api.trace.context.metadata.user.UserIdentityEmailExtensionKit;
+import dev.vality.woody.api.trace.context.metadata.user.UserIdentityIdExtensionKit;
+import dev.vality.woody.api.trace.context.metadata.user.UserIdentityRealmExtensionKit;
+import dev.vality.woody.api.trace.context.metadata.user.UserIdentityUsernameExtensionKit;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.context.propagation.TextMapSetter;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Component
-@RequiredArgsConstructor
 public class RequestAuditMetadataResolver {
 
-    private static final String WOODY_USER_ID = "woody.meta.user-identity.id";
-    private static final String WOODY_USERNAME = "woody.meta.user-identity.username";
-    private static final String WOODY_EMAIL = "woody.meta.user-identity.email";
-    private static final String WOODY_REALM = "woody.meta.user-identity.realm";
-    private static final String WOODY_REQUEST_ID = "woody.meta.user-identity.X-Request-ID";
-    private static final String WOODY_REQUEST_DEADLINE = "woody.meta.user-identity.X-Request-Deadline";
-    private static final String LEGACY_USER_ID = "x-woody-meta-user-identity-id";
-    private static final String LEGACY_USERNAME = "x-woody-meta-user-identity-username";
-    private static final String LEGACY_EMAIL = "x-woody-meta-user-identity-email";
-    private static final String LEGACY_REALM = "x-woody-meta-user-identity-realm";
-    private static final String LEGACY_REQUEST_ID = "x-woody-meta-user-identity-X-Request-ID";
-    private static final String LEGACY_REQUEST_DEADLINE = "x-woody-meta-user-identity-X-Request-Deadline";
-    private static final String REQUEST_ID = "X-Request-ID";
-    private static final String REQUEST_DEADLINE = "X-Request-Deadline";
+    private static final String WOODY_USER_ID = UserIdentityIdExtensionKit.KEY;
+    private static final String WOODY_USERNAME = UserIdentityUsernameExtensionKit.KEY;
+    private static final String WOODY_EMAIL = UserIdentityEmailExtensionKit.KEY;
+    private static final String WOODY_REALM = UserIdentityRealmExtensionKit.KEY;
     private static final String TRACE_PARENT = "traceparent";
     private static final String TRACE_STATE = "tracestate";
 
-    private final ObjectProvider<HttpServletRequest> requestProvider;
-
     public RequestAuditMetadata resolve() {
-        var request = requestProvider.getIfAvailable();
-        if (request == null) {
-            return new RequestAuditMetadata(null, null, null, null, null, null, null, null);
-        }
+        var traceData = TraceContext.getCurrentTraceData();
+        var activeSpan = traceData.getActiveSpan();
+        var metadata = activeSpan.getCustomMetadata();
+        var traceHeaders = extractTraceHeaders(traceData);
         return new RequestAuditMetadata(
-                header(request, WOODY_USER_ID, LEGACY_USER_ID),
-                header(request, WOODY_USERNAME, LEGACY_USERNAME),
-                header(request, WOODY_EMAIL, LEGACY_EMAIL),
-                header(request, WOODY_REALM, LEGACY_REALM),
-                header(request, WOODY_REQUEST_ID, LEGACY_REQUEST_ID, REQUEST_ID),
-                header(request, WOODY_REQUEST_DEADLINE, LEGACY_REQUEST_DEADLINE, REQUEST_DEADLINE),
-                header(request, TRACE_PARENT),
-                header(request, TRACE_STATE)
+                metadataValue(metadata, WOODY_USER_ID),
+                metadataValue(metadata, WOODY_USERNAME),
+                metadataValue(metadata, WOODY_EMAIL),
+                metadataValue(metadata, WOODY_REALM),
+                activeSpan.getSpan().getTraceId(),
+                traceHeaders.get(TRACE_PARENT),
+                traceHeaders.get(TRACE_STATE)
         );
     }
 
-    private String header(HttpServletRequest request, String... names) {
-        for (var name : names) {
-            var value = request.getHeader(name);
-            if (StringUtils.hasText(value)) {
-                return value.trim();
-            }
+    private Map<String, String> extractTraceHeaders(TraceData traceData) {
+        var headers = new HashMap<String, String>();
+        var otelSpan = traceData.getOtelSpan();
+        if (otelSpan != null && otelSpan.getSpanContext().isValid()) {
+            GlobalOpenTelemetry.getPropagators()
+                    .getTextMapPropagator()
+                    .inject(traceData.getOtelContext(), headers, MAP_SETTER);
+        }
+        putIfHasText(headers, TRACE_PARENT, traceData.getInboundTraceParent());
+        putIfHasText(headers, TRACE_STATE, traceData.getInboundTraceState());
+        return headers;
+    }
+
+    private String metadataValue(Metadata metadata, String key) {
+        if (metadata == null) {
+            return null;
+        }
+        return normalize(metadata.getValue(key));
+    }
+
+    private String normalize(Object value) {
+        if (value == null) {
+            return null;
+        }
+        var stringValue = value.toString();
+        if (StringUtils.hasText(stringValue)) {
+            return stringValue.trim();
         }
         return null;
     }
+
+    private void putIfHasText(Map<String, String> headers, String key, String value) {
+        if (StringUtils.hasText(value) && !headers.containsKey(key)) {
+            headers.put(key, value.trim());
+        }
+    }
+
+    private static final TextMapSetter<Map<String, String>> MAP_SETTER = (carrier, key, value) -> {
+        if (carrier != null && StringUtils.hasText(key) && StringUtils.hasText(value)) {
+            carrier.put(key, value);
+        }
+    };
+
 }

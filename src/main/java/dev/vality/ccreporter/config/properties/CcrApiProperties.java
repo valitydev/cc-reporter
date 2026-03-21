@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Configuration;
 public class CcrApiProperties {
 
     private String path;
-    private String createdByHeader;
     private int defaultPageSize;
     private int maxPageSize;
 
