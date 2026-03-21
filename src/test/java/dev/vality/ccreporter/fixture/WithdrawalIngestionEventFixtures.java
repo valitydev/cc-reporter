@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.integration.fixture;
+package dev.vality.ccreporter.fixture;
 
 import dev.vality.ccreporter.serde.thrift.ThriftSerializer;
 import dev.vality.fistful.cashflow.FinalCashFlow;

@@ -1,8 +1,10 @@
 package dev.vality.ccreporter.ingestion.payment;
 
 import dev.vality.ccreporter.domain.tables.pojos.PaymentTxnCurrent;
-import dev.vality.ccreporter.util.DomainCashFlowExtractor;
-import dev.vality.ccreporter.util.ProxyStateExtractor;
+import dev.vality.ccreporter.ingestion.payment.support.PaymentToolExtractor;
+import dev.vality.ccreporter.ingestion.payment.support.ProxyStateExtractor;
+import dev.vality.ccreporter.ingestion.payment.support.TransactionExtraExtractor;
+import dev.vality.ccreporter.ingestion.shared.cashflow.CashFlowAmountExtractor;
 import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.damsel.payment_processing.EventPayload;
 import dev.vality.damsel.payment_processing.InvoiceChange;
@@ -17,13 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static dev.vality.ccreporter.util.DomainStatusUtils.*;
-import static dev.vality.ccreporter.util.PaymentToolUtils.extractPaymentToolType;
+import static dev.vality.ccreporter.ingestion.shared.status.StatusDetailExtractor.*;
 import static dev.vality.ccreporter.util.SearchValueNormalizer.normalize;
 import static dev.vality.ccreporter.util.TimestampUtils.toLocalDateTime;
 import static dev.vality.ccreporter.util.TimestampUtils.toOptionalLocalDateTime;
-import static dev.vality.ccreporter.util.TransactionExtraUtils.getConvertedAmount;
-import static dev.vality.ccreporter.util.TransactionExtraUtils.getExchangeRate;
 
 @Component
 @RequiredArgsConstructor
@@ -80,7 +79,7 @@ public class PaymentEventProjector {
                 .setAmount(cost.getAmount())
                 .setCurrency(cost.getCurrency().getSymbolicCode())
                 .setExternalId(payment.getExternalId())
-                .setPaymentToolType(extractPaymentToolType(payment))
+                .setPaymentToolType(PaymentToolExtractor.extractPaymentToolType(payment))
                 .setOriginalAmount(cost.getAmount())
                 .setOriginalCurrency(cost.getCurrency().getSymbolicCode()));
     }
@@ -120,8 +119,8 @@ public class PaymentEventProjector {
         }
         var postings = paymentChange.getPayload().getInvoicePaymentCashFlowChanged().getCashFlow();
         return Optional.of(baseUpdate(event, paymentChange)
-                .setAmount(DomainCashFlowExtractor.extractPaymentAmount(postings))
-                .setFee(DomainCashFlowExtractor.extractPaymentFee(postings)));
+                .setAmount(CashFlowAmountExtractor.extractPaymentAmount(postings))
+                .setFee(CashFlowAmountExtractor.extractPaymentFee(postings)));
     }
 
     private Optional<PaymentTxnCurrent> paymentStatusChangedUpdate(
@@ -158,8 +157,8 @@ public class PaymentEventProjector {
                 .setTrxId(trx.getId())
                 .setRrn(rrn)
                 .setApprovalCode(code)
-                .setConvertedAmount(getConvertedAmount(trx))
-                .setExchangeRateInternal(getExchangeRate(trx))
+                .setConvertedAmount(TransactionExtraExtractor.getConvertedAmount(trx))
+                .setExchangeRateInternal(TransactionExtraExtractor.getExchangeRate(trx))
                 .setTrxSearch(normalize(trx.getId(), rrn, code)));
     }
 

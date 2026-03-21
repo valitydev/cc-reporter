@@ -1,14 +1,14 @@
-package dev.vality.ccreporter.util;
+package dev.vality.ccreporter.ingestion.shared.status;
 
 import dev.vality.damsel.domain.Cash;
 import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.fistful.withdrawal.status.Status;
 import lombok.experimental.UtilityClass;
 
-import static dev.vality.ccreporter.util.DomainFailureUtils.summary;
+import static dev.vality.ccreporter.ingestion.shared.status.FailureSummaryExtractor.summary;
 
 @UtilityClass
-public class DomainStatusUtils {
+public class StatusDetailExtractor {
 
     public static final String PENDING_STATUS = "pending";
 

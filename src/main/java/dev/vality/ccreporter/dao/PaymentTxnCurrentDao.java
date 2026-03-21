@@ -9,8 +9,8 @@ import org.springframework.stereotype.Repository;
 import java.util.Map;
 import java.util.Set;
 
+import static dev.vality.ccreporter.dao.support.DaoUpsertUtils.*;
 import static dev.vality.ccreporter.domain.Tables.PAYMENT_TXN_CURRENT;
-import static dev.vality.ccreporter.util.DaoUpsertUtils.*;
 
 @Repository
 @RequiredArgsConstructor

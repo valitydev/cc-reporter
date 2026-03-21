@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.integration.fixture;
+package dev.vality.ccreporter.fixture;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -81,10 +81,6 @@ public final class RealWithdrawalIngestionEventFixtures {
                 .toList();
     }
 
-    public static List<MachineEvent> withdrawalSessionEvents() {
-        return withdrawalSessionEvents(RESOURCE_NAME);
-    }
-
     public static List<MachineEvent> withdrawalSessionCollectionEvents() {
         return COLLECTION_RESOURCE_NAMES.stream()
                 .flatMap(resourceName -> withdrawalSessionEvents(resourceName).stream())
@@ -121,6 +117,10 @@ public final class RealWithdrawalIngestionEventFixtures {
         timestampedChange.setOccuredAt(eventNode.path("occured_at").asText());
         timestampedChange.setChange(change);
         return Optional.of(timestampedChange);
+    }
+
+    public static List<MachineEvent> withdrawalSessionEvents() {
+        return withdrawalSessionEvents(RESOURCE_NAME);
     }
 
     private static List<MachineEvent> withdrawalSessionEvents(String resourceName) {

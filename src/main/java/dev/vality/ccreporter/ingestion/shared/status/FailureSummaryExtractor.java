@@ -1,11 +1,11 @@
-package dev.vality.ccreporter.util;
+package dev.vality.ccreporter.ingestion.shared.status;
 
 import dev.vality.damsel.domain.Failure;
 import dev.vality.damsel.domain.OperationFailure;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
-public class DomainFailureUtils {
+public class FailureSummaryExtractor {
 
     public static String summary(OperationFailure operationFailure) {
         if (operationFailure == null) {

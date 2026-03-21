@@ -1,6 +1,6 @@
 package dev.vality.ccreporter.ingestion.dominant;
 
-import dev.vality.ccreporter.dao.DisplayNameLookupDao;
+import dev.vality.ccreporter.dao.DominantLookupDao;
 import dev.vality.damsel.domain.DomainObject;
 import dev.vality.damsel.domain.Reference;
 import dev.vality.damsel.domain_config_v2.FinalOperation;
@@ -12,13 +12,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Comparator;
 import java.util.List;
 
-import static dev.vality.ccreporter.dao.DisplayNameLookupDao.LookupType.*;
+import static dev.vality.ccreporter.dao.DominantLookupDao.LookupType.*;
 
 @Service
 @RequiredArgsConstructor
 public class DominantLookupIngestionService {
 
-    private final DisplayNameLookupDao displayNameLookupDao;
+    private final DominantLookupDao dominantLookupDao;
 
     @Transactional
     public void handleCommits(List<HistoricalCommit> commits) {
@@ -49,7 +49,7 @@ public class DominantLookupIngestionService {
         if (object.isSetShopConfig()) {
             var shop = object.getShopConfig();
             if (shop.getRef() != null && shop.getData() != null) {
-                displayNameLookupDao.upsert(
+                dominantLookupDao.upsert(
                         SHOP,
                         shop.getRef().getId(),
                         shop.getData().getName(),
@@ -62,7 +62,7 @@ public class DominantLookupIngestionService {
         if (object.isSetProvider()) {
             var provider = object.getProvider();
             if (provider.getRef() != null && provider.getData() != null) {
-                displayNameLookupDao.upsert(
+                dominantLookupDao.upsert(
                         PROVIDER,
                         String.valueOf(provider.getRef().getId()),
                         provider.getData().getName(),
@@ -75,7 +75,7 @@ public class DominantLookupIngestionService {
         if (object.isSetTerminal()) {
             var terminal = object.getTerminal();
             if (terminal.getRef() != null && terminal.getData() != null) {
-                displayNameLookupDao.upsert(
+                dominantLookupDao.upsert(
                         TERMINAL,
                         String.valueOf(terminal.getRef().getId()),
                         terminal.getData().getName(),
@@ -88,7 +88,7 @@ public class DominantLookupIngestionService {
         if (object.isSetWalletConfig()) {
             var wallet = object.getWalletConfig();
             if (wallet.getRef() != null && wallet.getData() != null) {
-                displayNameLookupDao.upsert(
+                dominantLookupDao.upsert(
                         WALLET,
                         wallet.getRef().getId(),
                         wallet.getData().getName(),
@@ -104,7 +104,7 @@ public class DominantLookupIngestionService {
             return;
         }
         if (reference.isSetShopConfig()) {
-            displayNameLookupDao.upsert(
+            dominantLookupDao.upsert(
                     SHOP,
                     reference.getShopConfig().getId(),
                     null,
@@ -114,7 +114,7 @@ public class DominantLookupIngestionService {
             return;
         }
         if (reference.isSetProvider()) {
-            displayNameLookupDao.upsert(
+            dominantLookupDao.upsert(
                     PROVIDER,
                     String.valueOf(reference.getProvider().getId()),
                     null,
@@ -124,7 +124,7 @@ public class DominantLookupIngestionService {
             return;
         }
         if (reference.isSetTerminal()) {
-            displayNameLookupDao.upsert(
+            dominantLookupDao.upsert(
                     TERMINAL,
                     String.valueOf(reference.getTerminal().getId()),
                     null,
@@ -134,7 +134,7 @@ public class DominantLookupIngestionService {
             return;
         }
         if (reference.isSetWalletConfig()) {
-            displayNameLookupDao.upsert(
+            dominantLookupDao.upsert(
                     WALLET,
                     reference.getWalletConfig().getId(),
                     null,

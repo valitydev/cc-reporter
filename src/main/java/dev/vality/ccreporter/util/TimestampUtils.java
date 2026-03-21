@@ -25,12 +25,12 @@ public class TimestampUtils {
         return LocalDateTime.ofInstant(value, ZoneOffset.UTC);
     }
 
-    public static LocalDateTime toOptionalLocalDateTime(Instant value) {
-        return value == null ? null : LocalDateTime.ofInstant(value, ZoneOffset.UTC);
-    }
-
     public static LocalDateTime toLocalDateTime(String value) {
         return toLocalDateTime(Instant.parse(value));
+    }
+
+    public static LocalDateTime toOptionalLocalDateTime(Instant value) {
+        return value == null ? null : LocalDateTime.ofInstant(value, ZoneOffset.UTC);
     }
 
     public static Instant toInstant(Timestamp timestamp) {

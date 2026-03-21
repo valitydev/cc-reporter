@@ -1,10 +1,10 @@
 package dev.vality.ccreporter.integration;
 
+import dev.vality.ccreporter.fixture.SerializedIngestionEventFixtures;
 import dev.vality.ccreporter.ingestion.payment.PaymentIngestionService;
 import dev.vality.ccreporter.ingestion.withdrawal.WithdrawalIngestionService;
-import dev.vality.ccreporter.ingestion.withdrawal.WithdrawalSessionIngestionService;
+import dev.vality.ccreporter.ingestion.withdrawal.session.WithdrawalSessionIngestionService;
 import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
-import dev.vality.ccreporter.integration.fixture.SerializedIngestionEventFixtures;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 

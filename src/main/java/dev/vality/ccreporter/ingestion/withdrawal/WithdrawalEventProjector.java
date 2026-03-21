@@ -1,7 +1,7 @@
 package dev.vality.ccreporter.ingestion.withdrawal;
 
 import dev.vality.ccreporter.domain.tables.pojos.WithdrawalTxnCurrent;
-import dev.vality.ccreporter.util.DomainCashFlowExtractor;
+import dev.vality.ccreporter.ingestion.shared.cashflow.CashFlowAmountExtractor;
 import dev.vality.fistful.withdrawal.Change;
 import dev.vality.fistful.withdrawal.QuoteState;
 import dev.vality.fistful.withdrawal.TimestampedChange;
@@ -16,8 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static dev.vality.ccreporter.util.DomainStatusUtils.PENDING_STATUS;
-import static dev.vality.ccreporter.util.DomainStatusUtils.extractErrorSummary;
+import static dev.vality.ccreporter.ingestion.shared.status.StatusDetailExtractor.PENDING_STATUS;
+import static dev.vality.ccreporter.ingestion.shared.status.StatusDetailExtractor.extractErrorSummary;
 import static dev.vality.ccreporter.util.TimestampUtils.toLocalDateTime;
 import static dev.vality.ccreporter.util.TimestampUtils.toOptionalLocalDateTime;
 
@@ -99,7 +99,7 @@ public class WithdrawalEventProjector {
         }
         var postings = change.getTransfer().getPayload().getCreated().getTransfer().getCashflow().getPostings();
         return Optional.of(baseUpdate(event)
-                .setFee(DomainCashFlowExtractor.extractWithdrawalFee(postings)));
+                .setFee(CashFlowAmountExtractor.extractWithdrawalFee(postings)));
     }
 
     private WithdrawalTxnCurrent baseUpdate(MachineEvent event) {

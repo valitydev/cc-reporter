@@ -4,13 +4,13 @@ import dev.vality.ccreporter.GetReportRequest;
 import dev.vality.ccreporter.PaymentsSearchFilter;
 import dev.vality.ccreporter.ReportStatus;
 import dev.vality.ccreporter.WithdrawalsSearchFilter;
-import dev.vality.ccreporter.dao.DisplayNameLookupDao;
+import dev.vality.ccreporter.dao.DominantLookupDao;
+import dev.vality.ccreporter.fixture.CurrentStateTableFixtures;
+import dev.vality.ccreporter.fixture.ReportRequestFixtures;
+import dev.vality.ccreporter.fixture.SerializedIngestionEventFixtures;
 import dev.vality.ccreporter.ingestion.payment.PaymentIngestionService;
 import dev.vality.ccreporter.ingestion.withdrawal.WithdrawalIngestionService;
 import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
-import dev.vality.ccreporter.integration.fixture.CurrentStateTableFixtures;
-import dev.vality.ccreporter.integration.fixture.ReportRequestFixtures;
-import dev.vality.ccreporter.integration.fixture.SerializedIngestionEventFixtures;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -32,7 +32,7 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
     private WithdrawalIngestionService withdrawalIngestionService;
 
     @Autowired
-    private DisplayNameLookupDao displayNameLookupDao;
+    private DominantLookupDao dominantLookupDao;
 
     @Test
     void paymentsQueryFiltersExcludeNonMatchingRows() throws Exception {
@@ -62,8 +62,8 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
                 "invoice-filter-2",
                 "payment-filter-2"
         );
-        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.SHOP, "shop-1", "Shop One", 0L, false);
-        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.SHOP, "shop-2", "Other Shop", 0L, false);
+        dominantLookupDao.upsert(DominantLookupDao.LookupType.SHOP, "shop-1", "Shop One", 0L, false);
+        dominantLookupDao.upsert(DominantLookupDao.LookupType.SHOP, "shop-2", "Other Shop", 0L, false);
 
         var request = ReportRequestFixtures.payments("payments-filter-1");
         request.getQuery().getPayments().setShopIds(List.of("shop-1"));
@@ -121,8 +121,8 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
                 "trx-w-2",
                 "withdrawal-filter-2"
         );
-        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.WALLET, "wallet-1", "Wallet One", 0L, false);
-        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.WALLET, "wallet-2", "Other Wallet", 0L, false);
+        dominantLookupDao.upsert(DominantLookupDao.LookupType.WALLET, "wallet-1", "Wallet One", 0L, false);
+        dominantLookupDao.upsert(DominantLookupDao.LookupType.WALLET, "wallet-2", "Other Wallet", 0L, false);
 
         var request = ReportRequestFixtures.withdrawals("withdrawals-filter-1");
         request.getQuery().getWithdrawals().setWalletIds(List.of("wallet-1"));
@@ -213,10 +213,10 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
                 Instant.parse("2026-01-01T10:00:00Z"),
                 Instant.parse("2026-01-01T11:00:00Z")
         );
-        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.SHOP, "shop-1", "Lookup Shop", 0L, false);
-        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.PROVIDER, "provider-1", "Lookup Provider", 0L,
+        dominantLookupDao.upsert(DominantLookupDao.LookupType.SHOP, "shop-1", "Lookup Shop", 0L, false);
+        dominantLookupDao.upsert(DominantLookupDao.LookupType.PROVIDER, "provider-1", "Lookup Provider", 0L,
                 false);
-        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.TERMINAL, "terminal-1", "Lookup Terminal", 0L,
+        dominantLookupDao.upsert(DominantLookupDao.LookupType.TERMINAL, "terminal-1", "Lookup Terminal", 0L,
                 false);
 
         final var request = ReportRequestFixtures.payments("payments-lookup-1");
@@ -249,10 +249,10 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
                 Instant.parse("2026-01-01T10:00:00Z"),
                 Instant.parse("2026-01-01T11:00:00Z")
         );
-        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.WALLET, "wallet-1", "Lookup Wallet", 0L, false);
-        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.PROVIDER, "provider-1", "Lookup Provider", 0L,
+        dominantLookupDao.upsert(DominantLookupDao.LookupType.WALLET, "wallet-1", "Lookup Wallet", 0L, false);
+        dominantLookupDao.upsert(DominantLookupDao.LookupType.PROVIDER, "provider-1", "Lookup Provider", 0L,
                 false);
-        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.TERMINAL, "terminal-1", "Lookup Terminal", 0L,
+        dominantLookupDao.upsert(DominantLookupDao.LookupType.TERMINAL, "terminal-1", "Lookup Terminal", 0L,
                 false);
 
         final var request = ReportRequestFixtures.withdrawals("withdrawals-lookup-1");

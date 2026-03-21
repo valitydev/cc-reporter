@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.ingestion.withdrawal;
+package dev.vality.ccreporter.ingestion.withdrawal.session;
 
 import dev.vality.ccreporter.dao.WithdrawalSessionDao;
 import dev.vality.ccreporter.serde.thrift.MachineEventParser;

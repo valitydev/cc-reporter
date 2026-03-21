@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.util;
+package dev.vality.ccreporter.dao.support;
 
 import lombok.experimental.UtilityClass;
 import org.jooq.Field;

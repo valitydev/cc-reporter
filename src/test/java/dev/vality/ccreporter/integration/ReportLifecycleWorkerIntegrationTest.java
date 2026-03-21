@@ -2,9 +2,9 @@ package dev.vality.ccreporter.integration;
 
 import dev.vality.ccreporter.GetReportRequest;
 import dev.vality.ccreporter.ReportStatus;
+import dev.vality.ccreporter.fixture.ReportRecordFixtures;
+import dev.vality.ccreporter.fixture.ReportRequestFixtures;
 import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
-import dev.vality.ccreporter.integration.fixture.ReportRecordFixtures;
-import dev.vality.ccreporter.integration.fixture.ReportRequestFixtures;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Timestamp;

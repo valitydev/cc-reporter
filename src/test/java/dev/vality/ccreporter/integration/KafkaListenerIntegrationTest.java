@@ -1,7 +1,8 @@
 package dev.vality.ccreporter.integration;
 
+import dev.vality.ccreporter.fixture.DominantCommitFixtures;
+import dev.vality.ccreporter.fixture.SerializedIngestionEventFixtures;
 import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
-import dev.vality.ccreporter.integration.fixture.SerializedIngestionEventFixtures;
 import dev.vality.ccreporter.integration.support.KafkaIntegrationTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -98,7 +99,7 @@ class KafkaListenerIntegrationTest extends AbstractReportingIntegrationTest {
         KafkaIntegrationTestSupport.sendDominantBatch(
                 embeddedKafkaBroker,
                 "ccr-dominant-test",
-                java.util.List.of(dev.vality.ccreporter.integration.fixture.DominantCommitFixtures.removeShopCommit(1L))
+                java.util.List.of(DominantCommitFixtures.removeShopCommit(1L))
         );
 
         var row = KafkaIntegrationTestSupport.waitForRow(

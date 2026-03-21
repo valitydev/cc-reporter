@@ -1,25 +1,7 @@
-package dev.vality.ccreporter.integration.fixture;
+package dev.vality.ccreporter.fixture;
 
-import dev.vality.damsel.domain.DomainObject;
-import dev.vality.damsel.domain.Provider;
-import dev.vality.damsel.domain.ProviderObject;
-import dev.vality.damsel.domain.ProviderRef;
-import dev.vality.damsel.domain.Reference;
-import dev.vality.damsel.domain.ShopConfig;
-import dev.vality.damsel.domain.ShopConfigObject;
-import dev.vality.damsel.domain.ShopConfigRef;
-import dev.vality.damsel.domain.Terminal;
-import dev.vality.damsel.domain.TerminalObject;
-import dev.vality.damsel.domain.TerminalRef;
-import dev.vality.damsel.domain.WalletConfig;
-import dev.vality.damsel.domain.WalletConfigObject;
-import dev.vality.damsel.domain.WalletConfigRef;
-import dev.vality.damsel.domain_config_v2.Author;
-import dev.vality.damsel.domain_config_v2.FinalInsertOp;
-import dev.vality.damsel.domain_config_v2.FinalOperation;
-import dev.vality.damsel.domain_config_v2.HistoricalCommit;
-import dev.vality.damsel.domain_config_v2.RemoveOp;
-import dev.vality.damsel.domain_config_v2.UpdateOp;
+import dev.vality.damsel.domain.*;
+import dev.vality.damsel.domain_config_v2.*;
 
 import java.util.List;
 

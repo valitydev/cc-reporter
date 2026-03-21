@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.util;
+package dev.vality.ccreporter.ingestion.payment.support;
 
 import dev.vality.damsel.domain.TransactionInfo;
 import lombok.experimental.UtilityClass;
@@ -10,7 +10,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 @UtilityClass
-public class TransactionExtraUtils {
+public class TransactionExtraExtractor {
 
     public static final String CONVERTED_AMOUNT_KEY = "converted_amount";
     public static final String EXCHANGE_RATE_KEY = "_rate";

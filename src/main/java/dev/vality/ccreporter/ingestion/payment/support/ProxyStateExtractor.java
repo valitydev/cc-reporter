@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.util;
+package dev.vality.ccreporter.ingestion.payment.support;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.vality.damsel.payment_processing.SessionChangePayload;

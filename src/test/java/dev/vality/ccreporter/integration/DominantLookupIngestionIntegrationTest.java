@@ -1,8 +1,8 @@
 package dev.vality.ccreporter.integration;
 
+import dev.vality.ccreporter.fixture.DominantCommitFixtures;
 import dev.vality.ccreporter.ingestion.dominant.DominantLookupIngestionService;
 import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
-import dev.vality.ccreporter.integration.fixture.DominantCommitFixtures;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 

@@ -1,8 +1,8 @@
 package dev.vality.ccreporter.integration;
 
+import dev.vality.ccreporter.fixture.SerializedIngestionEventFixtures;
 import dev.vality.ccreporter.ingestion.payment.PaymentIngestionService;
 import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
-import dev.vality.ccreporter.integration.fixture.SerializedIngestionEventFixtures;
 import dev.vality.ccreporter.integration.support.KafkaIntegrationTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

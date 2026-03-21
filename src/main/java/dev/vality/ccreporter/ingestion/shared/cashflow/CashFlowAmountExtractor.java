@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.util;
+package dev.vality.ccreporter.ingestion.shared.cashflow;
 
 import dev.vality.damsel.domain.MerchantCashFlowAccount;
 import dev.vality.damsel.domain.ProviderCashFlowAccount;
@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 @UtilityClass
-public class DomainCashFlowExtractor {
+public class CashFlowAmountExtractor {
 
     public static Long extractPaymentAmount(List<dev.vality.damsel.domain.FinalCashFlowPosting> postings) {
         return sum(
@@ -42,8 +42,10 @@ public class DomainCashFlowExtractor {
                 .sum();
     }
 
-    private static Long sum(List<dev.vality.damsel.domain.FinalCashFlowPosting> postings,
-                            Predicate<dev.vality.damsel.domain.FinalCashFlowPosting> filter) {
+    private static Long sum(
+            List<dev.vality.damsel.domain.FinalCashFlowPosting> postings,
+            Predicate<dev.vality.damsel.domain.FinalCashFlowPosting> filter
+    ) {
         return postings == null
                 ? null
                 : postings.stream()

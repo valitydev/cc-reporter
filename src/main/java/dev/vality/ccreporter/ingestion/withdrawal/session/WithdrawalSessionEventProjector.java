@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.ingestion.withdrawal;
+package dev.vality.ccreporter.ingestion.withdrawal.session;
 
 import dev.vality.ccreporter.domain.tables.pojos.WithdrawalSession;
 import dev.vality.fistful.withdrawal_session.Change;

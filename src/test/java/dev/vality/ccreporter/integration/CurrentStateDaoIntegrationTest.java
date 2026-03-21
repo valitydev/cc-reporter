@@ -1,11 +1,11 @@
 package dev.vality.ccreporter.integration;
 
-import dev.vality.ccreporter.dao.DisplayNameLookupDao;
+import dev.vality.ccreporter.dao.DominantLookupDao;
 import dev.vality.ccreporter.dao.PaymentTxnCurrentDao;
 import dev.vality.ccreporter.dao.WithdrawalSessionDao;
 import dev.vality.ccreporter.dao.WithdrawalTxnCurrentDao;
+import dev.vality.ccreporter.fixture.CurrentStateUpdateFixtures;
 import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
-import dev.vality.ccreporter.integration.fixture.CurrentStateUpdateFixtures;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -32,7 +32,7 @@ class CurrentStateDaoIntegrationTest extends AbstractReportingIntegrationTest {
     private WithdrawalSessionDao withdrawalSessionDao;
 
     @Autowired
-    private DisplayNameLookupDao displayNameLookupDao;
+    private DominantLookupDao dominantLookupDao;
 
     @Test
     void paymentUpsertIsMonotonic() {
@@ -133,11 +133,11 @@ class CurrentStateDaoIntegrationTest extends AbstractReportingIntegrationTest {
 
     @Test
     void displayNameLookupUpsertOverwritesExistingDominantName() {
-        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.SHOP, "shop-1", "Shop One", 0L, false);
-        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.SHOP, "shop-1", "Shop Uno", 0L, false);
-        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.PROVIDER, "provider-1", "Provider One", 0L, false);
-        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.TERMINAL, "terminal-1", "Terminal One", 0L, false);
-        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.WALLET, "wallet-1", "Wallet One", 0L, false);
+        dominantLookupDao.upsert(DominantLookupDao.LookupType.SHOP, "shop-1", "Shop One", 0L, false);
+        dominantLookupDao.upsert(DominantLookupDao.LookupType.SHOP, "shop-1", "Shop Uno", 0L, false);
+        dominantLookupDao.upsert(DominantLookupDao.LookupType.PROVIDER, "provider-1", "Provider One", 0L, false);
+        dominantLookupDao.upsert(DominantLookupDao.LookupType.TERMINAL, "terminal-1", "Terminal One", 0L, false);
+        dominantLookupDao.upsert(DominantLookupDao.LookupType.WALLET, "wallet-1", "Wallet One", 0L, false);
 
         assertThat(jdbcTemplate.queryForObject(
                 "SELECT shop_name FROM ccr.shop_lookup WHERE shop_id = 'shop-1'",
@@ -175,8 +175,8 @@ class CurrentStateDaoIntegrationTest extends AbstractReportingIntegrationTest {
 
     @Test
     void displayNameLookupUpsertWithBlankNameStillAdvancesVersion() {
-        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.SHOP, "shop-blank-name", "Shop One", 10L, false);
-        displayNameLookupDao.upsert(DisplayNameLookupDao.LookupType.SHOP, "shop-blank-name", null, 11L, false);
+        dominantLookupDao.upsert(DominantLookupDao.LookupType.SHOP, "shop-blank-name", "Shop One", 10L, false);
+        dominantLookupDao.upsert(DominantLookupDao.LookupType.SHOP, "shop-blank-name", null, 11L, false);
 
         var row = jdbcTemplate.queryForMap(
                 """

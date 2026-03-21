@@ -1,10 +1,10 @@
-package dev.vality.ccreporter.util;
+package dev.vality.ccreporter.ingestion.payment.support;
 
 import dev.vality.damsel.domain.InvoicePayment;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
-public class PaymentToolUtils {
+public class PaymentToolExtractor {
 
     public static String extractPaymentToolType(InvoicePayment payment) {
         if (payment == null || !payment.isSetPayer()) {

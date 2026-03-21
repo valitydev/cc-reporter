@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.integration.fixture;
+package dev.vality.ccreporter.fixture;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 

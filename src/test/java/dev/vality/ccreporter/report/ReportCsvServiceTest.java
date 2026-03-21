@@ -5,7 +5,7 @@ import dev.vality.ccreporter.FileType;
 import dev.vality.ccreporter.ReportType;
 import dev.vality.ccreporter.TimeRange;
 import dev.vality.ccreporter.config.ReportTransactionConfig.ReportCsvReadOnlyTxTemplate;
-import dev.vality.ccreporter.integration.fixture.ReportRequestFixtures;
+import dev.vality.ccreporter.fixture.ReportRequestFixtures;
 import dev.vality.ccreporter.model.ClaimedReportJob;
 import dev.vality.ccreporter.serde.json.ReportQueryJsonSerializer;
 import org.junit.jupiter.api.Test;

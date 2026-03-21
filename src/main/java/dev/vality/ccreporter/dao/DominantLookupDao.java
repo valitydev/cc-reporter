@@ -12,13 +12,13 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 
+import static dev.vality.ccreporter.dao.support.DaoUpsertUtils.buildLookupUpsertMap;
 import static dev.vality.ccreporter.domain.Tables.*;
-import static dev.vality.ccreporter.util.DaoUpsertUtils.buildLookupUpsertMap;
 import static dev.vality.ccreporter.util.SearchValueNormalizer.normalize;
 
 @Repository
 @RequiredArgsConstructor
-public class DisplayNameLookupDao {
+public class DominantLookupDao {
 
     private final DSLContext dslContext;
 
@@ -28,6 +28,7 @@ public class DisplayNameLookupDao {
             case PROVIDER -> insertProvider(id, name, dominantVersionId, deleted);
             case TERMINAL -> insertTerminal(id, name, dominantVersionId, deleted);
             case WALLET -> insertWallet(id, name, dominantVersionId, deleted);
+            default -> throw new IllegalArgumentException();
         }
     }
 
@@ -35,7 +36,7 @@ public class DisplayNameLookupDao {
         if (isBlank(shopId)) {
             return;
         }
-        upsert(
+        upsertEntity(
                 SHOP_LOOKUP,
                 SHOP_LOOKUP.SHOP_ID,
                 SHOP_LOOKUP.DOMINANT_VERSION_ID,
@@ -53,7 +54,7 @@ public class DisplayNameLookupDao {
         if (isBlank(providerId)) {
             return;
         }
-        upsert(
+        upsertEntity(
                 PROVIDER_LOOKUP,
                 PROVIDER_LOOKUP.PROVIDER_ID,
                 PROVIDER_LOOKUP.DOMINANT_VERSION_ID,
@@ -71,7 +72,7 @@ public class DisplayNameLookupDao {
         if (isBlank(terminalId)) {
             return;
         }
-        upsert(
+        upsertEntity(
                 TERMINAL_LOOKUP,
                 TERMINAL_LOOKUP.TERMINAL_ID,
                 TERMINAL_LOOKUP.DOMINANT_VERSION_ID,
@@ -89,7 +90,7 @@ public class DisplayNameLookupDao {
         if (isBlank(walletId)) {
             return;
         }
-        upsert(
+        upsertEntity(
                 WALLET_LOOKUP,
                 WALLET_LOOKUP.WALLET_ID,
                 WALLET_LOOKUP.DOMINANT_VERSION_ID,
@@ -103,7 +104,7 @@ public class DisplayNameLookupDao {
         );
     }
 
-    private <R extends Record, P> void upsert(
+    private <R extends Record, P> void upsertEntity(
             Table<R> table,
             TableField<R, String> idField,
             TableField<R, Long> versionField,
