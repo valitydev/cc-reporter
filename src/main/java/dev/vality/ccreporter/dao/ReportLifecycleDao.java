@@ -71,6 +71,26 @@ public class ReportLifecycleDao {
                 .fetchOptional(ReportLifecycleDao::mapClaimedReport);
     }
 
+    public boolean cancelReport(String createdBy, long reportId, Instant now) {
+        var updated = dslContext.update(REPORT_JOB)
+                .set(REPORT_JOB.STATUS, toJooqStatus(ReportStatus.canceled))
+                .set(
+                        REPORT_JOB.FINISHED_AT,
+                        DSL.coalesce(REPORT_JOB.FINISHED_AT, timestampValue(now, REPORT_JOB.FINISHED_AT))
+                )
+                .set(REPORT_JOB.UPDATED_AT, timestampValue(now, REPORT_JOB.UPDATED_AT))
+                .where(REPORT_JOB.ID.eq(reportId))
+                .and(REPORT_JOB.CREATED_BY.eq(createdBy))
+                .and(
+                        REPORT_JOB.STATUS.in(
+                                toJooqStatus(ReportStatus.pending),
+                                toJooqStatus(ReportStatus.processing)
+                        )
+                )
+                .execute();
+        return updated > 0;
+    }
+
     public boolean rescheduleForRetry(long reportId, Instant nextAttemptAt, String errorCode, String errorMessage) {
         var updated = dslContext.update(REPORT_JOB)
                 .set(REPORT_JOB.STATUS, toJooqStatus(ReportStatus.pending))

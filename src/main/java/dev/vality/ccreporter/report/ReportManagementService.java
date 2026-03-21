@@ -5,11 +5,13 @@ import dev.vality.ccreporter.config.ReportTransactionConfig.ReportManagementTxTe
 import dev.vality.ccreporter.config.properties.CcrApiProperties;
 import dev.vality.ccreporter.config.properties.ReportProperties;
 import dev.vality.ccreporter.dao.ReportAuditDao;
-import dev.vality.ccreporter.dao.ReportDao;
+import dev.vality.ccreporter.dao.ReportCommandDao;
+import dev.vality.ccreporter.dao.ReportLifecycleDao;
+import dev.vality.ccreporter.dao.ReportQueryDao;
+import dev.vality.ccreporter.model.RequestAuditMetadata;
 import dev.vality.ccreporter.model.StoredReport;
 import dev.vality.ccreporter.model.StoredReportFile;
 import dev.vality.ccreporter.security.CurrentPrincipalResolver;
-import dev.vality.ccreporter.model.RequestAuditMetadata;
 import dev.vality.ccreporter.security.RequestAuditMetadataResolver;
 import dev.vality.ccreporter.serde.json.ContinuationTokenJsonSerializer;
 import dev.vality.ccreporter.serde.json.ReportQueryJsonSerializer;
@@ -37,7 +39,9 @@ public class ReportManagementService {
     private static final String REPORT_CANCELED_EVENT = "report_canceled";
     private static final String PRESIGNED_URL_GENERATED_EVENT = "presigned_url_generated";
 
-    private final ReportDao reportDao;
+    private final ReportCommandDao reportCommandDao;
+    private final ReportQueryDao reportQueryDao;
+    private final ReportLifecycleDao reportLifecycleDao;
     private final ReportAuditDao reportAuditDao;
     private final ReportQueryService reportQueryService;
     private final ReportQueryJsonSerializer reportQueryJsonSerializer;
@@ -55,7 +59,7 @@ public class ReportManagementService {
         var auditMetadata = requestAuditMetadataResolver.resolve();
         var timezone = StringUtils.hasText(request.getTimezone()) ? request.getTimezone() : "UTC";
         try {
-            var reportId = reportDao.createReport(
+            var reportId = reportCommandDao.createReport(
                     createdBy,
                     request.getReportType(),
                     request.getFileType(),
@@ -66,7 +70,7 @@ public class ReportManagementService {
             writeCreateAuditEvent(reportId, createdBy, auditMetadata, request, timezone, false);
             return reportId;
         } catch (DuplicateKeyException ex) {
-            var reportId = reportDao.findByIdempotencyKey(createdBy, request.getIdempotencyKey())
+            var reportId = reportCommandDao.findByIdempotencyKey(createdBy, request.getIdempotencyKey())
                     .orElseThrow(() -> ex);
             writeCreateAuditEvent(reportId, createdBy, auditMetadata, request, timezone, true);
             return reportId;
@@ -78,7 +82,7 @@ public class ReportManagementService {
             throw invalidRequest("report_id is required");
         }
         var createdBy = currentPrincipalResolver.resolveRequired();
-        return reportDao.getReport(createdBy, request.getReportId())
+        return reportQueryDao.getReport(createdBy, request.getReportId())
                 .map(this::toThriftReport)
                 .orElseThrow(ReportNotFound::new);
     }
@@ -93,7 +97,7 @@ public class ReportManagementService {
         var cursor = meta != null && meta.isSetContinuationToken()
                 ? continuationTokenJsonSerializer.deserialize(meta.getContinuationToken())
                 : null;
-        var storedReports = reportDao.getReports(createdBy, safeRequest.getFilter(), cursor, limit);
+        var storedReports = reportQueryDao.getReports(createdBy, safeRequest.getFilter(), cursor, limit);
 
         var response = new GetReportsResponse();
         response.setReports(storedReports.stream().map(this::toThriftReport).toList());
@@ -114,8 +118,8 @@ public class ReportManagementService {
         var auditMetadata = requestAuditMetadataResolver.resolve();
         try {
             transactionTemplate.executeWithoutResult(status -> {
-                var updated = reportDao.cancelReport(createdBy, request.getReportId(), Instant.now());
-                if (!updated && !reportDao.reportExists(createdBy, request.getReportId())) {
+                var updated = reportLifecycleDao.cancelReport(createdBy, request.getReportId(), Instant.now());
+                if (!updated && !reportCommandDao.reportExists(createdBy, request.getReportId())) {
                     throw new RuntimeException("Report not found for cancellation: " + request.getReportId());
                 }
                 reportAuditDao.insertEvent(
@@ -141,7 +145,7 @@ public class ReportManagementService {
         }
         var createdBy = currentPrincipalResolver.resolveRequired();
         var auditMetadata = requestAuditMetadataResolver.resolve();
-        var fileData = reportDao.getFile(createdBy, request.getFileId());
+        var fileData = reportQueryDao.getFile(createdBy, request.getFileId());
         if (fileData.isEmpty()) {
             throw new FileNotFound();
         }
