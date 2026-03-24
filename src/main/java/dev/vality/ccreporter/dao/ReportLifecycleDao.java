@@ -1,13 +1,13 @@
 package dev.vality.ccreporter.dao;
 
 import dev.vality.ccreporter.ReportStatus;
-import dev.vality.ccreporter.domain.tables.pojos.ReportFile;
+import dev.vality.ccreporter.dao.mapper.ReportLifecycleMapper;
+import dev.vality.ccreporter.dao.mapper.ReportRecordMapper;
 import dev.vality.ccreporter.model.ClaimedReportJob;
 import dev.vality.ccreporter.model.ReportFileMetadata;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.jooq.Field;
-import org.jooq.Record6;
 import org.jooq.impl.DSL;
 import org.springframework.stereotype.Repository;
 
@@ -24,8 +24,6 @@ import static dev.vality.ccreporter.domain.Tables.REPORT_JOB;
 public class ReportLifecycleDao {
 
     private static final Field<Long> CANDIDATE_ID = DSL.field(DSL.name("candidate", "id"), Long.class);
-    private static final dev.vality.ccreporter.domain.enums.FileType CSV_FILE_TYPE =
-            dev.vality.ccreporter.domain.enums.FileType.csv;
 
     private final DSLContext dslContext;
 
@@ -35,7 +33,10 @@ public class ReportLifecycleDao {
         return dslContext.with("candidate").as(
                         dslContext.select(REPORT_JOB.ID)
                                 .from(REPORT_JOB)
-                                .where(REPORT_JOB.STATUS.eq(toJooqStatus(ReportStatus.pending)))
+                                .where(REPORT_JOB.STATUS.eq(ReportRecordMapper.mapEnum(
+                                        ReportStatus.pending,
+                                        dev.vality.ccreporter.domain.enums.ReportStatus.class
+                                )))
                                 .and(
                                         REPORT_JOB.NEXT_ATTEMPT_AT.isNull()
                                                 .or(
@@ -50,7 +51,10 @@ public class ReportLifecycleDao {
                                 .skipLocked()
                 )
                 .update(reportJob)
-                .set(reportJob.STATUS, toJooqStatus(ReportStatus.processing))
+                .set(reportJob.STATUS, ReportRecordMapper.mapEnum(
+                        ReportStatus.processing,
+                        dev.vality.ccreporter.domain.enums.ReportStatus.class
+                ))
                 .set(reportJob.ATTEMPT, reportJob.ATTEMPT.plus(1))
                 .set(
                         reportJob.STARTED_AT,
@@ -68,12 +72,15 @@ public class ReportLifecycleDao {
                         reportJob.TIMEZONE,
                         reportJob.ATTEMPT
                 )
-                .fetchOptional(ReportLifecycleDao::mapClaimedReport);
+                .fetchOptional(ReportLifecycleMapper::mapClaimedReport);
     }
 
     public boolean cancelReport(String createdBy, long reportId, Instant now) {
         var updated = dslContext.update(REPORT_JOB)
-                .set(REPORT_JOB.STATUS, toJooqStatus(ReportStatus.canceled))
+                .set(REPORT_JOB.STATUS, ReportRecordMapper.mapEnum(
+                        ReportStatus.canceled,
+                        dev.vality.ccreporter.domain.enums.ReportStatus.class
+                ))
                 .set(
                         REPORT_JOB.FINISHED_AT,
                         DSL.coalesce(REPORT_JOB.FINISHED_AT, timestampValue(now, REPORT_JOB.FINISHED_AT))
@@ -83,8 +90,14 @@ public class ReportLifecycleDao {
                 .and(REPORT_JOB.CREATED_BY.eq(createdBy))
                 .and(
                         REPORT_JOB.STATUS.in(
-                                toJooqStatus(ReportStatus.pending),
-                                toJooqStatus(ReportStatus.processing)
+                                ReportRecordMapper.mapEnum(
+                                        ReportStatus.pending,
+                                        dev.vality.ccreporter.domain.enums.ReportStatus.class
+                                ),
+                                ReportRecordMapper.mapEnum(
+                                        ReportStatus.processing,
+                                        dev.vality.ccreporter.domain.enums.ReportStatus.class
+                                )
                         )
                 )
                 .execute();
@@ -93,13 +106,19 @@ public class ReportLifecycleDao {
 
     public boolean rescheduleForRetry(long reportId, Instant nextAttemptAt, String errorCode, String errorMessage) {
         var updated = dslContext.update(REPORT_JOB)
-                .set(REPORT_JOB.STATUS, toJooqStatus(ReportStatus.pending))
+                .set(REPORT_JOB.STATUS, ReportRecordMapper.mapEnum(
+                        ReportStatus.pending,
+                        dev.vality.ccreporter.domain.enums.ReportStatus.class
+                ))
                 .set(REPORT_JOB.NEXT_ATTEMPT_AT, timestampValue(nextAttemptAt, REPORT_JOB.NEXT_ATTEMPT_AT))
                 .set(REPORT_JOB.ERROR_CODE, errorCode)
                 .set(REPORT_JOB.ERROR_MESSAGE, errorMessage)
                 .set(REPORT_JOB.UPDATED_AT, timestampValue(nextAttemptAt, REPORT_JOB.UPDATED_AT))
                 .where(REPORT_JOB.ID.eq(reportId))
-                .and(REPORT_JOB.STATUS.eq(toJooqStatus(ReportStatus.processing)))
+                .and(REPORT_JOB.STATUS.eq(ReportRecordMapper.mapEnum(
+                        ReportStatus.processing,
+                        dev.vality.ccreporter.domain.enums.ReportStatus.class
+                )))
                 .execute();
         return updated > 0;
     }
@@ -112,7 +131,10 @@ public class ReportLifecycleDao {
             long rowsCount
     ) {
         var updated = dslContext.update(REPORT_JOB)
-                .set(REPORT_JOB.STATUS, toJooqStatus(ReportStatus.created))
+                .set(REPORT_JOB.STATUS, ReportRecordMapper.mapEnum(
+                        ReportStatus.created,
+                        dev.vality.ccreporter.domain.enums.ReportStatus.class
+                ))
                 .set(
                         REPORT_JOB.DATA_SNAPSHOT_FIXED_AT,
                         DSL.coalesce(
@@ -131,28 +153,17 @@ public class ReportLifecycleDao {
                 .set(REPORT_JOB.NEXT_ATTEMPT_AT, (LocalDateTime) null)
                 .set(REPORT_JOB.UPDATED_AT, timestampValue(finishedAt, REPORT_JOB.UPDATED_AT))
                 .where(REPORT_JOB.ID.eq(reportId))
-                .and(REPORT_JOB.STATUS.eq(toJooqStatus(ReportStatus.processing)))
+                .and(REPORT_JOB.STATUS.eq(ReportRecordMapper.mapEnum(
+                        ReportStatus.processing,
+                        dev.vality.ccreporter.domain.enums.ReportStatus.class
+                )))
                 .execute();
         return updated > 0;
     }
 
     public boolean publishFileRecord(long reportId, ReportFileMetadata fileMetadata, Instant createdAt) {
-        var reportFile = new ReportFile()
-                .setReportId(reportId)
-                .setFileId(fileMetadata.fileId())
-                .setFileType(CSV_FILE_TYPE)
-                .setBucket(fileMetadata.bucket())
-                .setObjectKey(fileMetadata.objectKey())
-                .setFilename(fileMetadata.fileName())
-                .setContentType(fileMetadata.contentType())
-                .setSizeBytes(fileMetadata.sizeBytes())
-                .setMd5(fileMetadata.md5())
-                .setSha256(fileMetadata.sha256())
-                .setCreatedAt(LocalDateTime.ofInstant(createdAt, java.time.ZoneOffset.UTC));
-        var record = dslContext.newRecord(REPORT_FILE, reportFile);
-        record.changed(REPORT_FILE.ID, false);
         var updated = dslContext.insertInto(REPORT_FILE)
-                .set(record)
+                .set(ReportLifecycleMapper.newInsertableFileRecord(dslContext, reportId, fileMetadata, createdAt))
                 .execute();
         return updated > 0;
     }
@@ -169,21 +180,30 @@ public class ReportLifecycleDao {
 
     public boolean expireReport(long reportId, Instant expiredAt) {
         var updated = dslContext.update(REPORT_JOB)
-                .set(REPORT_JOB.STATUS, toJooqStatus(ReportStatus.expired))
+                .set(REPORT_JOB.STATUS, ReportRecordMapper.mapEnum(
+                        ReportStatus.expired,
+                        dev.vality.ccreporter.domain.enums.ReportStatus.class
+                ))
                 .set(
                         REPORT_JOB.FINISHED_AT,
                         DSL.coalesce(REPORT_JOB.FINISHED_AT, timestampValue(expiredAt, REPORT_JOB.FINISHED_AT))
                 )
                 .set(REPORT_JOB.UPDATED_AT, timestampValue(expiredAt, REPORT_JOB.UPDATED_AT))
                 .where(REPORT_JOB.ID.eq(reportId))
-                .and(REPORT_JOB.STATUS.eq(toJooqStatus(ReportStatus.created)))
+                .and(REPORT_JOB.STATUS.eq(ReportRecordMapper.mapEnum(
+                        ReportStatus.created,
+                        dev.vality.ccreporter.domain.enums.ReportStatus.class
+                )))
                 .execute();
         return updated > 0;
     }
 
     public int timeoutStaleProcessingReports(Instant staleBefore, Instant finishedAt) {
         return dslContext.update(REPORT_JOB)
-                .set(REPORT_JOB.STATUS, toJooqStatus(ReportStatus.timed_out))
+                .set(REPORT_JOB.STATUS, ReportRecordMapper.mapEnum(
+                        ReportStatus.timed_out,
+                        dev.vality.ccreporter.domain.enums.ReportStatus.class
+                ))
                 .set(
                         REPORT_JOB.FINISHED_AT,
                         DSL.coalesce(REPORT_JOB.FINISHED_AT, timestampValue(finishedAt, REPORT_JOB.FINISHED_AT))
@@ -201,14 +221,20 @@ public class ReportLifecycleDao {
                 )
                 .set(REPORT_JOB.NEXT_ATTEMPT_AT, (LocalDateTime) null)
                 .set(REPORT_JOB.UPDATED_AT, timestampValue(finishedAt, REPORT_JOB.UPDATED_AT))
-                .where(REPORT_JOB.STATUS.eq(toJooqStatus(ReportStatus.processing)))
+                .where(REPORT_JOB.STATUS.eq(ReportRecordMapper.mapEnum(
+                        ReportStatus.processing,
+                        dev.vality.ccreporter.domain.enums.ReportStatus.class
+                )))
                 .and(REPORT_JOB.UPDATED_AT.le(timestampValue(staleBefore, REPORT_JOB.UPDATED_AT)))
                 .execute();
     }
 
     public int expireReports(Instant now) {
         return dslContext.update(REPORT_JOB)
-                .set(REPORT_JOB.STATUS, toJooqStatus(ReportStatus.expired))
+                .set(REPORT_JOB.STATUS, ReportRecordMapper.mapEnum(
+                        ReportStatus.expired,
+                        dev.vality.ccreporter.domain.enums.ReportStatus.class
+                ))
                 .set(
                         REPORT_JOB.FINISHED_AT,
                         DSL.coalesce(
@@ -218,7 +244,10 @@ public class ReportLifecycleDao {
                         )
                 )
                 .set(REPORT_JOB.UPDATED_AT, timestampValue(now, REPORT_JOB.UPDATED_AT))
-                .where(REPORT_JOB.STATUS.eq(toJooqStatus(ReportStatus.created)))
+                .where(REPORT_JOB.STATUS.eq(ReportRecordMapper.mapEnum(
+                        ReportStatus.created,
+                        dev.vality.ccreporter.domain.enums.ReportStatus.class
+                )))
                 .and(REPORT_JOB.EXPIRES_AT.isNotNull())
                 .and(REPORT_JOB.EXPIRES_AT.le(timestampValue(now, REPORT_JOB.EXPIRES_AT)))
                 .execute();
@@ -233,7 +262,10 @@ public class ReportLifecycleDao {
             String message
     ) {
         var updated = dslContext.update(REPORT_JOB)
-                .set(REPORT_JOB.STATUS, toJooqStatus(terminalStatus))
+                .set(REPORT_JOB.STATUS, ReportRecordMapper.mapEnum(
+                        terminalStatus,
+                        dev.vality.ccreporter.domain.enums.ReportStatus.class
+                ))
                 .set(
                         REPORT_JOB.DATA_SNAPSHOT_FIXED_AT,
                         DSL.coalesce(
@@ -250,25 +282,12 @@ public class ReportLifecycleDao {
                 .set(REPORT_JOB.NEXT_ATTEMPT_AT, (LocalDateTime) null)
                 .set(REPORT_JOB.UPDATED_AT, timestampValue(finishedAt, REPORT_JOB.UPDATED_AT))
                 .where(REPORT_JOB.ID.eq(reportId))
-                .and(REPORT_JOB.STATUS.eq(toJooqStatus(ReportStatus.processing)))
+                .and(REPORT_JOB.STATUS.eq(ReportRecordMapper.mapEnum(
+                        ReportStatus.processing,
+                        dev.vality.ccreporter.domain.enums.ReportStatus.class
+                )))
                 .execute();
         return updated > 0;
-    }
-
-    private static ClaimedReportJob mapClaimedReport(Record6<Long,
-            dev.vality.ccreporter.domain.enums.ReportType,
-            dev.vality.ccreporter.domain.enums.FileType,
-            org.jooq.JSONB,
-            String,
-            Integer> record) {
-        return new ClaimedReportJob(
-                record.value1(),
-                dev.vality.ccreporter.ReportType.valueOf(record.value2().getLiteral()),
-                dev.vality.ccreporter.FileType.valueOf(record.value3().getLiteral()),
-                record.value4().data(),
-                record.value5(),
-                record.value6()
-        );
     }
 
     private static Field<LocalDateTime> timestampValue(Instant value, Field<LocalDateTime> field) {
@@ -276,9 +295,5 @@ public class ReportLifecycleDao {
             return DSL.castNull(field.getDataType());
         }
         return DSL.val(Timestamp.from(value)).cast(field.getDataType());
-    }
-
-    private static dev.vality.ccreporter.domain.enums.ReportStatus toJooqStatus(ReportStatus status) {
-        return dev.vality.ccreporter.domain.enums.ReportStatus.valueOf(status.name());
     }
 }

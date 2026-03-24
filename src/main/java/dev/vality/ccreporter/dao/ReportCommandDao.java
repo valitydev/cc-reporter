@@ -3,12 +3,11 @@ package dev.vality.ccreporter.dao;
 import dev.vality.ccreporter.FileType;
 import dev.vality.ccreporter.ReportQuery;
 import dev.vality.ccreporter.ReportType;
-import dev.vality.ccreporter.domain.tables.pojos.ReportJob;
+import dev.vality.ccreporter.dao.mapper.ReportCommandMapper;
 import dev.vality.ccreporter.report.ReportQueryService;
 import dev.vality.ccreporter.serde.json.ThriftJsonCodec;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
-import org.jooq.JSONB;
 import org.jooq.exception.IntegrityConstraintViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
@@ -18,7 +17,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static dev.vality.ccreporter.domain.Tables.REPORT_JOB;
-import static dev.vality.ccreporter.util.TimestampUtils.toLocalDateTime;
 
 @Repository
 @RequiredArgsConstructor
@@ -50,27 +48,22 @@ public class ReportCommandDao {
         var querySpec = reportQueryService.resolveQuerySpec(query);
         var queryJson = thriftJsonCodec.serialize(query);
         var queryHash = reportQueryService.hash(queryJson);
-        var reportJob = new ReportJob()
-                .setReportType(ReportRecordMapper.toJooqReportType(reportType))
-                .setFileType(ReportRecordMapper.toJooqFileType(fileType))
-                .setQueryJson(JSONB.jsonb(queryJson))
-                .setQueryHash(queryHash)
-                .setRequestedTimeFrom(toLocalDateTime(querySpec.timeRange().from()))
-                .setRequestedTimeTo(toLocalDateTime(querySpec.timeRange().to()))
-                .setTimezone(timezone)
-                .setCreatedBy(createdBy)
-                .setIdempotencyKey(StringUtils.hasText(idempotencyKey) ? idempotencyKey : null);
+        var reportJob = ReportCommandMapper.mapReportJob(
+                createdBy,
+                reportType,
+                fileType,
+                queryJson,
+                queryHash,
+                querySpec.timeRange().from(),
+                querySpec.timeRange().to(),
+                timezone,
+                idempotencyKey
+        );
 
         try {
-            var record = dslContext.newRecord(REPORT_JOB, reportJob);
-            record.changed(REPORT_JOB.ID, false);
-            record.changed(REPORT_JOB.STATUS, false);
-            record.changed(REPORT_JOB.ATTEMPT, false);
-            record.changed(REPORT_JOB.CREATED_AT, false);
-            record.changed(REPORT_JOB.UPDATED_AT, false);
             return Objects.requireNonNull(
                     dslContext.insertInto(REPORT_JOB)
-                            .set(record)
+                            .set(ReportCommandMapper.newInsertableRecord(dslContext, reportJob))
                             .returningResult(REPORT_JOB.ID)
                             .fetchOne(REPORT_JOB.ID),
                     "Report creation must return an id"

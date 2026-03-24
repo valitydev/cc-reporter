@@ -5,6 +5,7 @@ import lombok.experimental.UtilityClass;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
@@ -37,7 +38,15 @@ public class TimestampUtils {
         return timestamp.toInstant();
     }
 
+    public static Instant toInstant(LocalDateTime value) {
+        return value.atZone(ZoneId.systemDefault()).toInstant();
+    }
+
     public static Instant toOptionalInstant(Timestamp timestamp) {
         return timestamp == null ? null : timestamp.toInstant();
+    }
+
+    public static Instant toOptionalInstant(LocalDateTime value) {
+        return value == null ? null : value.atZone(ZoneId.systemDefault()).toInstant();
     }
 }

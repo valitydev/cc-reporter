@@ -51,31 +51,17 @@ public class ThriftJsonCodec {
     }
 
     private JsonNode toJsonNode(Object value, Type declaredType, FieldValueMetaData metaData) {
-        if (value == null) {
-            return objectMapper.nullNode();
-        }
-        if (value instanceof TUnion<?, ?> unionValue) {
-            return serializeUnion(unionValue);
-        }
-        if (value instanceof TBase<?, ?> baseValue) {
-            return serializeStruct(baseValue);
-        }
-        if (value instanceof TEnum enumValue) {
-            return objectMapper.getNodeFactory().textNode(((Enum<?>) enumValue).name());
-        }
-        if (value instanceof ByteBuffer byteBuffer) {
-            return objectMapper.getNodeFactory().binaryNode(toByteArray(byteBuffer));
-        }
-        if (value instanceof byte[] bytes) {
-            return objectMapper.getNodeFactory().binaryNode(bytes);
-        }
-        if (value instanceof Collection<?> collection) {
-            return serializeCollection(collection, declaredType, metaData);
-        }
-        if (value instanceof Map<?, ?> map) {
-            return serializeMap(map, declaredType, metaData);
-        }
-        return objectMapper.valueToTree(value);
+        return switch (value) {
+            case null -> objectMapper.nullNode();
+            case TUnion<?, ?> unionValue -> serializeUnion(unionValue);
+            case TBase<?, ?> baseValue -> serializeStruct(baseValue);
+            case TEnum enumValue -> objectMapper.getNodeFactory().textNode(((Enum<?>) enumValue).name());
+            case ByteBuffer byteBuffer -> objectMapper.getNodeFactory().binaryNode(toByteArray(byteBuffer));
+            case byte[] bytes -> objectMapper.getNodeFactory().binaryNode(bytes);
+            case Collection<?> collection -> serializeCollection(collection, declaredType, metaData);
+            case Map<?, ?> map -> serializeMap(map, declaredType, metaData);
+            default -> objectMapper.valueToTree(value);
+        };
     }
 
     private ObjectNode serializeStruct(TBase<?, ?> value) {

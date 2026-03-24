@@ -6,11 +6,9 @@ import dev.vality.ccreporter.config.properties.ReportProperties;
 import dev.vality.ccreporter.dao.ReportCommandDao;
 import dev.vality.ccreporter.dao.ReportLifecycleDao;
 import dev.vality.ccreporter.dao.ReportQueryDao;
-import dev.vality.ccreporter.model.StoredReport;
-import dev.vality.ccreporter.model.StoredReportFile;
+import dev.vality.ccreporter.report.mapper.ReportThriftMapper;
 import dev.vality.ccreporter.security.RequestAuditMetadataResolver;
 import dev.vality.ccreporter.serde.json.ContinuationTokenJsonSerializer;
-import dev.vality.ccreporter.serde.json.ThriftJsonCodec;
 import dev.vality.ccreporter.storage.FileStorageService;
 import dev.vality.ccreporter.util.TimestampUtils;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +32,7 @@ public class ReportManagementService {
     private final ReportManagementTransactionService reportManagementTransactionService;
     private final ReportAuditService reportAuditService;
     private final ReportRequestValidator reportRequestValidator;
-    private final ThriftJsonCodec thriftJsonCodec;
+    private final ReportThriftMapper reportThriftMapper;
     private final ContinuationTokenJsonSerializer continuationTokenJsonSerializer;
     private final RequestAuditMetadataResolver requestAuditMetadataResolver;
     private final CcrApiProperties apiProperties;
@@ -60,7 +58,7 @@ public class ReportManagementService {
         }
         var createdBy = requestAuditMetadataResolver.resolve().email();
         return reportQueryDao.getReport(createdBy, request.getReportId())
-                .map(this::toThriftReport)
+                .map(reportThriftMapper::mapReport)
                 .orElseThrow(ReportNotFound::new);
     }
 
@@ -77,11 +75,14 @@ public class ReportManagementService {
         var storedReports = reportQueryDao.getReports(createdBy, safeRequest.getFilter(), cursor, limit);
 
         var response = new GetReportsResponse();
-        response.setReports(storedReports.stream().map(this::toThriftReport).toList());
+        response.setReports(storedReports.stream().map(reportThriftMapper::mapReport).toList());
         if (storedReports.size() == limit) {
             var lastReport = storedReports.getLast();
             response.setContinuationToken(
-                    continuationTokenJsonSerializer.serialize(lastReport.createdAt(), lastReport.id())
+                    continuationTokenJsonSerializer.serialize(
+                            TimestampUtils.toInstant(lastReport.job().getCreatedAt()),
+                            lastReport.job().getId()
+                    )
             );
         }
         return response;
@@ -94,18 +95,11 @@ public class ReportManagementService {
         }
         var auditMetadata = requestAuditMetadataResolver.resolve();
         var createdBy = auditMetadata.email();
-        try {
-            var updated = reportLifecycleDao.cancelReport(createdBy, request.getReportId(), Instant.now());
-            if (!updated && !reportCommandDao.reportExists(createdBy, request.getReportId())) {
-                throw new RuntimeException("Report not found for cancellation: " + request.getReportId());
-            }
-            reportAuditService.writeReportCanceled(request.getReportId(), createdBy, auditMetadata, updated);
-        } catch (RuntimeException ex) {
-            if (ex.getMessage() != null && ex.getMessage().contains("Report not found")) {
-                throw new ReportNotFound();
-            }
-            throw ex;
+        var updated = reportLifecycleDao.cancelReport(createdBy, request.getReportId(), Instant.now());
+        if (!updated && !reportCommandDao.reportExists(createdBy, request.getReportId())) {
+            throw new ReportNotFound();
         }
+        reportAuditService.writeReportCanceled(request.getReportId(), createdBy, auditMetadata, updated);
     }
 
     public String generatePresignedUrl(GeneratePresignedUrlRequest request)
@@ -120,15 +114,7 @@ public class ReportManagementService {
             throw new FileNotFound();
         }
 
-        var now = Instant.now();
-        var ttlCap = now.plusSeconds(reportProperties.getPresignedUrlTtlSec());
-        var requestedExpiresAt = request.isSetRequestedExpiresAt()
-                ? TimestampUtils.parse(request.getRequestedExpiresAt())
-                : ttlCap;
-        if (!requestedExpiresAt.isAfter(now)) {
-            throw invalidRequest("requested_expires_at must be in the future");
-        }
-        var effectiveExpiresAt = requestedExpiresAt.isAfter(ttlCap) ? ttlCap : requestedExpiresAt;
+        var effectiveExpiresAt = resolveEffectivePresignedUrlExpiresAt(request);
         try {
             var url = fileStorageService.generateDownloadUrl(
                     fileData.get().getFileId(),
@@ -148,6 +134,18 @@ public class ReportManagementService {
         }
     }
 
+    private Instant resolveEffectivePresignedUrlExpiresAt(GeneratePresignedUrlRequest request) throws InvalidRequest {
+        var now = Instant.now();
+        var ttlCap = now.plusSeconds(reportProperties.getPresignedUrlTtlSec());
+        var requestedExpiresAt = request.isSetRequestedExpiresAt()
+                ? TimestampUtils.parse(request.getRequestedExpiresAt())
+                : ttlCap;
+        if (!requestedExpiresAt.isAfter(now)) {
+            throw invalidRequest("requested_expires_at must be in the future");
+        }
+        return requestedExpiresAt.isAfter(ttlCap) ? ttlCap : requestedExpiresAt;
+    }
+
     private int resolveLimit(GetReportsMeta meta) {
         if (meta == null || !meta.isSetLimit()) {
             return apiProperties.getDefaultPageSize();
@@ -155,60 +153,7 @@ public class ReportManagementService {
         return Math.min(meta.getLimit(), apiProperties.getMaxPageSize());
     }
 
-    private Report toThriftReport(StoredReport storedReport) {
-        var report = new Report();
-        report.setReportId(storedReport.id());
-        report.setReportType(storedReport.reportType());
-        report.setFileType(storedReport.fileType());
-        report.setQuery(thriftJsonCodec.deserialize(storedReport.queryJson(), ReportQuery.class));
-        report.setCreatedAt(TimestampUtils.format(storedReport.createdAt()));
-        report.setStatus(storedReport.status());
-        if (storedReport.startedAt() != null) {
-            report.setStartedAt(TimestampUtils.format(storedReport.startedAt()));
-        }
-        if (storedReport.dataSnapshotFixedAt() != null) {
-            report.setDataSnapshotFixedAt(TimestampUtils.format(storedReport.dataSnapshotFixedAt()));
-        }
-        if (storedReport.finishedAt() != null) {
-            report.setFinishedAt(TimestampUtils.format(storedReport.finishedAt()));
-        }
-        if (storedReport.rowsCount() != null) {
-            report.setRowsCount(storedReport.rowsCount());
-        }
-        if (storedReport.expiresAt() != null) {
-            report.setExpiresAt(TimestampUtils.format(storedReport.expiresAt()));
-        }
-        if (StringUtils.hasText(storedReport.errorCode()) || StringUtils.hasText(storedReport.errorMessage())) {
-            report.setError(new ErrorInfo(
-                    defaultString(storedReport.errorCode()),
-                    defaultString(storedReport.errorMessage())
-            ));
-        }
-        if (storedReport.fileData() != null) {
-            report.setFile(toThriftFile(storedReport.fileData()));
-        }
-        return report;
-    }
-
-    private FileMeta toThriftFile(StoredReportFile fileData) {
-        var fileMeta = new FileMeta();
-        fileMeta.setFileId(fileData.fileId());
-        fileMeta.setFileType(fileData.fileType());
-        fileMeta.setFilename(fileData.filename());
-        fileMeta.setContentType(fileData.contentType());
-        fileMeta.setSignature(new FileSignature(fileData.md5(), fileData.sha256()));
-        if (fileData.sizeBytes() != null) {
-            fileMeta.setSizeBytes(fileData.sizeBytes());
-        }
-        fileMeta.setCreatedAt(TimestampUtils.format(fileData.createdAt()));
-        return fileMeta;
-    }
-
     private InvalidRequest invalidRequest(String error) {
         return new InvalidRequest(List.of(error));
-    }
-
-    private String defaultString(String value) {
-        return value == null ? "" : value;
     }
 }
