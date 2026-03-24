@@ -5,7 +5,6 @@ import dev.vality.ccreporter.dao.ReportLifecycleDao;
 import dev.vality.ccreporter.integration.config.ReportingIntegrationTestConfig;
 import dev.vality.ccreporter.report.ReportLifecycleService;
 import dev.vality.ccreporter.storage.FileStorageService;
-import dev.vality.file.storage.FileStorageSrv;
 import dev.vality.woody.api.trace.TraceData;
 import dev.vality.woody.api.trace.context.TraceContext;
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
@@ -141,7 +140,7 @@ public abstract class AbstractReportingIntegrationTest {
         }
     }
 
-    public static class StubFileStorageService extends FileStorageService {
+    public static class StubFileStorageService implements FileStorageService {
 
         private final AtomicInteger uploadSequence = new AtomicInteger(0);
         private final AtomicReference<String> lastFileId = new AtomicReference<>();
@@ -151,12 +150,7 @@ public abstract class AbstractReportingIntegrationTest {
         private volatile CountDownLatch uploadEnteredLatch;
         private volatile CountDownLatch releaseUploadLatch;
 
-        public StubFileStorageService() {
-            super(missingClient(), java.net.http.HttpClient.newHttpClient());
-        }
-
-        @Override
-        public String storeFile(String fileName, String contentType, byte[] content, Instant expiresAt) {
+        private String storeFile(String fileName, String contentType, byte[] content, Instant expiresAt) {
             if (failUploads) {
                 throw new IllegalStateException("upload failed");
             }
@@ -182,7 +176,6 @@ public abstract class AbstractReportingIntegrationTest {
             return fileId;
         }
 
-        @Override
         public String storeFile(String fileName, String contentType, Path contentPath, Instant expiresAt) {
             try {
                 return storeFile(fileName, contentType, Files.readAllBytes(contentPath), expiresAt);
@@ -229,14 +222,5 @@ public abstract class AbstractReportingIntegrationTest {
             this.releaseUploadLatch = releaseUploadLatch;
         }
 
-        private static FileStorageSrv.Iface missingClient() {
-            return (FileStorageSrv.Iface) java.lang.reflect.Proxy.newProxyInstance(
-                    FileStorageSrv.Iface.class.getClassLoader(),
-                    new Class<?>[]{FileStorageSrv.Iface.class},
-                    (proxy, method, args) -> {
-                        throw new IllegalStateException("stub file-storage client should not be called directly");
-                    }
-            );
-        }
     }
 }
