@@ -28,19 +28,6 @@ public class ReportLifecycleService {
     private final ReportProperties reportProperties;
     private final ReportSchedulerProperties reportSchedulerProperties;
 
-    public void processNextPendingReport() {
-        processNextPendingReport(Instant.now());
-    }
-
-    public boolean processNextPendingReport(Instant now) {
-        var claimedReportJob = reportLifecycleDao.claimNextPendingReport(now);
-        if (claimedReportJob.isEmpty()) {
-            return false;
-        }
-        processClaimedReport(claimedReportJob.get(), now);
-        return true;
-    }
-
     public void timeoutStaleProcessingReports() {
         timeoutStaleProcessingReports(Instant.now());
     }
@@ -56,6 +43,19 @@ public class ReportLifecycleService {
 
     public int expireReadyReports(Instant now) {
         return reportLifecycleDao.expireReports(now);
+    }
+
+    public void processNextPendingReport() {
+        processNextPendingReport(Instant.now());
+    }
+
+    public boolean processNextPendingReport(Instant now) {
+        var claimedReportJob = reportLifecycleDao.claimNextPendingReport(now);
+        if (claimedReportJob.isEmpty()) {
+            return false;
+        }
+        processClaimedReport(claimedReportJob.get(), now);
+        return true;
     }
 
     private void processClaimedReport(ClaimedReportJob claimedReportJob, Instant processingTime) {

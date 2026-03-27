@@ -12,13 +12,12 @@ import dev.vality.ccreporter.serde.json.ContinuationTokenJsonSerializer;
 import dev.vality.ccreporter.storage.FileStorageService;
 import dev.vality.ccreporter.util.TimestampUtils;
 import lombok.RequiredArgsConstructor;
-import org.apache.thrift.TException;
+import lombok.SneakyThrows;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.nio.file.NoSuchFileException;
 import java.time.Instant;
 import java.util.List;
 
@@ -39,7 +38,8 @@ public class ReportManagementService {
     private final ReportProperties reportProperties;
     private final FileStorageService fileStorageService;
 
-    public long createReport(CreateReportRequest request) throws InvalidRequest {
+    @SneakyThrows
+    public long createReport(CreateReportRequest request) {
         reportRequestValidator.validateCreate(request);
         var auditMetadata = requestAuditMetadataResolver.resolve();
         var timezone = StringUtils.hasText(request.getTimezone()) ? request.getTimezone() : "UTC";
@@ -52,7 +52,8 @@ public class ReportManagementService {
         }
     }
 
-    public Report getReport(GetReportRequest request) throws InvalidRequest, ReportNotFound {
+    @SneakyThrows
+    public Report getReport(GetReportRequest request) {
         if (request == null) {
             throw invalidRequest("request is required");
         }
@@ -62,7 +63,8 @@ public class ReportManagementService {
                 .orElseThrow(ReportNotFound::new);
     }
 
-    public GetReportsResponse getReports(GetReportsRequest request) throws InvalidRequest, BadContinuationToken {
+    @SneakyThrows
+    public GetReportsResponse getReports(GetReportsRequest request) {
         var createdBy = requestAuditMetadataResolver.resolve().email();
         var safeRequest = request == null ? new GetReportsRequest() : request;
         reportRequestValidator.validateGetReports(safeRequest);
@@ -89,7 +91,8 @@ public class ReportManagementService {
     }
 
     @Transactional
-    public void cancelReport(CancelReportRequest request) throws InvalidRequest, ReportNotFound {
+    @SneakyThrows
+    public void cancelReport(CancelReportRequest request) {
         if (request == null) {
             throw invalidRequest("request is required");
         }
@@ -102,8 +105,8 @@ public class ReportManagementService {
         reportAuditService.writeReportCanceled(request.getReportId(), createdBy, auditMetadata, updated);
     }
 
-    public String generatePresignedUrl(GeneratePresignedUrlRequest request)
-            throws TException {
+    @SneakyThrows
+    public String generatePresignedUrl(GeneratePresignedUrlRequest request) {
         if (request == null) {
             throw invalidRequest("request is required");
         }
@@ -115,26 +118,23 @@ public class ReportManagementService {
         }
 
         var effectiveExpiresAt = resolveEffectivePresignedUrlExpiresAt(request);
-        try {
-            var url = fileStorageService.generateDownloadUrl(
-                    fileData.get().getFileId(),
-                    effectiveExpiresAt
-            );
-            reportAuditService.writePresignedUrlGenerated(
-                    fileData.get().getReportId(),
-                    createdBy,
-                    auditMetadata,
-                    request,
-                    effectiveExpiresAt,
-                    fileData.get().getFileId()
-            );
-            return url;
-        } catch (NoSuchFileException ex) {
-            throw new FileNotFound();
-        }
+        var url = fileStorageService.generateDownloadUrl(
+                fileData.get().getFileId(),
+                effectiveExpiresAt
+        );
+        reportAuditService.writePresignedUrlGenerated(
+                fileData.get().getReportId(),
+                createdBy,
+                auditMetadata,
+                request,
+                effectiveExpiresAt,
+                fileData.get().getFileId()
+        );
+        return url;
     }
 
-    private Instant resolveEffectivePresignedUrlExpiresAt(GeneratePresignedUrlRequest request) throws InvalidRequest {
+    @SneakyThrows
+    private Instant resolveEffectivePresignedUrlExpiresAt(GeneratePresignedUrlRequest request) {
         var now = Instant.now();
         var ttlCap = now.plusSeconds(reportProperties.getPresignedUrlTtlSec());
         var requestedExpiresAt = request.isSetRequestedExpiresAt()

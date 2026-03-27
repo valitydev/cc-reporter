@@ -9,8 +9,6 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "ccr.scheduler")
 public class ReportSchedulerProperties {
 
-    private boolean enabled;
-    private long pollIntervalMs;
     private long staleProcessingTimeoutMs;
 
 }

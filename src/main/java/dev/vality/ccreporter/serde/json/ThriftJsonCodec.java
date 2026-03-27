@@ -32,7 +32,9 @@ public class ThriftJsonCodec {
 
     public <T extends TBase<T, ?>> String serialize(T value) {
         try {
-            return objectMapper.writeValueAsString(toJsonNode(value, value.getClass(), null));
+            return objectMapper.writeValueAsString(
+                    toJsonNode(value, value.getClass(), null, new IdentityHashMap<>())
+            );
         } catch (JsonProcessingException ex) {
             throw new RuntimeException("Failed to serialize thrift object to JSON", ex);
         }
@@ -50,36 +52,53 @@ public class ThriftJsonCodec {
         return thriftClass.cast(fromJsonNode(jsonNode, thriftClass, null));
     }
 
-    private JsonNode toJsonNode(Object value, Type declaredType, FieldValueMetaData metaData) {
+    private JsonNode toJsonNode(
+            Object value,
+            Type declaredType,
+            FieldValueMetaData metaData,
+            IdentityHashMap<TBase<?, ?>, Boolean> visitingStructs
+    ) {
         return switch (value) {
             case null -> objectMapper.nullNode();
-            case TUnion<?, ?> unionValue -> serializeUnion(unionValue);
-            case TBase<?, ?> baseValue -> serializeStruct(baseValue);
+            case TUnion<?, ?> unionValue -> serializeUnion(unionValue, visitingStructs);
+            case TBase<?, ?> baseValue -> serializeStruct(baseValue, visitingStructs);
             case TEnum enumValue -> objectMapper.getNodeFactory().textNode(((Enum<?>) enumValue).name());
-            case ByteBuffer byteBuffer -> objectMapper.getNodeFactory().binaryNode(toByteArray(byteBuffer));
+            case ByteBuffer byteBuffer -> objectMapper.getNodeFactory().binaryNode(copyBinary(byteBuffer));
             case byte[] bytes -> objectMapper.getNodeFactory().binaryNode(bytes);
-            case Collection<?> collection -> serializeCollection(collection, declaredType, metaData);
-            case Map<?, ?> map -> serializeMap(map, declaredType, metaData);
+            case Collection<?> collection -> serializeCollection(collection, declaredType, metaData, visitingStructs);
+            case Map<?, ?> map -> serializeMap(map, declaredType, metaData, visitingStructs);
             default -> objectMapper.valueToTree(value);
         };
     }
 
-    private ObjectNode serializeStruct(TBase<?, ?> value) {
-        var node = objectMapper.createObjectNode();
-        for (var entry : getFieldMetaDataMap(value.getClass()).entrySet()) {
-            var field = entry.getKey();
-            if (!isSet(value, field)) {
-                continue;
-            }
-            var fieldMetaData = entry.getValue();
-            var fieldValue = getFieldValue(value, field);
-            var declaredType = resolveFieldType(value.getClass(), fieldMetaData.fieldName);
-            node.set(fieldMetaData.fieldName, toJsonNode(fieldValue, declaredType, fieldMetaData.valueMetaData));
+    private ObjectNode serializeStruct(TBase<?, ?> value, IdentityHashMap<TBase<?, ?>, Boolean> visitingStructs) {
+        if (visitingStructs.put(value, Boolean.TRUE) != null) {
+            throw new IllegalArgumentException(
+                    "Cyclic reference detected while serializing thrift struct: " + value.getClass().getName()
+            );
         }
-        return node;
+        try {
+            var node = objectMapper.createObjectNode();
+            for (var entry : getFieldMetaDataMap(value.getClass()).entrySet()) {
+                var field = entry.getKey();
+                if (!isSet(value, field)) {
+                    continue;
+                }
+                var fieldMetaData = entry.getValue();
+                var fieldValue = getFieldValue(value, field);
+                var declaredType = resolveFieldType(value.getClass(), fieldMetaData.fieldName);
+                node.set(
+                        fieldMetaData.fieldName,
+                        toJsonNode(fieldValue, declaredType, fieldMetaData.valueMetaData, visitingStructs)
+                );
+            }
+            return node;
+        } finally {
+            visitingStructs.remove(value);
+        }
     }
 
-    private ObjectNode serializeUnion(TUnion<?, ?> value) {
+    private ObjectNode serializeUnion(TUnion<?, ?> value, IdentityHashMap<TBase<?, ?>, Boolean> visitingStructs) {
         var setField = value.getSetField();
         if (setField == null) {
             throw new IllegalArgumentException(
@@ -88,11 +107,19 @@ public class ThriftJsonCodec {
         var fieldMetaData = getFieldMetaData(value.getClass(), setField);
         var declaredType = resolveFieldType(value.getClass(), fieldMetaData.fieldName);
         var node = objectMapper.createObjectNode();
-        node.set(fieldMetaData.fieldName, toJsonNode(value.getFieldValue(), declaredType, fieldMetaData.valueMetaData));
+        node.set(
+                fieldMetaData.fieldName,
+                toJsonNode(value.getFieldValue(), declaredType, fieldMetaData.valueMetaData, visitingStructs)
+        );
         return node;
     }
 
-    private ArrayNode serializeCollection(Collection<?> collection, Type declaredType, FieldValueMetaData metaData) {
+    private ArrayNode serializeCollection(
+            Collection<?> collection,
+            Type declaredType,
+            FieldValueMetaData metaData,
+            IdentityHashMap<TBase<?, ?>, Boolean> visitingStructs
+    ) {
         var node = objectMapper.createArrayNode();
         var elementType = declaredType instanceof ParameterizedType parameterizedType
                 ? parameterizedType.getActualTypeArguments()[0]
@@ -101,12 +128,17 @@ public class ThriftJsonCodec {
                 ? collectionMetaData.elemMetaData
                 : null;
         for (var element : collection) {
-            node.add(toJsonNode(element, elementType, elementMetaData));
+            node.add(toJsonNode(element, elementType, elementMetaData, visitingStructs));
         }
         return node;
     }
 
-    private JsonNode serializeMap(Map<?, ?> map, Type declaredType, FieldValueMetaData metaData) {
+    private JsonNode serializeMap(
+            Map<?, ?> map,
+            Type declaredType,
+            FieldValueMetaData metaData,
+            IdentityHashMap<TBase<?, ?>, Boolean> visitingStructs
+    ) {
         var keyType = declaredType instanceof ParameterizedType parameterizedType
                 ? parameterizedType.getActualTypeArguments()[0]
                 : Object.class;
@@ -120,7 +152,7 @@ public class ThriftJsonCodec {
             for (var entry : map.entrySet()) {
                 node.set(
                         stringifyMapKey(entry.getKey()),
-                        toJsonNode(entry.getValue(), valueType, valueMetaData)
+                        toJsonNode(entry.getValue(), valueType, valueMetaData, visitingStructs)
                 );
             }
             return node;
@@ -128,8 +160,8 @@ public class ThriftJsonCodec {
         var node = objectMapper.createArrayNode();
         for (var entry : map.entrySet()) {
             var itemNode = objectMapper.createObjectNode();
-            itemNode.set("key", toJsonNode(entry.getKey(), keyType, keyMetaData));
-            itemNode.set("value", toJsonNode(entry.getValue(), valueType, valueMetaData));
+            itemNode.set("key", toJsonNode(entry.getKey(), keyType, keyMetaData, visitingStructs));
+            itemNode.set("value", toJsonNode(entry.getValue(), valueType, valueMetaData, visitingStructs));
             node.add(itemNode);
         }
         return node;
@@ -382,8 +414,8 @@ public class ThriftJsonCodec {
         }
     }
 
-    private byte[] toByteArray(ByteBuffer byteBuffer) {
-        var duplicate = byteBuffer.duplicate();
+    private byte[] copyBinary(ByteBuffer byteBuffer) {
+        var duplicate = byteBuffer.asReadOnlyBuffer();
         var bytes = new byte[duplicate.remaining()];
         duplicate.get(bytes);
         return bytes;
