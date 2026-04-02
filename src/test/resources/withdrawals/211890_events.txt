@@ -1,0 +1,1058 @@
+[
+  {
+    "event_id": 1,
+    "occured_at": "2026-02-17T18:15:27.166262Z",
+    "change": {
+      "created": {
+        "withdrawal": {
+          "id": "211890",
+          "body": {
+            "amount": 2900000,
+            "currency": {
+              "symbolic_code": "RUB"
+            }
+          },
+          "wallet_id": "3313",
+          "destination_id": "212279",
+          "party_id": "test-party-w-1",
+          "created_at": "2026-02-17T18:15:27.083Z",
+          "domain_revision": 2348,
+          "metadata": {
+            "user_id": {
+              "str": "test-user-meta"
+            },
+            "transaction_id": {
+              "str": "test-withdrawal-transaction-1"
+            },
+            "X-traceparent": {
+              "str": "00-00000000000000000000000000000000-0000000000000000-01"
+            }
+          },
+          "external_id": "test-withdrawal-external-1"
+        }
+      }
+    }
+  },
+  {
+    "event_id": 2,
+    "occured_at": "2026-02-17T18:15:27.166262Z",
+    "change": {
+      "status_changed": {
+        "status": {
+          "pending": []
+        }
+      }
+    }
+  },
+  {
+    "event_id": 3,
+    "occured_at": "2026-02-17T18:15:27.166262Z",
+    "change": {
+      "resource": {
+        "got": {
+          "resource": {
+            "bank_card": {
+              "bank_card": {
+                "token": "test-token",
+                "bin": "411111",
+                "masked_pan": "1111",
+                "issuer_country": "RUS",
+                "bank_name": "TEST BANK",
+                "card_type": "debit",
+                "bin_data_id": {
+                  "i": 13938
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 4,
+    "occured_at": "2026-02-17T18:15:27.360478Z",
+    "change": {
+      "route": {
+        "route": {
+          "provider_id": 393,
+          "terminal_id": 2226,
+          "provider_id_legacy": "93"
+        }
+      }
+    }
+  },
+  {
+    "event_id": 5,
+    "occured_at": "2026-02-17T18:15:27.450848Z",
+    "change": {
+      "transfer": {
+        "payload": {
+          "created": {
+            "transfer": {
+              "id": "ff/withdrawal/211890/1",
+              "cashflow": {
+                "postings": [
+                  {
+                    "source": {
+                      "account_type": {
+                        "wallet": "sender_settlement"
+                      },
+                      "account": {
+                        "party_id": "test-party-w-1",
+                        "realm": "live",
+                        "currency": {
+                          "symbolic_code": "RUB"
+                        },
+                        "account_id": 5331
+                      }
+                    },
+                    "destination": {
+                      "account_type": {
+                        "wallet": "receiver_destination"
+                      },
+                      "account": {
+                        "party_id": "test-party-w-1",
+                        "realm": "live",
+                        "currency": {
+                          "symbolic_code": "RUB"
+                        },
+                        "account_id": 212626
+                      }
+                    },
+                    "volume": {
+                      "amount": 2900000,
+                      "currency": {
+                        "symbolic_code": "RUB"
+                      }
+                    }
+                  },
+                  {
+                    "source": {
+                      "account_type": {
+                        "wallet": "sender_settlement"
+                      },
+                      "account": {
+                        "party_id": "test-party-w-1",
+                        "realm": "live",
+                        "currency": {
+                          "symbolic_code": "RUB"
+                        },
+                        "account_id": 5331
+                      }
+                    },
+                    "destination": {
+                      "account_type": {
+                        "system": "settlement"
+                      },
+                      "account": {
+                        "realm": "live",
+                        "currency": {
+                          "symbolic_code": "RUB"
+                        },
+                        "account_id": 5012
+                      }
+                    },
+                    "volume": {
+                      "amount": 145000,
+                      "currency": {
+                        "symbolic_code": "RUB"
+                      }
+                    }
+                  },
+                  {
+                    "source": {
+                      "account_type": {
+                        "system": "settlement"
+                      },
+                      "account": {
+                        "realm": "live",
+                        "currency": {
+                          "symbolic_code": "RUB"
+                        },
+                        "account_id": 5012
+                      }
+                    },
+                    "destination": {
+                      "account_type": {
+                        "provider": "settlement"
+                      },
+                      "account": {
+                        "realm": "live",
+                        "currency": {
+                          "symbolic_code": "RUB"
+                        },
+                        "account_id": 12228
+                      }
+                    },
+                    "volume": {
+                      "amount": 130500,
+                      "currency": {
+                        "symbolic_code": "RUB"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 6,
+    "occured_at": "2026-02-17T18:15:27.450848Z",
+    "change": {
+      "transfer": {
+        "payload": {
+          "status_changed": {
+            "status": {
+              "created": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 7,
+    "occured_at": "2026-02-17T18:15:27.541755Z",
+    "change": {
+      "transfer": {
+        "payload": {
+          "status_changed": {
+            "status": {
+              "prepared": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 8,
+    "occured_at": "2026-02-17T18:15:27.578582Z",
+    "change": {
+      "limit_check": {
+        "details": {
+          "wallet_sender": {
+            "ok": []
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 9,
+    "occured_at": "2026-02-17T18:15:27.626527Z",
+    "change": {
+      "session": {
+        "id": "211890/1",
+        "payload": {
+          "started": []
+        }
+      }
+    }
+  },
+  {
+    "event_id": 10,
+    "occured_at": "2026-02-17T18:15:59.249252Z",
+    "change": {
+      "session": {
+        "id": "211890/1",
+        "payload": {
+          "finished": {
+            "result": {
+              "failed": {
+                "failure": {
+                  "code": "authorization_failed",
+                  "reason": "'330' - 'Destination account unavailable'",
+                  "sub": {
+                    "code": "unknown"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 11,
+    "occured_at": "2026-02-17T18:15:59.318438Z",
+    "change": {
+      "transfer": {
+        "payload": {
+          "status_changed": {
+            "status": {
+              "cancelled": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 12,
+    "occured_at": "2026-02-17T18:15:59.431803Z",
+    "change": {
+      "route": {
+        "route": {
+          "provider_id": 518,
+          "terminal_id": 2465,
+          "provider_id_legacy": "218"
+        }
+      }
+    }
+  },
+  {
+    "event_id": 13,
+    "occured_at": "2026-02-17T18:15:59.512814Z",
+    "change": {
+      "transfer": {
+        "payload": {
+          "created": {
+            "transfer": {
+              "id": "ff/withdrawal/211890/2",
+              "cashflow": {
+                "postings": [
+                  {
+                    "source": {
+                      "account_type": {
+                        "wallet": "sender_settlement"
+                      },
+                      "account": {
+                        "party_id": "test-party-w-1",
+                        "realm": "live",
+                        "currency": {
+                          "symbolic_code": "RUB"
+                        },
+                        "account_id": 5331
+                      }
+                    },
+                    "destination": {
+                      "account_type": {
+                        "wallet": "receiver_destination"
+                      },
+                      "account": {
+                        "party_id": "test-party-w-1",
+                        "realm": "live",
+                        "currency": {
+                          "symbolic_code": "RUB"
+                        },
+                        "account_id": 212626
+                      }
+                    },
+                    "volume": {
+                      "amount": 2900000,
+                      "currency": {
+                        "symbolic_code": "RUB"
+                      }
+                    }
+                  },
+                  {
+                    "source": {
+                      "account_type": {
+                        "wallet": "sender_settlement"
+                      },
+                      "account": {
+                        "party_id": "test-party-w-1",
+                        "realm": "live",
+                        "currency": {
+                          "symbolic_code": "RUB"
+                        },
+                        "account_id": 5331
+                      }
+                    },
+                    "destination": {
+                      "account_type": {
+                        "system": "settlement"
+                      },
+                      "account": {
+                        "realm": "live",
+                        "currency": {
+                          "symbolic_code": "RUB"
+                        },
+                        "account_id": 5012
+                      }
+                    },
+                    "volume": {
+                      "amount": 145000,
+                      "currency": {
+                        "symbolic_code": "RUB"
+                      }
+                    }
+                  },
+                  {
+                    "source": {
+                      "account_type": {
+                        "system": "settlement"
+                      },
+                      "account": {
+                        "realm": "live",
+                        "currency": {
+                          "symbolic_code": "RUB"
+                        },
+                        "account_id": 5012
+                      }
+                    },
+                    "destination": {
+                      "account_type": {
+                        "provider": "settlement"
+                      },
+                      "account": {
+                        "realm": "live",
+                        "currency": {
+                          "symbolic_code": "RUB"
+                        },
+                        "account_id": 10683
+                      }
+                    },
+                    "volume": {
+                      "amount": 116000,
+                      "currency": {
+                        "symbolic_code": "RUB"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 14,
+    "occured_at": "2026-02-17T18:15:59.512814Z",
+    "change": {
+      "transfer": {
+        "payload": {
+          "status_changed": {
+            "status": {
+              "created": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 15,
+    "occured_at": "2026-02-17T18:15:59.578280Z",
+    "change": {
+      "transfer": {
+        "payload": {
+          "status_changed": {
+            "status": {
+              "prepared": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 16,
+    "occured_at": "2026-02-17T18:15:59.619442Z",
+    "change": {
+      "limit_check": {
+        "details": {
+          "wallet_sender": {
+            "ok": []
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 17,
+    "occured_at": "2026-02-17T18:15:59.670130Z",
+    "change": {
+      "session": {
+        "id": "211890/2",
+        "payload": {
+          "started": []
+        }
+      }
+    }
+  },
+  {
+    "event_id": 18,
+    "occured_at": "2026-02-17T18:33:00.195739Z",
+    "change": {
+      "session": {
+        "id": "211890/2",
+        "payload": {
+          "finished": {
+            "result": {
+              "succeeded": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 19,
+    "occured_at": "2026-02-17T18:33:00.265856Z",
+    "change": {
+      "transfer": {
+        "payload": {
+          "status_changed": {
+            "status": {
+              "committed": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 20,
+    "occured_at": "2026-02-17T18:33:00.283712Z",
+    "change": {
+      "status_changed": {
+        "status": {
+          "succeeded": []
+        }
+      }
+    }
+  },
+  {
+    "event_id": 21,
+    "occured_at": "2026-02-20T11:51:00.389Z",
+    "change": {
+      "adjustment": {
+        "id": "test-withdrawal-adjustment-1",
+        "payload": {
+          "created": {
+            "adjustment": {
+              "id": "test-withdrawal-adjustment-1",
+              "status": {
+                "pending": []
+              },
+              "changes_plan": {
+                "new_cash_flow": {
+                  "old_cash_flow_inverted": {
+                    "postings": [
+                      {
+                        "source": {
+                          "account_type": {
+                            "wallet": "receiver_destination"
+                          },
+                          "account": {
+                            "party_id": "test-party-w-1",
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 212626
+                          }
+                        },
+                        "destination": {
+                          "account_type": {
+                            "wallet": "sender_settlement"
+                          },
+                          "account": {
+                            "party_id": "test-party-w-1",
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 5331
+                          }
+                        },
+                        "volume": {
+                          "amount": 2900000,
+                          "currency": {
+                            "symbolic_code": "RUB"
+                          }
+                        }
+                      },
+                      {
+                        "source": {
+                          "account_type": {
+                            "system": "settlement"
+                          },
+                          "account": {
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 5012
+                          }
+                        },
+                        "destination": {
+                          "account_type": {
+                            "wallet": "sender_settlement"
+                          },
+                          "account": {
+                            "party_id": "test-party-w-1",
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 5331
+                          }
+                        },
+                        "volume": {
+                          "amount": 145000,
+                          "currency": {
+                            "symbolic_code": "RUB"
+                          }
+                        }
+                      },
+                      {
+                        "source": {
+                          "account_type": {
+                            "provider": "settlement"
+                          },
+                          "account": {
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 10683
+                          }
+                        },
+                        "destination": {
+                          "account_type": {
+                            "system": "settlement"
+                          },
+                          "account": {
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 5012
+                          }
+                        },
+                        "volume": {
+                          "amount": 116000,
+                          "currency": {
+                            "symbolic_code": "RUB"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "new_cash_flow": {
+                    "postings": [
+                      {
+                        "source": {
+                          "account_type": {
+                            "wallet": "sender_settlement"
+                          },
+                          "account": {
+                            "party_id": "test-party-w-1",
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 5331
+                          }
+                        },
+                        "destination": {
+                          "account_type": {
+                            "wallet": "receiver_destination"
+                          },
+                          "account": {
+                            "party_id": "test-party-w-1",
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 212626
+                          }
+                        },
+                        "volume": {
+                          "amount": 2900000,
+                          "currency": {
+                            "symbolic_code": "RUB"
+                          }
+                        }
+                      },
+                      {
+                        "source": {
+                          "account_type": {
+                            "wallet": "sender_settlement"
+                          },
+                          "account": {
+                            "party_id": "test-party-w-1",
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 5331
+                          }
+                        },
+                        "destination": {
+                          "account_type": {
+                            "system": "settlement"
+                          },
+                          "account": {
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 5012
+                          }
+                        },
+                        "volume": {
+                          "amount": 145000,
+                          "currency": {
+                            "symbolic_code": "RUB"
+                          }
+                        }
+                      },
+                      {
+                        "source": {
+                          "account_type": {
+                            "system": "settlement"
+                          },
+                          "account": {
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 5012
+                          }
+                        },
+                        "destination": {
+                          "account_type": {
+                            "provider": "settlement"
+                          },
+                          "account": {
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 10683
+                          }
+                        },
+                        "volume": {
+                          "amount": 116000,
+                          "currency": {
+                            "symbolic_code": "RUB"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                "new_domain_revision": {
+                  "new_domain_revision": 2433
+                }
+              },
+              "created_at": "2026-02-20T11:51:00.388Z",
+              "domain_revision": 2433,
+              "operation_timestamp": "2026-02-17T18:15:27.083Z"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 22,
+    "occured_at": "2026-02-20T11:51:00.419078Z",
+    "change": {
+      "adjustment": {
+        "id": "test-withdrawal-adjustment-1",
+        "payload": {
+          "transfer": {
+            "payload": {
+              "created": {
+                "transfer": {
+                  "id": "ff/adjustment/test-withdrawal-adjustment-1",
+                  "cashflow": {
+                    "postings": [
+                      {
+                        "source": {
+                          "account_type": {
+                            "wallet": "receiver_destination"
+                          },
+                          "account": {
+                            "party_id": "test-party-w-1",
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 212626
+                          }
+                        },
+                        "destination": {
+                          "account_type": {
+                            "wallet": "sender_settlement"
+                          },
+                          "account": {
+                            "party_id": "test-party-w-1",
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 5331
+                          }
+                        },
+                        "volume": {
+                          "amount": 2900000,
+                          "currency": {
+                            "symbolic_code": "RUB"
+                          }
+                        }
+                      },
+                      {
+                        "source": {
+                          "account_type": {
+                            "system": "settlement"
+                          },
+                          "account": {
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 5012
+                          }
+                        },
+                        "destination": {
+                          "account_type": {
+                            "wallet": "sender_settlement"
+                          },
+                          "account": {
+                            "party_id": "test-party-w-1",
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 5331
+                          }
+                        },
+                        "volume": {
+                          "amount": 145000,
+                          "currency": {
+                            "symbolic_code": "RUB"
+                          }
+                        }
+                      },
+                      {
+                        "source": {
+                          "account_type": {
+                            "provider": "settlement"
+                          },
+                          "account": {
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 10683
+                          }
+                        },
+                        "destination": {
+                          "account_type": {
+                            "system": "settlement"
+                          },
+                          "account": {
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 5012
+                          }
+                        },
+                        "volume": {
+                          "amount": 116000,
+                          "currency": {
+                            "symbolic_code": "RUB"
+                          }
+                        }
+                      },
+                      {
+                        "source": {
+                          "account_type": {
+                            "wallet": "sender_settlement"
+                          },
+                          "account": {
+                            "party_id": "test-party-w-1",
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 5331
+                          }
+                        },
+                        "destination": {
+                          "account_type": {
+                            "wallet": "receiver_destination"
+                          },
+                          "account": {
+                            "party_id": "test-party-w-1",
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 212626
+                          }
+                        },
+                        "volume": {
+                          "amount": 2900000,
+                          "currency": {
+                            "symbolic_code": "RUB"
+                          }
+                        }
+                      },
+                      {
+                        "source": {
+                          "account_type": {
+                            "wallet": "sender_settlement"
+                          },
+                          "account": {
+                            "party_id": "test-party-w-1",
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 5331
+                          }
+                        },
+                        "destination": {
+                          "account_type": {
+                            "system": "settlement"
+                          },
+                          "account": {
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 5012
+                          }
+                        },
+                        "volume": {
+                          "amount": 145000,
+                          "currency": {
+                            "symbolic_code": "RUB"
+                          }
+                        }
+                      },
+                      {
+                        "source": {
+                          "account_type": {
+                            "system": "settlement"
+                          },
+                          "account": {
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 5012
+                          }
+                        },
+                        "destination": {
+                          "account_type": {
+                            "provider": "settlement"
+                          },
+                          "account": {
+                            "realm": "live",
+                            "currency": {
+                              "symbolic_code": "RUB"
+                            },
+                            "account_id": 10683
+                          }
+                        },
+                        "volume": {
+                          "amount": 116000,
+                          "currency": {
+                            "symbolic_code": "RUB"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 23,
+    "occured_at": "2026-02-20T11:51:00.419078Z",
+    "change": {
+      "adjustment": {
+        "id": "test-withdrawal-adjustment-1",
+        "payload": {
+          "transfer": {
+            "payload": {
+              "status_changed": {
+                "status": {
+                  "created": []
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 24,
+    "occured_at": "2026-02-20T11:51:00.448121Z",
+    "change": {
+      "adjustment": {
+        "id": "test-withdrawal-adjustment-1",
+        "payload": {
+          "transfer": {
+            "payload": {
+              "status_changed": {
+                "status": {
+                  "prepared": []
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 25,
+    "occured_at": "2026-02-20T11:51:00.473244Z",
+    "change": {
+      "adjustment": {
+        "id": "test-withdrawal-adjustment-1",
+        "payload": {
+          "transfer": {
+            "payload": {
+              "status_changed": {
+                "status": {
+                  "committed": []
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "event_id": 26,
+    "occured_at": "2026-02-20T11:51:00.493094Z",
+    "change": {
+      "adjustment": {
+        "id": "test-withdrawal-adjustment-1",
+        "payload": {
+          "status_changed": {
+            "status": {
+              "succeeded": []
+            }
+          }
+        }
+      }
+    }
+  }
+]

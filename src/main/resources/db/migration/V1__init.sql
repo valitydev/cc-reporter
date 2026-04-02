@@ -41,7 +41,7 @@ CREATE TABLE ccr.report_job (
   rows_count BIGINT,
   attempt INT NOT NULL DEFAULT 0,
   next_attempt_at TIMESTAMP WITHOUT TIME ZONE,
-  data_window_fixed_at TIMESTAMP WITHOUT TIME ZONE,
+  data_snapshot_fixed_at TIMESTAMP WITHOUT TIME ZONE,
 
   error_code VARCHAR,
   error_message VARCHAR,
@@ -86,51 +86,71 @@ CREATE TABLE ccr.report_audit_event (
   created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
 );
 
+CREATE TABLE ccr.shop_lookup (
+  shop_id VARCHAR PRIMARY KEY,
+  shop_name VARCHAR,
+  shop_search VARCHAR,
+  dominant_version_id BIGINT NOT NULL DEFAULT 0,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
+);
+
+CREATE TABLE ccr.provider_lookup (
+  provider_id VARCHAR PRIMARY KEY,
+  provider_name VARCHAR,
+  provider_search VARCHAR,
+  dominant_version_id BIGINT NOT NULL DEFAULT 0,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
+);
+
+CREATE TABLE ccr.terminal_lookup (
+  terminal_id VARCHAR PRIMARY KEY,
+  terminal_name VARCHAR,
+  terminal_search VARCHAR,
+  dominant_version_id BIGINT NOT NULL DEFAULT 0,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
+);
+
+CREATE TABLE ccr.wallet_lookup (
+  wallet_id VARCHAR PRIMARY KEY,
+  wallet_name VARCHAR,
+  wallet_search VARCHAR,
+  dominant_version_id BIGINT NOT NULL DEFAULT 0,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
+);
+
 CREATE TABLE ccr.payment_txn_current (
   id BIGSERIAL PRIMARY KEY,
-
   invoice_id VARCHAR NOT NULL,
   payment_id VARCHAR NOT NULL,
-
-  -- Domain event order comes from MachineEvent.eventId.
   domain_event_id BIGINT NOT NULL,
   domain_event_created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-
-  party_id VARCHAR NOT NULL,
+  party_id VARCHAR,
   shop_id VARCHAR,
-  shop_name VARCHAR,
-
-  created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+  created_at TIMESTAMP WITHOUT TIME ZONE,
   finalized_at TIMESTAMP WITHOUT TIME ZONE,
-  status VARCHAR NOT NULL,
-
+  status VARCHAR,
   provider_id VARCHAR,
-  provider_name VARCHAR,
   terminal_id VARCHAR,
-  terminal_name VARCHAR,
-
-  amount BIGINT NOT NULL,
+  amount BIGINT,
   fee BIGINT,
-  currency VARCHAR NOT NULL,
-
+  currency VARCHAR,
   trx_id VARCHAR,
   external_id VARCHAR,
   rrn VARCHAR,
   approval_code VARCHAR,
   payment_tool_type VARCHAR,
-
+  error_summary VARCHAR,
   original_amount BIGINT,
   original_currency VARCHAR,
   converted_amount BIGINT,
   exchange_rate_internal NUMERIC(20, 10),
   provider_amount BIGINT,
   provider_currency VARCHAR,
-
-  shop_search VARCHAR,
-  provider_search VARCHAR,
-  terminal_search VARCHAR,
   trx_search VARCHAR,
-
   updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
 
   CONSTRAINT payment_txn_current_event_chk CHECK (domain_event_id > 0),
@@ -138,54 +158,42 @@ CREATE TABLE ccr.payment_txn_current (
 );
 
 CREATE TABLE ccr.withdrawal_txn_current (
-  id BIGSERIAL PRIMARY KEY,
-
-  withdrawal_id VARCHAR NOT NULL,
-
-  -- Domain event order comes from MachineEvent.eventId.
+  withdrawal_id VARCHAR PRIMARY KEY,
   domain_event_id BIGINT NOT NULL,
   domain_event_created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-
-  party_id VARCHAR NOT NULL,
+  party_id VARCHAR,
   wallet_id VARCHAR,
-  wallet_name VARCHAR,
   destination_id VARCHAR,
-
-  created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+  created_at TIMESTAMP WITHOUT TIME ZONE,
   finalized_at TIMESTAMP WITHOUT TIME ZONE,
-  status VARCHAR NOT NULL,
-
+  status VARCHAR,
   provider_id VARCHAR,
-  provider_name VARCHAR,
   terminal_id VARCHAR,
-  terminal_name VARCHAR,
-
-  amount BIGINT NOT NULL,
+  amount BIGINT,
   fee BIGINT,
-  currency VARCHAR NOT NULL,
-
-  trx_id VARCHAR,
+  currency VARCHAR,
   external_id VARCHAR,
-  error_code VARCHAR,
-  error_reason VARCHAR,
-  error_sub_failure VARCHAR,
-
+  error_summary VARCHAR,
   original_amount BIGINT,
   original_currency VARCHAR,
-  converted_amount BIGINT,
   exchange_rate_internal NUMERIC(20, 10),
   provider_amount BIGINT,
   provider_currency VARCHAR,
-
-  wallet_search VARCHAR,
-  provider_search VARCHAR,
-  terminal_search VARCHAR,
-  trx_search VARCHAR,
-
   updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
 
-  CONSTRAINT withdrawal_txn_current_event_chk CHECK (domain_event_id > 0),
-  CONSTRAINT withdrawal_txn_current_uniq UNIQUE (withdrawal_id)
+  CONSTRAINT withdrawal_txn_current_event_chk CHECK (domain_event_id > 0)
+);
+
+CREATE TABLE ccr.withdrawal_session (
+  session_id VARCHAR PRIMARY KEY,
+  domain_event_id BIGINT NOT NULL,
+  domain_event_created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+  withdrawal_id VARCHAR,
+  trx_id VARCHAR,
+  trx_search VARCHAR,
+  updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
+
+  CONSTRAINT withdrawal_session_event_chk CHECK (domain_event_id > 0)
 );
 
 CREATE INDEX report_job_created_by_created_at_idx
@@ -216,6 +224,18 @@ CREATE UNIQUE INDEX report_job_idempotency_key_uniq
 CREATE INDEX report_audit_event_report_id_idx
   ON ccr.report_audit_event (report_id, created_at DESC, id DESC);
 
+CREATE INDEX shop_lookup_search_trgm_idx
+  ON ccr.shop_lookup USING gin (shop_search gin_trgm_ops);
+
+CREATE INDEX provider_lookup_search_trgm_idx
+  ON ccr.provider_lookup USING gin (provider_search gin_trgm_ops);
+
+CREATE INDEX terminal_lookup_search_trgm_idx
+  ON ccr.terminal_lookup USING gin (terminal_search gin_trgm_ops);
+
+CREATE INDEX wallet_lookup_search_trgm_idx
+  ON ccr.wallet_lookup USING gin (wallet_search gin_trgm_ops);
+
 CREATE INDEX payment_txn_created_at_idx
   ON ccr.payment_txn_current (created_at DESC, id DESC);
 
@@ -238,23 +258,14 @@ CREATE INDEX payment_txn_filters_idx
 CREATE INDEX payment_txn_trx_idx
   ON ccr.payment_txn_current (trx_id);
 
-CREATE INDEX payment_txn_shop_trgm_idx
-  ON ccr.payment_txn_current USING gin (shop_search gin_trgm_ops);
-
-CREATE INDEX payment_txn_provider_trgm_idx
-  ON ccr.payment_txn_current USING gin (provider_search gin_trgm_ops);
-
-CREATE INDEX payment_txn_terminal_trgm_idx
-  ON ccr.payment_txn_current USING gin (terminal_search gin_trgm_ops);
-
 CREATE INDEX payment_txn_trx_trgm_idx
   ON ccr.payment_txn_current USING gin (trx_search gin_trgm_ops);
 
 CREATE INDEX withdrawal_txn_created_at_idx
-  ON ccr.withdrawal_txn_current (created_at DESC, id DESC);
+  ON ccr.withdrawal_txn_current (created_at DESC, withdrawal_id);
 
 CREATE INDEX withdrawal_txn_finalized_at_idx
-  ON ccr.withdrawal_txn_current (finalized_at DESC, id DESC)
+  ON ccr.withdrawal_txn_current (finalized_at DESC, withdrawal_id)
   WHERE finalized_at IS NOT NULL;
 
 CREATE INDEX withdrawal_txn_filters_idx
@@ -266,29 +277,14 @@ CREATE INDEX withdrawal_txn_filters_idx
     status,
     currency,
     created_at DESC,
-    id DESC
+    withdrawal_id
   );
 
-CREATE INDEX withdrawal_txn_trx_idx
-  ON ccr.withdrawal_txn_current (trx_id);
+CREATE INDEX withdrawal_session_trx_idx
+  ON ccr.withdrawal_session (trx_id);
 
-CREATE INDEX withdrawal_txn_wallet_trgm_idx
-  ON ccr.withdrawal_txn_current USING gin (wallet_search gin_trgm_ops);
+CREATE INDEX withdrawal_session_trx_trgm_idx
+  ON ccr.withdrawal_session USING gin (trx_search gin_trgm_ops);
 
-CREATE INDEX withdrawal_txn_provider_trgm_idx
-  ON ccr.withdrawal_txn_current USING gin (provider_search gin_trgm_ops);
-
-CREATE INDEX withdrawal_txn_terminal_trgm_idx
-  ON ccr.withdrawal_txn_current USING gin (terminal_search gin_trgm_ops);
-
-CREATE INDEX withdrawal_txn_trx_trgm_idx
-  ON ccr.withdrawal_txn_current USING gin (trx_search gin_trgm_ops);
-
--- Ingest contract (implemented in application code):
--- payments:
---   INSERT ... ON CONFLICT (invoice_id, payment_id) DO UPDATE
---   ... WHERE ccr.payment_txn_current.domain_event_id < EXCLUDED.domain_event_id;
---
--- withdrawals:
---   INSERT ... ON CONFLICT (withdrawal_id) DO UPDATE
---   ... WHERE ccr.withdrawal_txn_current.domain_event_id < EXCLUDED.domain_event_id;
+CREATE INDEX withdrawal_session_withdrawal_idx
+  ON ccr.withdrawal_session (withdrawal_id);

@@ -17,6 +17,8 @@
     <description>CC Reporter</description>
 
     <properties>
+        <java.version>25</java.version>
+        <maven.compiler.release>25</maven.compiler.release>
         <dockerfile.registry>${env.REGISTRY}</dockerfile.registry>
         <server.port>8022</server.port>
         <management.port>8023</management.port>
@@ -54,6 +56,10 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-kafka</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
@@ -70,6 +76,10 @@
             <groupId>org.jooq</groupId>
             <artifactId>jooq</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
 
         <!--dev.vality-->
         <dependency>
@@ -79,6 +89,38 @@
         <dependency>
             <groupId>dev.vality.woody</groupId>
             <artifactId>woody-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.vality</groupId>
+            <artifactId>cc-reporter-proto</artifactId>
+            <version>1.3-e7841ec</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.vality</groupId>
+            <artifactId>file-storage-proto</artifactId>
+            <version>1.49-f01d2d9</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.vality</groupId>
+            <artifactId>msgpack-proto</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.vality</groupId>
+            <artifactId>machinegun-proto</artifactId>
+            <version>1.43-3decc8f</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.vality</groupId>
+            <artifactId>damsel</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.vality</groupId>
+            <artifactId>fistful-proto</artifactId>
+            <version>1.188-f7ce08e</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
         </dependency>
 
         <!-- Test -->
@@ -91,6 +133,11 @@
             <groupId>io.zonky.test</groupId>
             <artifactId>embedded-postgres</artifactId>
             <version>2.0.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -123,12 +170,24 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>dev.vality.maven.plugins</groupId>
                 <artifactId>pg-embedded-plugin</artifactId>
-                <version>2.0.0</version>
+                <version>3.0.0</version>
                 <configuration>
                     <port>${local.pg.port}</port>
-                    <dbName>${db.name}</dbName>
+                    <name>${db.name}</name>
                     <schemas>
                         <schema>${db.schema}</schema>
                     </schemas>
@@ -136,14 +195,14 @@
                 <executions>
                     <execution>
                         <id>PG_server_start</id>
-                        <phase>initialize</phase>
+                        <phase>generate-sources</phase>
                         <goals>
                             <goal>start</goal>
                         </goals>
                     </execution>
                     <execution>
                         <id>PG_server_stop</id>
-                        <phase>generate-resources</phase>
+                        <phase>process-sources</phase>
                         <goals>
                             <goal>stop</goal>
                         </goals>
@@ -164,7 +223,7 @@
                 <executions>
                     <execution>
                         <id>migrate</id>
-                        <phase>initialize</phase>
+                        <phase>generate-sources</phase>
                         <goals>
                             <goal>migrate</goal>
                         </goals>
@@ -194,6 +253,7 @@
                             <pojos>true</pojos>
                             <pojosEqualsAndHashCode>true</pojosEqualsAndHashCode>
                             <pojosToString>true</pojosToString>
+                            <fluentSetters>true</fluentSetters>
                         </generate>
                         <database>
                             <name>org.jooq.meta.postgres.PostgresDatabase</name>
@@ -212,7 +272,7 @@
                 <executions>
                     <execution>
                         <id>gen-src</id>
-                        <phase>initialize</phase>
+                        <phase>generate-sources</phase>
                         <goals>
                             <goal>generate</goal>
                         </goals>

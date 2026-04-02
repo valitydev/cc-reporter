@@ -1,0 +1,1768 @@
+[
+  {
+    "id": 1,
+    "created_at": "2025-11-14T10:24:28.719864Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_created": {
+            "invoice": {
+              "id": "2BcxlVzvnqy",
+              "owner_id": "test-party-3",
+              "party_revision": 51,
+              "shop_id": "test-shop-4",
+              "created_at": "2025-11-14T10:24:28.698271Z",
+              "status": {
+                "unpaid": []
+              },
+              "details": {
+                "product": "1028623"
+              },
+              "due": "2025-11-15T10:24:28Z",
+              "cost": {
+                "amount": 10000,
+                "currency": {
+                  "symbolic_code": "KZT"
+                }
+              },
+              "context": {
+                "type": "application/json",
+                "data": "{\"X-traceparent\":\"00-00000000000000000000000000000000-0000000000000002-01\",\"transaction_id\":\"test-transaction-embedded\",\"user_id\":\"test-user-embedded\"}"
+              },
+              "external_id": "test-external-3"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 2,
+    "created_at": "2025-11-14T10:24:29.122465Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_started": {
+                "payment": {
+                  "id": "1",
+                  "created_at": "2025-11-14T10:24:29.114953Z",
+                  "status": {
+                    "pending": []
+                  },
+                  "context": {
+                    "type": "application/json",
+                    "data": "{\"transaction_id\":\"test-transaction-embedded\",\"user_id\":\"test-user-embedded\"}"
+                  },
+                  "cost": {
+                    "amount": 10000,
+                    "currency": {
+                      "symbolic_code": "KZT"
+                    }
+                  },
+                  "domain_revision": 72891,
+                  "flow": {
+                    "instant": []
+                  },
+                  "payer": {
+                    "payment_resource": {
+                      "resource": {
+                        "payment_tool": {
+                          "bank_card": {
+                            "token": "test-token",
+                            "payment_system": {
+                              "id": "VISA"
+                            },
+                            "bin": "411111",
+                            "last_digits": "1111",
+                            "issuer_country": "KAZ",
+                            "bank_name": "TEST BANK",
+                            "metadata": {
+                              "com.rbkmoney.binbase": {
+                                "obj": [
+                                  {
+                                    "key": {
+                                      "str": "version"
+                                    },
+                                    "value": {
+                                      "i": 1
+                                    }
+                                  }
+                                ]
+                              }
+                            },
+                            "is_cvv_empty": false,
+                            "exp_date": {
+                              "month": 2,
+                              "year": 2026
+                            },
+                            "category": "REWARDS"
+                          }
+                        },
+                        "payment_session_id": "test-payment-session-5",
+                        "client_info": {
+                          "ip_address": "198.51.100.37",
+                          "fingerprint": "test-fingerprint-5",
+                          "peer_ip_address": "198.51.100.38",
+                          "user_ip_address": "198.51.100.39"
+                        }
+                      },
+                      "contact_info": {
+                        "email": "user11@example.test",
+                        "country": "KAZ",
+                        "state": "Kazakhstan"
+                      }
+                    }
+                  },
+                  "payer_session_info": {
+                    "redirect_url": "https://example.com/test-url-31"
+                  },
+                  "party_revision": 51,
+                  "owner_id": "test-party-3",
+                  "shop_id": "test-shop-4",
+                  "make_recurrent": true,
+                  "external_id": "test-external-4",
+                  "processing_deadline": "2025-11-14T10:26:29.091Z",
+                  "registration_origin": {
+                    "merchant": []
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:24:29.114953Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 3,
+    "created_at": "2025-11-14T10:24:29.136483Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_shop_limit_initiated": []
+            },
+            "occurred_at": "2025-11-14T10:24:29.135286Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 4,
+    "created_at": "2025-11-14T10:24:29.151770Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_shop_limit_applied": []
+            },
+            "occurred_at": "2025-11-14T10:24:29.150568Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 5,
+    "created_at": "2025-11-14T10:24:29.186674Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_risk_score_changed": {
+                "risk_score": "high"
+              }
+            },
+            "occurred_at": "2025-11-14T10:24:29.172720Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 6,
+    "created_at": "2025-11-14T10:24:29.245128Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_route_changed": {
+                "route": {
+                  "provider": {
+                    "id": 170
+                  },
+                  "terminal": {
+                    "id": 2529
+                  }
+                },
+                "candidates": [
+                  {
+                    "provider": {
+                      "id": 170
+                    },
+                    "terminal": {
+                      "id": 2529
+                    }
+                  }
+                ],
+                "scores": [
+                  {
+                    "key": {
+                      "provider": {
+                        "id": 170
+                      },
+                      "terminal": {
+                        "id": 2529
+                      }
+                    },
+                    "value": {
+                      "availability_condition": 1,
+                      "conversion_condition": 1,
+                      "terminal_priority_rating": 1000,
+                      "route_pin": 0,
+                      "random_condition": 0,
+                      "availability": 1.00000000000000000000e+00,
+                      "conversion": 9.63086637119786259653e-01,
+                      "blacklist_condition": 0
+                    }
+                  }
+                ],
+                "limits": [
+                  {
+                    "key": {
+                      "provider": {
+                        "id": 170
+                      },
+                      "terminal": {
+                        "id": 2529
+                      }
+                    },
+                    "value": []
+                  }
+                ]
+              }
+            },
+            "occurred_at": "2025-11-14T10:24:29.200424Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 7,
+    "created_at": "2025-11-14T10:24:29.307742Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_cash_flow_changed": {
+                "cash_flow": [
+                  {
+                    "source": {
+                      "account_type": {
+                        "merchant": "settlement"
+                      },
+                      "account_id": 85723906,
+                      "transaction_account": {
+                        "merchant": {
+                          "type": "settlement",
+                          "owner": {
+                            "party_id": "test-uuid-6",
+                            "shop_id": "test-shop-4"
+                          }
+                        }
+                      }
+                    },
+                    "destination": {
+                      "account_type": {
+                        "system": "settlement"
+                      },
+                      "account_id": 333,
+                      "transaction_account": {
+                        "system": {
+                          "type": "settlement"
+                        }
+                      }
+                    },
+                    "volume": {
+                      "amount": 390,
+                      "currency": {
+                        "symbolic_code": "KZT"
+                      }
+                    }
+                  },
+                  {
+                    "source": {
+                      "account_type": {
+                        "provider": "settlement"
+                      },
+                      "account_id": 329,
+                      "transaction_account": {
+                        "provider": {
+                          "type": "settlement",
+                          "owner": {
+                            "provider_ref": {
+                              "id": 170
+                            },
+                            "terminal_ref": {
+                              "id": 2529
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "destination": {
+                      "account_type": {
+                        "merchant": "settlement"
+                      },
+                      "account_id": 85723906,
+                      "transaction_account": {
+                        "merchant": {
+                          "type": "settlement",
+                          "owner": {
+                            "party_id": "test-uuid-6",
+                            "shop_id": "test-shop-4"
+                          }
+                        }
+                      }
+                    },
+                    "volume": {
+                      "amount": 10000,
+                      "currency": {
+                        "symbolic_code": "KZT"
+                      }
+                    }
+                  },
+                  {
+                    "source": {
+                      "account_type": {
+                        "system": "settlement"
+                      },
+                      "account_id": 333,
+                      "transaction_account": {
+                        "system": {
+                          "type": "settlement"
+                        }
+                      }
+                    },
+                    "destination": {
+                      "account_type": {
+                        "provider": "settlement"
+                      },
+                      "account_id": 329,
+                      "transaction_account": {
+                        "provider": {
+                          "type": "settlement",
+                          "owner": {
+                            "provider_ref": {
+                              "id": 170
+                            },
+                            "terminal_ref": {
+                              "id": 2529
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "volume": {
+                      "amount": 420,
+                      "currency": {
+                        "symbolic_code": "KZT"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "occurred_at": "2025-11-14T10:24:29.259479Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 8,
+    "created_at": "2025-11-14T10:24:29.322318Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_started": []
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:24:29.321401Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 9,
+    "created_at": "2025-11-14T10:24:29.495195Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_transaction_bound": {
+                    "trx": {
+                      "id": "GE00000000000003",
+                      "extra": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:24:29.338079Z"
+          }
+        },
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_proxy_state_changed": {
+                    "proxy_state": "{\"trxId\":\"test-provider-trx-alt-1\",\"step\":\"CHECK_STATUS\",\"options\":{},\"start_date_time_polling\":1763115869.482891063,\"max_date_time_polling\":1763116469.482890530}"
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:24:29.338079Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 10,
+    "created_at": "2025-11-14T10:24:37.155699Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-32"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:24:37.104385Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 11,
+    "created_at": "2025-11-14T10:24:57.157103Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-33"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:24:57.104830Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 12,
+    "created_at": "2025-11-14T10:25:17.155134Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-34"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:25:17.115029Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 13,
+    "created_at": "2025-11-14T10:25:37.160204Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-35"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:25:37.109052Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 14,
+    "created_at": "2025-11-14T10:25:57.152078Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-36"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:25:57.104418Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 15,
+    "created_at": "2025-11-14T10:26:17.151927Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-37"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:26:17.109318Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 16,
+    "created_at": "2025-11-14T10:26:37.154330Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-38"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:26:37.109036Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 17,
+    "created_at": "2025-11-14T10:26:57.160146Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-39"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:26:57.107185Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 18,
+    "created_at": "2025-11-14T10:27:17.151623Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-40"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:27:17.107678Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 19,
+    "created_at": "2025-11-14T10:27:37.150250Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-41"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:27:37.111268Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 20,
+    "created_at": "2025-11-14T10:27:57.175002Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-42"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:27:57.112052Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 21,
+    "created_at": "2025-11-14T10:28:17.167396Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-43"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:28:17.111609Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 22,
+    "created_at": "2025-11-14T10:28:37.163980Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-44"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:28:37.111522Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 23,
+    "created_at": "2025-11-14T10:28:57.166199Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-45"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:28:57.112037Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 24,
+    "created_at": "2025-11-14T10:29:17.183369Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-46"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:29:17.111395Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 25,
+    "created_at": "2025-11-14T10:29:37.530234Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-47"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:29:37.107648Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 26,
+    "created_at": "2025-11-14T10:29:57.153520Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-48"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:29:57.107746Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 27,
+    "created_at": "2025-11-14T10:30:17.151411Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-49"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:30:17.108093Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 28,
+    "created_at": "2025-11-14T10:30:37.189863Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-50"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:30:37.108377Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 29,
+    "created_at": "2025-11-14T10:30:57.133894Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-51"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:30:57.030022Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 30,
+    "created_at": "2025-11-14T10:31:17.165283Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-52"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:31:17.113978Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 31,
+    "created_at": "2025-11-14T10:31:37.164775Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-53"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:31:37.113329Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 32,
+    "created_at": "2025-11-14T10:31:57.151220Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-54"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:31:57.109168Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 33,
+    "created_at": "2025-11-14T10:32:17.157902Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-55"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:32:17.114112Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 34,
+    "created_at": "2025-11-14T10:32:37.150847Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-56"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:32:37.109589Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 35,
+    "created_at": "2025-11-14T10:32:57.104392Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-57"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:32:57.065222Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 36,
+    "created_at": "2025-11-14T10:33:17.160628Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-58"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:33:17.110021Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 37,
+    "created_at": "2025-11-14T10:33:37.213604Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-59"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:33:37.114701Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 38,
+    "created_at": "2025-11-14T10:33:57.166928Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-60"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:33:57.115621Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 39,
+    "created_at": "2025-11-14T10:34:17.162550Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-61"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:34:17.110517Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 40,
+    "created_at": "2025-11-14T10:34:37.162235Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_interaction_changed": {
+                    "interaction": {
+                      "redirect": {
+                        "get_request": {
+                          "uri": "https://example.com/test-url-62"
+                        }
+                      }
+                    },
+                    "status": {
+                      "requested": []
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:34:37.110845Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 41,
+    "created_at": "2025-11-14T10:34:57.193325Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_session_change": {
+                "target": {
+                  "processed": []
+                },
+                "payload": {
+                  "session_finished": {
+                    "result": {
+                      "failed": {
+                        "failure": {
+                          "failure": {
+                            "code": "authorization_failed",
+                            "reason": "'REFUSAL_BY_BANK' - 'Internal error'",
+                            "sub": {
+                              "code": "rejected_by_issuer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:34:57.119663Z"
+          }
+        },
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_rollback_started": {
+                "reason": {
+                  "failure": {
+                    "code": "authorization_failed",
+                    "reason": "'REFUSAL_BY_BANK' - 'Internal error'",
+                    "sub": {
+                      "code": "rejected_by_issuer"
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:34:57.119663Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": 42,
+    "created_at": "2025-11-14T10:34:57.248628Z",
+    "source": {
+      "invoice_id": "test-invoice-5"
+    },
+    "payload": {
+      "invoice_changes": [
+        {
+          "invoice_payment_change": {
+            "id": "1",
+            "payload": {
+              "invoice_payment_status_changed": {
+                "status": {
+                  "failed": {
+                    "failure": {
+                      "failure": {
+                        "code": "authorization_failed",
+                        "reason": "'REFUSAL_BY_BANK' - 'Internal error'",
+                        "sub": {
+                          "code": "rejected_by_issuer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "occurred_at": "2025-11-14T10:34:57.218873Z"
+          }
+        }
+      ]
+    }
+  }
+]

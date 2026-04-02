@@ -81,3 +81,6 @@ env.list
 
 # TestContainers
 .testcontainers-*
+
+refs/
+research/
