@@ -540,7 +540,7 @@
                 "payload": {
                   "session_transaction_bound": {
                     "trx": {
-                      "id": "GE00002302404771",
+                      "id": "GE00000000000002",
                       "extra": []
                     }
                   }

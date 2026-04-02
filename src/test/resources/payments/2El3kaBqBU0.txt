@@ -124,10 +124,10 @@
                         }
                       },
                       "contact_info": {
-                        "phone_number": "+77074914494",
+                        "phone_number": "+70000000003",
                         "email": "user3@example.test",
-                        "first_name": "Salima",
-                        "last_name": "Minzhanova",
+                        "first_name": "Test",
+                        "last_name": "UserThree",
                         "country": "KAZ",
                         "state": "Kazakhstan"
                       }

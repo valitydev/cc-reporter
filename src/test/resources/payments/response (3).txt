@@ -115,7 +115,7 @@
                               "month": 2,
                               "year": 2026
                             },
-                            "cardholder_name": "YULIA RODIMOVA",
+                            "cardholder_name": "TEST CARDHOLDER",
                             "category": "REWARDS"
                           }
                         },
@@ -470,7 +470,7 @@
                 "payload": {
                   "session_transaction_bound": {
                     "trx": {
-                      "id": "GE00002302254985",
+                      "id": "GE00000000000001",
                       "extra": []
                     }
                   }

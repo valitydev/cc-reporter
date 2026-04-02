@@ -123,10 +123,10 @@
                         }
                       },
                       "contact_info": {
-                        "phone_number": "+77785620492",
+                        "phone_number": "+70000000004",
                         "email": "user4@example.test",
-                        "first_name": "ÐÐ°ÑÑÐ°Ñ",
-                        "last_name": "ÐÐµÐ»ÑÐ´ÐµÐ±ÐµÐºÐ¾Ð²Ð°",
+                        "first_name": "Test",
+                        "last_name": "UserFour",
                         "country": "KAZ",
                         "state": "Kazakhstan",
                         "city": "ÐÐ»Ð¼Ð°ÑÑ"
@@ -1164,7 +1164,7 @@
                 "payload": {
                   "session_transaction_bound": {
                     "trx": {
-                      "id": "100044666313",
+                      "id": "100000000003",
                       "extra": {
                         "kzt_to_usd_rate": "489.39",
                         "kzt_to_usd_converted_amount": "2043"

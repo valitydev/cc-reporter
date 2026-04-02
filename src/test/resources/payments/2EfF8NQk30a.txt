@@ -123,10 +123,10 @@
                         }
                       },
                       "contact_info": {
-                        "phone_number": "+77076681410",
+                        "phone_number": "+70000000001",
                         "email": "user1@example.test",
-                        "first_name": "Moldir",
-                        "last_name": "Kongyrbay",
+                        "first_name": "Test",
+                        "last_name": "UserOne",
                         "country": "KAZ",
                         "state": "Kazakhstan",
                         "city": "Ð¢Ð°ÑÐ°Ð·"
@@ -1164,7 +1164,7 @@
                 "payload": {
                   "session_transaction_bound": {
                     "trx": {
-                      "id": "100044064356",
+                      "id": "100000000001",
                       "extra": {
                         "kzt_to_usd_rate": "493.85",
                         "kzt_to_usd_converted_amount": "20249"

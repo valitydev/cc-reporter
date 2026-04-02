@@ -116,7 +116,7 @@
                         }
                       },
                       "contact_info": {
-                        "phone_number": "+79998799321",
+                        "phone_number": "+70000000007",
                         "email": "user12@example.test",
                         "country": "KAZ",
                         "state": "Kazakhstan"
@@ -541,7 +541,7 @@
                 "payload": {
                   "session_transaction_bound": {
                     "trx": {
-                      "id": "GE00002302586822",
+                      "id": "GE00000000000004",
                       "extra": []
                     }
                   }
