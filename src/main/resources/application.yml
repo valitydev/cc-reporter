@@ -89,7 +89,7 @@ ccr:
   scheduler:
     enabled: false
     poll-interval-ms: 10000
-    stale-processing-timeout-ms: 300000
+    stale-processing-timeout-ms: 1200000
   report:
     max-attempts: 5
     presigned-url-ttl-sec: 900

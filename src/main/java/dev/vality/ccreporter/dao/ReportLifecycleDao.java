@@ -1,9 +1,10 @@
 package dev.vality.ccreporter.dao;
 
 import dev.vality.ccreporter.dao.mapper.ReportLifecycleMapper;
+import dev.vality.ccreporter.dao.mapper.ReportRecordMapper;
 import dev.vality.ccreporter.domain.enums.ReportStatus;
-import dev.vality.ccreporter.model.ClaimedReportJob;
-import dev.vality.ccreporter.model.ReportFileMetadata;
+import dev.vality.ccreporter.domain.tables.pojos.ReportFile;
+import dev.vality.ccreporter.domain.tables.pojos.ReportJob;
 import lombok.RequiredArgsConstructor;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -35,8 +36,7 @@ public class ReportLifecycleDao {
 
     private final DSLContext dslContext;
 
-    public Optional<ClaimedReportJob> claimNextPendingReport(Instant now) {
-        var reportJob = REPORT_JOB.as("r");
+    public Optional<ReportJob> claimNextPendingReport(Instant now) {
         var candidate = DSL.table(DSL.name("candidate"));
         return dslContext.with("candidate").as(
                         dslContext.select(REPORT_JOB.ID)
@@ -48,23 +48,16 @@ public class ReportLifecycleDao {
                                 .forUpdate()
                                 .skipLocked()
                 )
-                .update(reportJob)
-                .set(reportJob.STATUS, PROCESSING)
-                .set(reportJob.ATTEMPT, reportJob.ATTEMPT.plus(1))
-                .set(reportJob.STARTED_AT, firstTimestampOrExisting(now, reportJob.STARTED_AT))
-                .set(reportJob.NEXT_ATTEMPT_AT, (LocalDateTime) null)
-                .set(reportJob.UPDATED_AT, timestampValue(now, reportJob.UPDATED_AT))
+                .update(REPORT_JOB)
+                .set(REPORT_JOB.STATUS, PROCESSING)
+                .set(REPORT_JOB.ATTEMPT, REPORT_JOB.ATTEMPT.plus(1))
+                .set(REPORT_JOB.STARTED_AT, firstTimestampOrExisting(now, REPORT_JOB.STARTED_AT))
+                .set(REPORT_JOB.NEXT_ATTEMPT_AT, (LocalDateTime) null)
+                .set(REPORT_JOB.UPDATED_AT, timestampValue(now, REPORT_JOB.UPDATED_AT))
                 .from(candidate)
-                .where(reportJob.ID.eq(CANDIDATE_ID))
-                .returningResult(
-                        reportJob.ID,
-                        reportJob.REPORT_TYPE,
-                        reportJob.FILE_TYPE,
-                        reportJob.QUERY_JSON,
-                        reportJob.TIMEZONE,
-                        reportJob.ATTEMPT
-                )
-                .fetchOptional(ReportLifecycleMapper::mapClaimedReport);
+                .where(REPORT_JOB.ID.eq(CANDIDATE_ID))
+                .returning(REPORT_JOB.fields())
+                .fetchOptional(ReportRecordMapper::mapReportJob);
     }
 
     public boolean cancelReport(String createdBy, long reportId, Instant now) {
@@ -116,9 +109,9 @@ public class ReportLifecycleDao {
         return updated > 0;
     }
 
-    public boolean publishFileRecord(long reportId, ReportFileMetadata fileMetadata, Instant createdAt) {
+    public boolean publishFileRecord(long reportId, ReportFile reportFile, Instant createdAt) {
         var updated = dslContext.insertInto(REPORT_FILE)
-                .set(ReportLifecycleMapper.newInsertableFileRecord(dslContext, reportId, fileMetadata, createdAt))
+                .set(ReportLifecycleMapper.newInsertableFileRecord(dslContext, reportId, reportFile, createdAt))
                 .execute();
         return updated > 0;
     }

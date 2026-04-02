@@ -3,9 +3,9 @@ package dev.vality.ccreporter.report;
 import dev.vality.ccreporter.config.properties.ReportProperties;
 import dev.vality.ccreporter.config.properties.ReportSchedulerProperties;
 import dev.vality.ccreporter.dao.ReportLifecycleDao;
-import dev.vality.ccreporter.model.ClaimedReportJob;
+import dev.vality.ccreporter.domain.tables.pojos.ReportFile;
+import dev.vality.ccreporter.domain.tables.pojos.ReportJob;
 import dev.vality.ccreporter.model.GeneratedCsvReport;
-import dev.vality.ccreporter.model.ReportFileMetadata;
 import dev.vality.ccreporter.storage.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -50,18 +50,18 @@ public class ReportLifecycleService {
     }
 
     public boolean processNextPendingReport(Instant now) {
-        var claimedReportJob = reportLifecycleDao.claimNextPendingReport(now);
-        if (claimedReportJob.isEmpty()) {
+        var reportJob = reportLifecycleDao.claimNextPendingReport(now);
+        if (reportJob.isEmpty()) {
             return false;
         }
-        processClaimedReport(claimedReportJob.get(), now);
+        processReportJob(reportJob.get(), now);
         return true;
     }
 
-    private void processClaimedReport(ClaimedReportJob claimedReportJob, Instant processingTime) {
+    private void processReportJob(ReportJob reportJob, Instant processingTime) {
         var generatedCsvReport = (GeneratedCsvReport) null;
         try {
-            generatedCsvReport = reportCsvService.generate(claimedReportJob);
+            generatedCsvReport = reportCsvService.generate(reportJob);
             var expiresAt = processingTime.plusSeconds(reportProperties.getExpirationSec());
             var fileId = fileStorageService.storeFile(
                     generatedCsvReport.fileName(),
@@ -70,45 +70,45 @@ public class ReportLifecycleService {
                     expiresAt
             );
             var finishedAt = Instant.now();
-            var fileMetadata = buildFileMetadata(fileId, generatedCsvReport);
+            var reportFile = buildReportFile(fileId, generatedCsvReport);
             reportLifecycleTransactionService.publishCompletedReport(
-                    claimedReportJob.id(),
-                    fileMetadata,
+                    reportJob.getId(),
+                    reportFile,
                     finishedAt,
                     expiresAt,
                     generatedCsvReport
             );
         } catch (Exception ex) {
-            handleProcessingFailure(claimedReportJob, processingTime, ex);
+            handleProcessingFailure(reportJob, processingTime, ex);
         } finally {
             deleteStagedFile(generatedCsvReport);
         }
     }
 
-    private void handleProcessingFailure(ClaimedReportJob claimedReportJob, Instant now, Exception ex) {
+    private void handleProcessingFailure(ReportJob reportJob, Instant now, Exception ex) {
         var errorCode = "report_processing_error";
         var errorMessage = ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage();
-        if (claimedReportJob.attempt() >= reportProperties.getMaxAttempts()) {
-            reportLifecycleDao.markFailed(claimedReportJob.id(), now, now, errorCode, errorMessage);
+        if (reportJob.getAttempt() >= reportProperties.getMaxAttempts()) {
+            reportLifecycleDao.markFailed(reportJob.getId(), now, now, errorCode, errorMessage);
             return;
         }
-        reportLifecycleDao.rescheduleForRetry(claimedReportJob.id(), now.plus(RETRY_BACKOFF), errorCode, errorMessage);
+        reportLifecycleDao.rescheduleForRetry(reportJob.getId(), now.plus(RETRY_BACKOFF), errorCode, errorMessage);
     }
 
-    private ReportFileMetadata buildFileMetadata(
+    private ReportFile buildReportFile(
             String fileId,
             GeneratedCsvReport generatedCsvReport
     ) {
-        return new ReportFileMetadata(
-                fileId,
-                generatedCsvReport.fileName(),
-                generatedCsvReport.contentType(),
-                generatedCsvReport.sizeBytes(),
-                generatedCsvReport.md5(),
-                generatedCsvReport.sha256(),
-                "file-storage",
-                fileId
-        );
+        return new ReportFile()
+                .setFileId(fileId)
+                .setFileType(dev.vality.ccreporter.domain.enums.FileType.csv)
+                .setBucket("file-storage")
+                .setObjectKey(fileId)
+                .setFilename(generatedCsvReport.fileName())
+                .setContentType(generatedCsvReport.contentType())
+                .setSizeBytes(generatedCsvReport.sizeBytes())
+                .setMd5(generatedCsvReport.md5())
+                .setSha256(generatedCsvReport.sha256());
     }
 
     private void deleteStagedFile(GeneratedCsvReport generatedCsvReport) {

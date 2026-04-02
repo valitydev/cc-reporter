@@ -14,9 +14,13 @@ public class ReportRecordMapper {
 
     public static ReportProjection mapReportProjection(Record record) {
         return new ReportProjection(
-                record.into(REPORT_JOB).into(ReportJob.class),
+                mapReportJob(record),
                 record.get(REPORT_FILE.FILE_ID) == null ? null : mapReportFile(record)
         );
+    }
+
+    public static ReportJob mapReportJob(org.jooq.Record record) {
+        return record.into(REPORT_JOB).into(ReportJob.class);
     }
 
     public static ReportFile mapReportFile(Record record) {

@@ -1,8 +1,8 @@
 package dev.vality.ccreporter.report;
 
 import dev.vality.ccreporter.dao.ReportLifecycleDao;
+import dev.vality.ccreporter.domain.tables.pojos.ReportFile;
 import dev.vality.ccreporter.model.GeneratedCsvReport;
-import dev.vality.ccreporter.model.ReportFileMetadata;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,12 +18,12 @@ public class ReportLifecycleTransactionService {
     @Transactional
     public void publishCompletedReport(
             long reportId,
-            ReportFileMetadata fileMetadata,
+            ReportFile reportFile,
             Instant finishedAt,
             Instant expiresAt,
             GeneratedCsvReport generatedCsvReport
     ) {
-        var published = reportLifecycleDao.publishFileRecord(reportId, fileMetadata, finishedAt);
+        var published = reportLifecycleDao.publishFileRecord(reportId, reportFile, finishedAt);
         var markedCreated = reportLifecycleDao.markCreated(
                 reportId,
                 generatedCsvReport.dataSnapshotFixedAt(),

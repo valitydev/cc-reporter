@@ -27,8 +27,8 @@ class ReportLifecycleWorkerIntegrationTest extends AbstractReportingIntegrationT
         var claimedReport = reportLifecycleDao.claimNextPendingReport(claimTime);
 
         assertThat(claimedReport).isPresent();
-        assertThat(claimedReport.get().id()).isEqualTo(firstReportId);
-        assertThat(claimedReport.get().attempt()).isEqualTo(1);
+        assertThat(claimedReport.get().getId()).isEqualTo(firstReportId);
+        assertThat(claimedReport.get().getAttempt()).isEqualTo(1);
         assertReportStatus(firstReportId, ReportStatus.processing);
         assertThat(readInstant("SELECT started_at FROM ccr.report_job WHERE id = ?", firstReportId)).isEqualTo(
                 claimTime);
@@ -55,11 +55,11 @@ class ReportLifecycleWorkerIntegrationTest extends AbstractReportingIntegrationT
                 reportLifecycleDao.claimNextPendingReport(firstClaimTime.plusSeconds(30));
         var secondClaim = reportLifecycleDao.claimNextPendingReport(secondClaimTime).orElseThrow();
 
-        assertThat(firstClaim.id()).isEqualTo(reportId);
+        assertThat(firstClaim.getId()).isEqualTo(reportId);
         assertThat(rescheduled).isTrue();
         assertThat(prematureClaim).isEmpty();
-        assertThat(secondClaim.id()).isEqualTo(reportId);
-        assertThat(secondClaim.attempt()).isEqualTo(2);
+        assertThat(secondClaim.getId()).isEqualTo(reportId);
+        assertThat(secondClaim.getAttempt()).isEqualTo(2);
 
         var retriedReport = reportingHandler.getReport(new GetReportRequest(reportId));
         assertThat(retriedReport.getStatus()).isEqualTo(ReportStatus.processing);
