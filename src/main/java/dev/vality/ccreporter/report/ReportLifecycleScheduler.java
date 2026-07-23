@@ -14,8 +14,6 @@ public class ReportLifecycleScheduler {
 
     @Scheduled(fixedDelayString = "${ccr.scheduler.poll-interval-ms:10000}")
     public void runLifecycleTick() {
-        reportLifecycleService.timeoutStaleProcessingReports();
-        reportLifecycleService.expireReadyReports();
-        reportLifecycleService.processNextPendingReport();
+        reportLifecycleService.runLifecycleTick();
     }
 }

@@ -3,8 +3,8 @@ package dev.vality.ccreporter.report;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.vality.ccreporter.TimeRange;
 import dev.vality.ccreporter.dao.ReportCsvDao;
-import dev.vality.ccreporter.domain.tables.pojos.ReportJob;
 import dev.vality.ccreporter.fixture.ReportRequestFixtures;
+import dev.vality.ccreporter.model.ReportTask;
 import dev.vality.ccreporter.serde.json.ThriftJsonCodec;
 import org.jooq.Cursor;
 import org.jooq.Record;
@@ -70,19 +70,19 @@ class ReportCsvServiceTest {
         Files.deleteIfExists(generatedCsvReport.contentPath());
     }
 
-    private ReportJob claimedPaymentsJob(ThriftJsonCodec thriftJsonCodec) {
+    private ReportTask claimedPaymentsJob(ThriftJsonCodec thriftJsonCodec) {
         var request = ReportRequestFixtures.payments(
                 "cursor-fetch-size-1",
                 new TimeRange("2025-12-31T00:00:00Z", "2026-01-02T00:00:00Z")
         );
         request.setTimezone("Asia/Krasnoyarsk");
         var reportQuery = request.getQuery();
-        return new ReportJob()
-                .setId(42L)
-                .setReportType(dev.vality.ccreporter.domain.enums.ReportType.payments)
-                .setFileType(dev.vality.ccreporter.domain.enums.FileType.csv)
-                .setQueryJson(org.jooq.JSONB.valueOf(thriftJsonCodec.serialize(reportQuery)))
-                .setTimezone(request.getTimezone())
-                .setAttempt(1);
+        return new ReportTask(
+                42L,
+                dev.vality.ccreporter.domain.enums.ReportType.payments,
+                thriftJsonCodec.serialize(reportQuery),
+                request.getTimezone(),
+                1
+        );
     }
 }

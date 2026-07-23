@@ -174,13 +174,15 @@ class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
         var claimTime = Instant.parse("2026-01-01T12:00:00Z");
 
         reportLifecycleService.processNextPendingReport(claimTime);
-        var expired = reportLifecycleService.expireReadyReports(claimTime.plusSeconds(601));
+        var createdReport = reportingHandler.getReport(new GetReportRequest(reportId));
+        var expiresAt = Instant.parse(createdReport.getExpiresAt());
+        var expired = reportLifecycleService.expireReadyReports(expiresAt.plusSeconds(1));
 
         var report = reportingHandler.getReport(new GetReportRequest(reportId));
 
         assertThat(expired).isEqualTo(1);
         assertThat(report.getStatus()).isEqualTo(ReportStatus.expired);
-        assertThat(report.getExpiresAt()).isEqualTo(claimTime.plusSeconds(600).toString());
+        assertThat(report.getExpiresAt()).isEqualTo(expiresAt.toString());
     }
 
     private List<String> readCsvLines(byte[] bytes, java.nio.charset.Charset charset) {

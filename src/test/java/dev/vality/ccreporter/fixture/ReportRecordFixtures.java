@@ -24,12 +24,10 @@ public final class ReportRecordFixtures {
                         UPDATE ccr.report_job
                         SET status = 'processing',
                             started_at = ?,
-                            data_snapshot_fixed_at = ?,
-                            updated_at = ?
+                            data_snapshot_fixed_at = ?
                         WHERE id = ?
                         """,
                 Timestamp.from(startedAt),
-                Timestamp.from(snapshotFixedAt),
                 Timestamp.from(snapshotFixedAt),
                 reportId
         );
@@ -52,8 +50,7 @@ public final class ReportRecordFixtures {
                             data_snapshot_fixed_at = ?,
                             finished_at = ?,
                             expires_at = ?,
-                            rows_count = ?,
-                            updated_at = ?
+                            rows_count = ?
                         WHERE id = ?
                         """,
                 Timestamp.from(startedAt),
@@ -61,7 +58,6 @@ public final class ReportRecordFixtures {
                 Timestamp.from(finishedAt),
                 Timestamp.from(expiresAt),
                 rowsCount,
-                Timestamp.from(finishedAt),
                 reportId
         );
     }
@@ -83,8 +79,7 @@ public final class ReportRecordFixtures {
                             data_snapshot_fixed_at = ?,
                             finished_at = ?,
                             error_code = ?,
-                            error_message = ?,
-                            updated_at = ?
+                            error_message = ?
                         WHERE id = ?
                         """,
                 Timestamp.from(startedAt),
@@ -92,7 +87,6 @@ public final class ReportRecordFixtures {
                 Timestamp.from(finishedAt),
                 errorCode,
                 errorMessage,
-                Timestamp.from(finishedAt),
                 reportId
         );
     }
@@ -109,8 +103,6 @@ public final class ReportRecordFixtures {
                             report_id,
                             file_id,
                             file_type,
-                            bucket,
-                            object_key,
                             filename,
                             content_type,
                             size_bytes,
@@ -118,12 +110,10 @@ public final class ReportRecordFixtures {
                             sha256,
                             created_at
                         )
-                        VALUES (?, ?, 'csv', ?, ?, ?, 'text/csv', ?, ?, ?, ?)
+                        VALUES (?, ?, 'csv', ?, 'text/csv', ?, ?, ?, ?)
                         """,
                 reportId,
                 fileId,
-                "bucket-1",
-                "object-1",
                 "payments.csv",
                 128L,
                 "md5-value",

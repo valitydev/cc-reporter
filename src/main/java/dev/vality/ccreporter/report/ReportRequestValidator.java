@@ -8,10 +8,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 @Component
 @RequiredArgsConstructor
@@ -24,14 +24,14 @@ public class ReportRequestValidator {
         if (request == null) {
             errors.add("request is required");
         } else {
-            validateQuery(request, errors);
-            if (StringUtils.hasText(request.getTimezone())) {
-                try {
-                    Objects.requireNonNull(ZoneId.of(request.getTimezone()));
-                } catch (Exception ex) {
-                    errors.add("timezone must be a valid IANA timezone");
-                }
+            if (!request.isSetReportType()) {
+                errors.add("report_type is required");
             }
+            if (!request.isSetFileType()) {
+                errors.add("file_type is required");
+            }
+            validateQuery(request, errors);
+            validateTimezone(request.getTimezone(), errors);
         }
         if (!errors.isEmpty()) {
             throw new InvalidRequest(errors);
@@ -46,10 +46,14 @@ public class ReportRequestValidator {
         }
         var filter = request.getFilter();
         if (filter != null && filter.isSetCreatedFrom() && filter.isSetCreatedTo()) {
-            var createdFrom = TimestampUtils.parse(filter.getCreatedFrom());
-            var createdTo = TimestampUtils.parse(filter.getCreatedTo());
-            if (createdFrom.isAfter(createdTo)) {
-                errors.add("filter.created_from must be before or equal to filter.created_to");
+            try {
+                var createdFrom = TimestampUtils.parse(filter.getCreatedFrom());
+                var createdTo = TimestampUtils.parse(filter.getCreatedTo());
+                if (createdFrom.isAfter(createdTo)) {
+                    errors.add("filter.created_from must be before or equal to filter.created_to");
+                }
+            } catch (DateTimeException ex) {
+                errors.add("filter creation timestamps must use ISO-8601 format");
             }
         }
         if (!errors.isEmpty()) {
@@ -62,7 +66,7 @@ public class ReportRequestValidator {
         try {
             querySpec = reportQueryService.resolveQuerySpec(request.getQuery());
         } catch (IllegalArgumentException ex) {
-            errors.add("query must select exactly one branch");
+            errors.add(ex.getMessage());
             return;
         }
         if (request.isSetReportType() && request.getReportType() != querySpec.reportType()) {
@@ -70,6 +74,17 @@ public class ReportRequestValidator {
         }
         if (!querySpec.timeRange().to().isAfter(querySpec.timeRange().from())) {
             errors.add("time_range.from_time must be before time_range.to_time");
+        }
+    }
+
+    private void validateTimezone(String timezone, List<String> errors) {
+        if (!StringUtils.hasText(timezone)) {
+            return;
+        }
+        try {
+            ZoneId.of(timezone);
+        } catch (DateTimeException ex) {
+            errors.add("timezone must be a valid IANA timezone");
         }
     }
 }
