@@ -34,6 +34,34 @@ class ReportingApiSmokeTest extends AbstractReportingIntegrationTest {
     }
 
     @Test
+    void reportStorageDoesNotKeepDerivedColumns() {
+        var reportJobColumns = jdbcTemplate.queryForList(
+                """
+                        SELECT column_name
+                        FROM information_schema.columns
+                        WHERE table_schema = 'ccr' AND table_name = 'report_job'
+                        """,
+                String.class
+        );
+        var reportFileColumns = jdbcTemplate.queryForList(
+                """
+                        SELECT column_name
+                        FROM information_schema.columns
+                        WHERE table_schema = 'ccr' AND table_name = 'report_file'
+                        """,
+                String.class
+        );
+
+        assertThat(reportJobColumns).doesNotContain(
+                "query_hash",
+                "requested_time_from",
+                "requested_time_to",
+                "updated_at"
+        );
+        assertThat(reportFileColumns).doesNotContain("bucket", "object_key");
+    }
+
+    @Test
     void createReportIsIdempotentAndReadable() throws Exception {
         var request = ReportRequestFixtures.payments("idem-1");
 

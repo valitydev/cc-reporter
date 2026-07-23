@@ -2,15 +2,12 @@ package dev.vality.ccreporter.report;
 
 import dev.vality.ccreporter.PaymentsQuery;
 import dev.vality.ccreporter.ReportQuery;
-import dev.vality.ccreporter.ReportType;
 import dev.vality.ccreporter.WithdrawalsQuery;
 import dev.vality.ccreporter.dao.ReportCsvDao;
-import dev.vality.ccreporter.dao.mapper.ReportRecordMapper;
-import dev.vality.ccreporter.domain.tables.pojos.ReportJob;
 import dev.vality.ccreporter.model.GeneratedCsvReport;
+import dev.vality.ccreporter.model.ReportTask;
 import dev.vality.ccreporter.serde.json.ThriftJsonCodec;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import org.jooq.Cursor;
 import org.jooq.Record;
 import org.springframework.stereotype.Service;
@@ -27,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -87,17 +85,17 @@ public class ReportCsvService {
     private final ThriftJsonCodec thriftJsonCodec;
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
-    public GeneratedCsvReport generate(ReportJob reportJob) {
+    public GeneratedCsvReport generate(ReportTask reportTask) {
         var snapshotFixedAt = reportCsvDao.currentSnapshot();
-        var reportQuery = thriftJsonCodec.deserialize(reportJob.getQueryJson().data(), ReportQuery.class);
-        var zoneId = ZoneId.of(reportJob.getTimezone());
-        var reportType = ReportRecordMapper.mapEnum(reportJob.getReportType(), ReportType.class);
-        var fileName = reportType.name() + "-report-" + reportJob.getId() + ".csv";
-        var stagedFile = createTempFile(reportJob.getId());
+        var reportQuery = thriftJsonCodec.deserialize(reportTask.queryJson(), ReportQuery.class);
+        var zoneId = ZoneId.of(reportTask.timezone());
+        var reportType = reportTask.reportType();
+        var fileName = reportType.name() + "-report-" + reportTask.id() + ".csv";
+        var stagedFile = createTempFile(reportTask.id());
         try {
             var md5 = createDigest("MD5");
             var sha256 = createDigest("SHA-256");
-            var rowsCount = 0L;
+            long rowsCount;
             try (
                     var fileOutputStream = Files.newOutputStream(stagedFile);
                     var bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
@@ -111,7 +109,6 @@ public class ReportCsvService {
                     case payments -> writePaymentsCsv(writer, reportQuery.getPayments(), zoneId);
                     case withdrawals -> writeWithdrawalsCsv(writer, reportQuery.getWithdrawals(), zoneId);
                 };
-                writer.flush();
             }
             return new GeneratedCsvReport(
                     fileName,
@@ -152,13 +149,12 @@ public class ReportCsvService {
         }
     }
 
-    @SneakyThrows
     private long writeRows(
             BufferedWriter writer,
             Cursor<? extends Record> rows,
             List<String> columns,
             ZoneId zoneId
-    ) {
+    ) throws IOException {
         var rowCount = 0L;
         for (var row : rows) {
             writeRow(writer, row, columns, zoneId);
@@ -284,7 +280,7 @@ public class ReportCsvService {
     private MessageDigest createDigest(String algorithm) {
         try {
             return MessageDigest.getInstance(algorithm);
-        } catch (Exception ex) {
+        } catch (NoSuchAlgorithmException ex) {
             throw new IllegalStateException("Failed to initialize " + algorithm + " digest", ex);
         }
     }

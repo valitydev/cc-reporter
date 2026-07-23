@@ -4,10 +4,11 @@ import dev.vality.ccreporter.config.properties.ReportProperties;
 import dev.vality.ccreporter.config.properties.ReportSchedulerProperties;
 import dev.vality.ccreporter.dao.ReportLifecycleDao;
 import dev.vality.ccreporter.domain.tables.pojos.ReportFile;
-import dev.vality.ccreporter.domain.tables.pojos.ReportJob;
 import dev.vality.ccreporter.model.GeneratedCsvReport;
+import dev.vality.ccreporter.model.ReportTask;
 import dev.vality.ccreporter.storage.FileStorageService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -15,6 +16,7 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ReportLifecycleService {
@@ -24,12 +26,16 @@ public class ReportLifecycleService {
     private final ReportLifecycleDao reportLifecycleDao;
     private final ReportCsvService reportCsvService;
     private final FileStorageService fileStorageService;
-    private final ReportLifecycleTransactionService reportLifecycleTransactionService;
     private final ReportProperties reportProperties;
     private final ReportSchedulerProperties reportSchedulerProperties;
 
-    public void timeoutStaleProcessingReports() {
-        timeoutStaleProcessingReports(Instant.now());
+    public void runLifecycleTick() {
+        var now = Instant.now();
+        timeoutStaleProcessingReports(now);
+        expireReadyReports(now);
+        while (processNextPendingReport(Instant.now())) {
+            // Drain all reports that are ready now; failed reports are rescheduled into the future.
+        }
     }
 
     public int timeoutStaleProcessingReports(Instant now) {
@@ -37,88 +43,87 @@ public class ReportLifecycleService {
         return reportLifecycleDao.timeoutStaleProcessingReports(staleBefore, now);
     }
 
-    public void expireReadyReports() {
-        expireReadyReports(Instant.now());
-    }
-
     public int expireReadyReports(Instant now) {
         return reportLifecycleDao.expireReports(now);
     }
 
-    public void processNextPendingReport() {
-        processNextPendingReport(Instant.now());
-    }
-
     public boolean processNextPendingReport(Instant now) {
-        var reportJob = reportLifecycleDao.claimNextPendingReport(now);
-        if (reportJob.isEmpty()) {
-            return false;
-        }
-        processReportJob(reportJob.get(), now);
-        return true;
+        return reportLifecycleDao.claimNextPendingReport(now)
+                .map(reportTask -> {
+                    processReportTask(reportTask, now);
+                    return true;
+                })
+                .orElse(false);
     }
 
-    private void processReportJob(ReportJob reportJob, Instant processingTime) {
-        var generatedCsvReport = (GeneratedCsvReport) null;
+    private void processReportTask(ReportTask reportTask, Instant processingTime) {
+        GeneratedCsvReport generatedReport = null;
         try {
-            generatedCsvReport = reportCsvService.generate(reportJob);
-            var expiresAt = processingTime.plusSeconds(reportProperties.getExpirationSec());
+            generatedReport = reportCsvService.generate(reportTask);
+            var expiresAt = Instant.now().plusSeconds(reportProperties.getExpirationSec());
             var fileId = fileStorageService.storeFile(
-                    generatedCsvReport.fileName(),
-                    generatedCsvReport.contentType(),
-                    generatedCsvReport.contentPath(),
+                    generatedReport.fileName(),
+                    generatedReport.contentType(),
+                    generatedReport.contentPath(),
                     expiresAt
             );
+            var reportFile = buildReportFile(fileId, generatedReport);
             var finishedAt = Instant.now();
-            var reportFile = buildReportFile(fileId, generatedCsvReport);
-            reportLifecycleTransactionService.publishCompletedReport(
-                    reportJob.getId(),
+            var completed = reportLifecycleDao.completeReport(
+                    reportTask.id(),
                     reportFile,
+                    generatedReport.dataSnapshotFixedAt(),
                     finishedAt,
                     expiresAt,
-                    generatedCsvReport
+                    generatedReport.rowsCount()
             );
+            if (!completed) {
+                log.info(
+                        "Report {} changed state while it was being generated; uploaded file will expire",
+                        reportTask.id()
+                );
+            }
         } catch (Exception ex) {
-            handleProcessingFailure(reportJob, processingTime, ex);
+            handleProcessingFailure(reportTask, processingTime, ex);
         } finally {
-            deleteStagedFile(generatedCsvReport);
+            deleteStagedFile(generatedReport);
         }
     }
 
-    private void handleProcessingFailure(ReportJob reportJob, Instant now, Exception ex) {
+    private void handleProcessingFailure(ReportTask reportTask, Instant now, Exception ex) {
         var errorCode = "report_processing_error";
         var errorMessage = ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage();
-        if (reportJob.getAttempt() >= reportProperties.getMaxAttempts()) {
-            reportLifecycleDao.markFailed(reportJob.getId(), now, now, errorCode, errorMessage);
-            return;
+        if (reportTask.attempt() >= reportProperties.getMaxAttempts()) {
+            reportLifecycleDao.markFailed(reportTask.id(), now, errorCode, errorMessage);
+        } else {
+            reportLifecycleDao.rescheduleForRetry(
+                    reportTask.id(),
+                    now.plus(RETRY_BACKOFF),
+                    errorCode,
+                    errorMessage
+            );
         }
-        reportLifecycleDao.rescheduleForRetry(reportJob.getId(), now.plus(RETRY_BACKOFF), errorCode, errorMessage);
     }
 
-    private ReportFile buildReportFile(
-            String fileId,
-            GeneratedCsvReport generatedCsvReport
-    ) {
+    private ReportFile buildReportFile(String fileId, GeneratedCsvReport generatedReport) {
         return new ReportFile()
                 .setFileId(fileId)
                 .setFileType(dev.vality.ccreporter.domain.enums.FileType.csv)
-                .setBucket("file-storage")
-                .setObjectKey(fileId)
-                .setFilename(generatedCsvReport.fileName())
-                .setContentType(generatedCsvReport.contentType())
-                .setSizeBytes(generatedCsvReport.sizeBytes())
-                .setMd5(generatedCsvReport.md5())
-                .setSha256(generatedCsvReport.sha256());
+                .setFilename(generatedReport.fileName())
+                .setContentType(generatedReport.contentType())
+                .setSizeBytes(generatedReport.sizeBytes())
+                .setMd5(generatedReport.md5())
+                .setSha256(generatedReport.sha256());
     }
 
-    private void deleteStagedFile(GeneratedCsvReport generatedCsvReport) {
-        if (generatedCsvReport == null) {
+    private void deleteStagedFile(GeneratedCsvReport generatedReport) {
+        if (generatedReport == null) {
             return;
         }
         try {
-            Files.deleteIfExists(generatedCsvReport.contentPath());
-        } catch (IOException ignored) {
-            // Best-effort cleanup for staged files after upload/publication.
+            Files.deleteIfExists(generatedReport.contentPath());
+        } catch (IOException ex) {
+            log.warn("Failed to delete staged report file {}", generatedReport.contentPath(), ex);
         }
     }
 }

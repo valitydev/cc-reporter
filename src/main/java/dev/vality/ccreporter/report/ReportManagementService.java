@@ -13,7 +13,6 @@ import dev.vality.ccreporter.storage.FileStorageService;
 import dev.vality.ccreporter.util.TimestampUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -28,7 +27,6 @@ public class ReportManagementService {
     private final ReportCommandDao reportCommandDao;
     private final ReportQueryDao reportQueryDao;
     private final ReportLifecycleDao reportLifecycleDao;
-    private final ReportManagementTransactionService reportManagementTransactionService;
     private final ReportAuditService reportAuditService;
     private final ReportRequestValidator reportRequestValidator;
     private final ReportThriftMapper reportThriftMapper;
@@ -38,18 +36,25 @@ public class ReportManagementService {
     private final ReportProperties reportProperties;
     private final FileStorageService fileStorageService;
 
+    @Transactional
     @SneakyThrows
     public long createReport(CreateReportRequest request) {
         reportRequestValidator.validateCreate(request);
         var auditMetadata = requestAuditMetadataResolver.resolve();
         var timezone = StringUtils.hasText(request.getTimezone()) ? request.getTimezone() : "UTC";
         var createdBy = auditMetadata.email();
-        try {
-            return reportManagementTransactionService.createReport(createdBy, auditMetadata, request, timezone);
-        } catch (DuplicateKeyException ex) {
-            return reportCommandDao.findByIdempotencyKey(createdBy, request.getIdempotencyKey())
-                    .orElseThrow(() -> ex);
+        var result = reportCommandDao.createReport(
+                createdBy,
+                request.getReportType(),
+                request.getFileType(),
+                request.getQuery(),
+                timezone,
+                request.getIdempotencyKey()
+        );
+        if (result.created()) {
+            reportAuditService.writeReportCreated(result.reportId(), createdBy, auditMetadata, request, timezone);
         }
+        return result.reportId();
     }
 
     @SneakyThrows
