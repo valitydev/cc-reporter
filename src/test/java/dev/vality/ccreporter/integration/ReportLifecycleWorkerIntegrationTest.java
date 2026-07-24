@@ -58,7 +58,7 @@ class ReportLifecycleWorkerIntegrationTest extends AbstractReportingIntegrationT
         var secondClaimTime = Instant.parse("2026-01-06T11:06:00Z");
 
         var firstClaim = reportLifecycleDao.claimNextPendingReport(firstClaimTime).orElseThrow();
-        reportLifecycleDao.rescheduleForRetry(
+        var rescheduled = reportLifecycleDao.rescheduleForRetry(
                 reportId,
                 retryAt,
                 "storage_unavailable",
@@ -68,14 +68,14 @@ class ReportLifecycleWorkerIntegrationTest extends AbstractReportingIntegrationT
         var secondClaim = reportLifecycleDao.claimNextPendingReport(secondClaimTime).orElseThrow();
 
         assertThat(firstClaim.id()).isEqualTo(reportId);
+        assertThat(rescheduled).isTrue();
         assertThat(prematureClaim).isEmpty();
         assertThat(secondClaim.id()).isEqualTo(reportId);
         assertThat(secondClaim.attempt()).isEqualTo(2);
 
         var retriedReport = reportingHandler.getReport(new GetReportRequest(reportId));
         assertThat(retriedReport.getStatus()).isEqualTo(ReportStatus.processing);
-        assertThat(retriedReport.getError().getCode()).isEqualTo("storage_unavailable");
-        assertThat(retriedReport.getError().getMessage()).isEqualTo("temporary upload issue");
+        assertThat(retriedReport.isSetError()).isFalse();
         assertThat(retriedReport.getStartedAt()).isEqualTo(secondClaimTime.toString());
     }
 
@@ -87,9 +87,10 @@ class ReportLifecycleWorkerIntegrationTest extends AbstractReportingIntegrationT
         var timedOutAt = Instant.parse("2026-01-06T12:03:00Z");
 
         reportLifecycleDao.claimNextPendingReport(claimTime).orElseThrow();
-        reportLifecycleDao.markFailed(reportId, failedAt, "storage_error", "upload failed");
+        var failed = reportLifecycleDao.markFailed(reportId, failedAt, "storage_error", "upload failed");
         var timedOut = reportLifecycleDao.timeoutStaleProcessingReports(timedOutAt, timedOutAt);
 
+        assertThat(failed).isTrue();
         assertThat(timedOut).isZero();
 
         var report = reportingHandler.getReport(new GetReportRequest(reportId));

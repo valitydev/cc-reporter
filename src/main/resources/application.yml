@@ -11,10 +11,17 @@ spring:
     username: ${db.user}
     password: ${db.password}
     hikari:
+      connection-timeout: 5000
+      validation-timeout: 3000
       idle-timeout: 30000
-      maximum-pool-size: 2
+      minimum-idle: 2
+      maximum-pool-size: 8
       data-source-properties:
         reWriteBatchedInserts: true
+        connectTimeout: 5
+        socketTimeout: 1260
+        cancelSignalTimeout: 5
+        tcpKeepAlive: true
   flyway:
     enabled: true
     schemas: ${db.schema}
@@ -89,9 +96,10 @@ ccr:
   scheduler:
     enabled: false
     poll-interval-ms: 10000
-    stale-processing-timeout-ms: 1200000
   report:
     max-attempts: 5
+    worker-concurrency: 2
+    processing-timeout-ms: 1200000
     presigned-url-ttl-sec: 900
     expiration-sec: 604800
   api:

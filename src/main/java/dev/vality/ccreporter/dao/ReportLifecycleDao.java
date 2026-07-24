@@ -24,7 +24,7 @@ public class ReportLifecycleDao {
 
     private static final Field<Long> CANDIDATE_ID = DSL.field(DSL.name("candidate", "id"), Long.class);
     private static final String WORKER_TIMEOUT_CODE = "worker_timeout";
-    private static final String WORKER_TIMEOUT_MESSAGE = "Report processing exceeded stale timeout";
+    private static final String WORKER_TIMEOUT_MESSAGE = "Report processing exceeded maximum duration";
 
     private final DSLContext dslContext;
 
@@ -47,6 +47,8 @@ public class ReportLifecycleDao {
                 .set(REPORT_JOB.ATTEMPT, REPORT_JOB.ATTEMPT.plus(1))
                 .set(REPORT_JOB.STARTED_AT, claimTime)
                 .set(REPORT_JOB.NEXT_ATTEMPT_AT, (LocalDateTime) null)
+                .set(REPORT_JOB.ERROR_CODE, (String) null)
+                .set(REPORT_JOB.ERROR_MESSAGE, (String) null)
                 .from(candidate)
                 .where(REPORT_JOB.ID.eq(CANDIDATE_ID))
                 .returning(
@@ -69,14 +71,15 @@ public class ReportLifecycleDao {
         return dslContext.update(REPORT_JOB)
                 .set(REPORT_JOB.STATUS, ReportStatus.canceled)
                 .set(REPORT_JOB.FINISHED_AT, toLocalDateTime(now))
+                .set(REPORT_JOB.NEXT_ATTEMPT_AT, (LocalDateTime) null)
                 .where(REPORT_JOB.ID.eq(reportId))
                 .and(REPORT_JOB.CREATED_BY.eq(createdBy))
                 .and(REPORT_JOB.STATUS.in(ReportStatus.pending, ReportStatus.processing))
                 .execute() == 1;
     }
 
-    public void rescheduleForRetry(long reportId, Instant nextAttemptAt, String errorCode, String errorMessage) {
-        dslContext.update(REPORT_JOB)
+    public boolean rescheduleForRetry(long reportId, Instant nextAttemptAt, String errorCode, String errorMessage) {
+        return dslContext.update(REPORT_JOB)
                 .set(REPORT_JOB.STATUS, ReportStatus.pending)
                 .set(REPORT_JOB.STARTED_AT, (LocalDateTime) null)
                 .set(REPORT_JOB.NEXT_ATTEMPT_AT, toLocalDateTime(nextAttemptAt))
@@ -84,11 +87,11 @@ public class ReportLifecycleDao {
                 .set(REPORT_JOB.ERROR_MESSAGE, errorMessage)
                 .where(REPORT_JOB.ID.eq(reportId))
                 .and(REPORT_JOB.STATUS.eq(ReportStatus.processing))
-                .execute();
+                .execute() == 1;
     }
 
-    public void markFailed(long reportId, Instant finishedAt, String code, String message) {
-        dslContext.update(REPORT_JOB)
+    public boolean markFailed(long reportId, Instant finishedAt, String code, String message) {
+        return dslContext.update(REPORT_JOB)
                 .set(REPORT_JOB.STATUS, ReportStatus.failed)
                 .set(REPORT_JOB.FINISHED_AT, toLocalDateTime(finishedAt))
                 .set(REPORT_JOB.ERROR_CODE, code)
@@ -96,7 +99,7 @@ public class ReportLifecycleDao {
                 .set(REPORT_JOB.NEXT_ATTEMPT_AT, (LocalDateTime) null)
                 .where(REPORT_JOB.ID.eq(reportId))
                 .and(REPORT_JOB.STATUS.eq(ReportStatus.processing))
-                .execute();
+                .execute() == 1;
     }
 
     @Transactional
@@ -161,6 +164,18 @@ public class ReportLifecycleDao {
                 .where(REPORT_JOB.STATUS.eq(ReportStatus.processing))
                 .and(REPORT_JOB.STARTED_AT.le(toLocalDateTime(staleBefore)))
                 .execute();
+    }
+
+    public boolean markTimedOut(long reportId, Instant finishedAt) {
+        return dslContext.update(REPORT_JOB)
+                .set(REPORT_JOB.STATUS, ReportStatus.timed_out)
+                .set(REPORT_JOB.FINISHED_AT, toLocalDateTime(finishedAt))
+                .set(REPORT_JOB.ERROR_CODE, WORKER_TIMEOUT_CODE)
+                .set(REPORT_JOB.ERROR_MESSAGE, WORKER_TIMEOUT_MESSAGE)
+                .set(REPORT_JOB.NEXT_ATTEMPT_AT, (LocalDateTime) null)
+                .where(REPORT_JOB.ID.eq(reportId))
+                .and(REPORT_JOB.STATUS.eq(ReportStatus.processing))
+                .execute() == 1;
     }
 
     public int expireReports(Instant now) {

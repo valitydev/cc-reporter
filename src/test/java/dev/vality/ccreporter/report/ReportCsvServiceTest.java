@@ -2,6 +2,7 @@ package dev.vality.ccreporter.report;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.vality.ccreporter.TimeRange;
+import dev.vality.ccreporter.config.properties.ReportProperties;
 import dev.vality.ccreporter.dao.ReportCsvDao;
 import dev.vality.ccreporter.fixture.ReportRequestFixtures;
 import dev.vality.ccreporter.model.ReportTask;
@@ -27,7 +28,9 @@ class ReportCsvServiceTest {
         var reportCsvDao = mock(ReportCsvDao.class);
         var objectMapper = new ObjectMapper();
         var thriftJsonCodec = new ThriftJsonCodec(objectMapper);
-        var reportCsvService = new ReportCsvService(reportCsvDao, thriftJsonCodec);
+        var reportProperties = new ReportProperties();
+        reportProperties.setProcessingTimeoutMs(60_000);
+        var reportCsvService = new ReportCsvService(reportCsvDao, thriftJsonCodec, reportProperties);
         @SuppressWarnings("unchecked")
         var cursor = mock(Cursor.class);
         var row = mock(Record.class);
@@ -59,6 +62,7 @@ class ReportCsvServiceTest {
 
         var generatedCsvReport = reportCsvService.generate(claimedPaymentsJob(thriftJsonCodec));
 
+        verify(reportCsvDao).setLocalStatementTimeout(60_000);
         verify(reportCsvDao).fetchPayments(any());
         verify(cursor).close();
         assertThat(generatedCsvReport.rowsCount()).isEqualTo(1L);

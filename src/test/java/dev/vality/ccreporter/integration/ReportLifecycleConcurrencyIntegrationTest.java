@@ -21,6 +21,37 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ReportLifecycleConcurrencyIntegrationTest extends AbstractReportingIntegrationTest {
 
     @Test
+    void lifecycleTickProcessesReportsWithConfiguredConcurrency() throws Exception {
+        CurrentStateTableFixtures.insertPaymentRow(
+                jdbcTemplate,
+                "invoice-concurrency-batch-1",
+                "payment-concurrency-batch-1",
+                Instant.parse("2026-01-01T10:00:00Z"),
+                Instant.parse("2026-01-01T11:00:00Z")
+        );
+        final var firstReportId = reportingHandler.createReport(ReportRequestFixtures.payments("concurrency-batch-1"));
+        final var secondReportId = reportingHandler.createReport(ReportRequestFixtures.payments("concurrency-batch-2"));
+        var uploadEntered = new CountDownLatch(2);
+        var releaseUpload = new CountDownLatch(1);
+        stubFileStorageClient.blockUploads(uploadEntered, releaseUpload);
+        var schedulerExecutor = Executors.newSingleThreadExecutor();
+        try {
+            var lifecycleTick = schedulerExecutor.submit(reportLifecycleService::runLifecycleTick);
+
+            assertThat(uploadEntered.await(5, TimeUnit.SECONDS)).isTrue();
+            releaseUpload.countDown();
+            lifecycleTick.get(10, TimeUnit.SECONDS);
+        } finally {
+            releaseUpload.countDown();
+            schedulerExecutor.shutdownNow();
+            assertThat(schedulerExecutor.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
+        }
+
+        assertCreatedReport(firstReportId, 1L);
+        assertCreatedReport(secondReportId, 1L);
+    }
+
+    @Test
     void concurrentWorkersDoNotDoubleProcessSinglePendingReport() throws Exception {
         CurrentStateTableFixtures.insertPaymentRow(
                 jdbcTemplate,
@@ -144,9 +175,13 @@ class ReportLifecycleConcurrencyIntegrationTest extends AbstractReportingIntegra
     }
 
     private void assertCreatedReport(long reportId) throws Exception {
+        assertCreatedReport(reportId, 2L);
+    }
+
+    private void assertCreatedReport(long reportId, long expectedRowsCount) throws Exception {
         var report = reportingHandler.getReport(new GetReportRequest(reportId));
         assertThat(report.getStatus()).isEqualTo(ReportStatus.created);
-        assertThat(report.getRowsCount()).isEqualTo(2L);
+        assertThat(report.getRowsCount()).isEqualTo(expectedRowsCount);
         assertThat(report.getFile().getFileId()).isNotBlank();
     }
 

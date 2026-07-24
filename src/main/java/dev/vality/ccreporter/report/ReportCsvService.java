@@ -3,6 +3,7 @@ package dev.vality.ccreporter.report;
 import dev.vality.ccreporter.PaymentsQuery;
 import dev.vality.ccreporter.ReportQuery;
 import dev.vality.ccreporter.WithdrawalsQuery;
+import dev.vality.ccreporter.config.properties.ReportProperties;
 import dev.vality.ccreporter.dao.ReportCsvDao;
 import dev.vality.ccreporter.model.GeneratedCsvReport;
 import dev.vality.ccreporter.model.ReportTask;
@@ -33,6 +34,7 @@ import java.util.Currency;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CancellationException;
 
 @Service
 @RequiredArgsConstructor
@@ -86,9 +88,11 @@ public class ReportCsvService {
 
     private final ReportCsvDao reportCsvDao;
     private final ThriftJsonCodec thriftJsonCodec;
+    private final ReportProperties reportProperties;
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public GeneratedCsvReport generate(ReportTask reportTask) {
+        reportCsvDao.setLocalStatementTimeout(reportProperties.getProcessingTimeoutMs());
         var snapshotFixedAt = reportCsvDao.currentSnapshot();
         var reportQuery = thriftJsonCodec.deserialize(reportTask.queryJson(), ReportQuery.class);
         var zoneId = ZoneId.of(reportTask.timezone());
@@ -160,10 +164,17 @@ public class ReportCsvService {
     ) throws IOException {
         var rowCount = 0L;
         for (var row : rows) {
+            throwIfInterrupted();
             writeRow(writer, row, columns, zoneId);
             rowCount++;
         }
         return rowCount;
+    }
+
+    private void throwIfInterrupted() {
+        if (Thread.currentThread().isInterrupted()) {
+            throw new CancellationException("Report CSV generation was interrupted");
+        }
     }
 
     private void writeRow(

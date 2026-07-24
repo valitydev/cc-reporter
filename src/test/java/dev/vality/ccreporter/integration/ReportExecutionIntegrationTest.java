@@ -9,6 +9,8 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -131,10 +133,15 @@ class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
         var reportId = reportingHandler.createReport(ReportRequestFixtures.payments("exec-failure-1"));
         stubFileStorageClient.setFailUploads(true);
 
-        reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
+        reportLifecycleService.processNextPendingReport(Instant.now());
         var pendingAfterRetry = reportingHandler.getReport(new GetReportRequest(reportId));
+        var retryAt = jdbcTemplate.queryForObject(
+                "SELECT next_attempt_at FROM ccr.report_job WHERE id = ?",
+                LocalDateTime.class,
+                reportId
+        ).toInstant(ZoneOffset.UTC);
 
-        reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:31Z"));
+        reportLifecycleService.processNextPendingReport(retryAt.plusMillis(1));
         var failedReport = reportingHandler.getReport(new GetReportRequest(reportId));
 
         assertThat(pendingAfterRetry.getStatus()).isEqualTo(ReportStatus.pending);

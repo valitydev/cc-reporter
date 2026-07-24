@@ -85,6 +85,29 @@ class ReportLifecycleIntegrationTest extends AbstractReportingIntegrationTest {
     }
 
     @Test
+    void canceledRetryDoesNotKeepNextAttemptTime() throws Exception {
+        var reportId = reportingHandler.createReport(ReportRequestFixtures.payments("cancel-retry-1"));
+        var startedAt = Instant.parse("2026-01-03T11:00:00Z");
+        var retryAt = Instant.parse("2026-01-03T11:05:00Z");
+
+        reportLifecycleDao.claimNextPendingReport(startedAt).orElseThrow();
+        assertThat(reportLifecycleDao.rescheduleForRetry(
+                reportId,
+                retryAt,
+                "temporary_error",
+                "retry later"
+        )).isTrue();
+
+        reportingHandler.cancelReport(new CancelReportRequest(reportId));
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT next_attempt_at IS NULL FROM ccr.report_job WHERE id = ?",
+                Boolean.class,
+                reportId
+        )).isTrue();
+    }
+
+    @Test
     void failedReportRemainsFailedWhenCancelIsCalled() throws Exception {
         var reportId = reportingHandler.createReport(ReportRequestFixtures.payments("failed-1"));
         var startedAt = Instant.parse("2026-01-04T10:00:00Z");

@@ -38,8 +38,9 @@ import java.util.concurrent.atomic.AtomicReference;
                 "management.server.port=0",
                 "ccr.storage.file-storage.url=http://localhost:8022/file-storage",
                 "ccr.report.max-attempts=2",
+                "ccr.report.worker-concurrency=2",
                 "ccr.report.expiration-sec=600",
-                "ccr.scheduler.stale-processing-timeout-ms=60000"
+                "ccr.report.processing-timeout-ms=60000"
         }
 )
 @Import(ReportingIntegrationTestConfig.class)

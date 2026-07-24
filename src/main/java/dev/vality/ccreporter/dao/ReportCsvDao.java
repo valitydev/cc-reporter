@@ -1,9 +1,7 @@
 package dev.vality.ccreporter.dao;
 
 import dev.vality.ccreporter.PaymentsQuery;
-import dev.vality.ccreporter.PaymentsSearchFilter;
 import dev.vality.ccreporter.WithdrawalsQuery;
-import dev.vality.ccreporter.WithdrawalsSearchFilter;
 import lombok.RequiredArgsConstructor;
 import org.jooq.*;
 import org.jooq.Record;
@@ -37,6 +35,13 @@ public class ReportCsvDao {
         return dslContext.select(DSL.currentOffsetDateTime())
                 .fetchSingle(0, OffsetDateTime.class)
                 .toInstant();
+    }
+
+    public void setLocalStatementTimeout(long timeoutMs) {
+        dslContext.fetchSingle(
+                "SELECT set_config('statement_timeout', ?, true)",
+                timeoutMs + "ms"
+        );
     }
 
     public Cursor<? extends Record> fetchPayments(PaymentsQuery query) {
@@ -135,24 +140,26 @@ public class ReportCsvDao {
         appendInCondition(conditions, PAYMENT_TXN_CURRENT.TRX_ID, query.getTrxIds());
         appendInCondition(conditions, PAYMENT_TXN_CURRENT.CURRENCY, query.getCurrencies());
         appendInCondition(conditions, PAYMENT_TXN_CURRENT.STATUS, query.getStatuses());
-        appendSearchCondition(conditions, SHOP_LOOKUP.SHOP_SEARCH, query.getFilter(), "shop");
+        var filter = query.getFilter();
+        appendSearchCondition(
+                conditions,
+                SHOP_LOOKUP.SHOP_SEARCH,
+                filter == null ? null : filter.getShopTerm()
+        );
         appendSearchCondition(
                 conditions,
                 PROVIDER_LOOKUP.PROVIDER_SEARCH,
-                query.getFilter(),
-                "provider"
+                filter == null ? null : filter.getProviderTerm()
         );
         appendSearchCondition(
                 conditions,
                 TERMINAL_LOOKUP.TERMINAL_SEARCH,
-                query.getFilter(),
-                "terminal"
+                filter == null ? null : filter.getTerminalTerm()
         );
         appendSearchCondition(
                 conditions,
                 PAYMENT_TXN_CURRENT.TRX_SEARCH,
-                query.getFilter(),
-                "trx"
+                filter == null ? null : filter.getTrxTerm()
         );
         return conditions;
     }
@@ -176,25 +183,27 @@ public class ReportCsvDao {
         appendInCondition(conditions, latestSessionTrxId, query.getTrxIds());
         appendInCondition(conditions, WITHDRAWAL_TXN_CURRENT.CURRENCY, query.getCurrencies());
         appendInCondition(conditions, WITHDRAWAL_TXN_CURRENT.STATUS, query.getStatuses());
+        var filter = query.getFilter();
         appendSearchCondition(
                 conditions,
                 WALLET_LOOKUP.WALLET_SEARCH,
-                query.getFilter(),
-                "wallet"
+                filter == null ? null : filter.getWalletTerm()
         );
         appendSearchCondition(
                 conditions,
                 PROVIDER_LOOKUP.PROVIDER_SEARCH,
-                query.getFilter(),
-                "provider"
+                filter == null ? null : filter.getProviderTerm()
         );
         appendSearchCondition(
                 conditions,
                 TERMINAL_LOOKUP.TERMINAL_SEARCH,
-                query.getFilter(),
-                "terminal"
+                filter == null ? null : filter.getTerminalTerm()
         );
-        appendSearchCondition(conditions, latestSessionTrxSearch, query.getFilter(), "trx");
+        appendSearchCondition(
+                conditions,
+                latestSessionTrxSearch,
+                filter == null ? null : filter.getTrxTerm()
+        );
         return conditions;
     }
 
@@ -203,42 +212,6 @@ public class ReportCsvDao {
             return;
         }
         conditions.add(field.in(values));
-    }
-
-    private void appendSearchCondition(
-            List<Condition> conditions,
-            Field<String> field,
-            PaymentsSearchFilter filter,
-            String filterType
-    ) {
-        if (filter == null) {
-            return;
-        }
-        appendSearchCondition(conditions, field, switch (filterType) {
-            case "shop" -> filter.getShopTerm();
-            case "provider" -> filter.getProviderTerm();
-            case "terminal" -> filter.getTerminalTerm();
-            case "trx" -> filter.getTrxTerm();
-            default -> null;
-        });
-    }
-
-    private void appendSearchCondition(
-            List<Condition> conditions,
-            Field<String> field,
-            WithdrawalsSearchFilter filter,
-            String filterType
-    ) {
-        if (filter == null) {
-            return;
-        }
-        appendSearchCondition(conditions, field, switch (filterType) {
-            case "wallet" -> filter.getWalletTerm();
-            case "provider" -> filter.getProviderTerm();
-            case "terminal" -> filter.getTerminalTerm();
-            case "trx" -> filter.getTrxTerm();
-            default -> null;
-        });
     }
 
     private void appendSearchCondition(List<Condition> conditions, Field<String> field, String value) {
