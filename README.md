@@ -1,1 +1,26 @@
 # CC Reporter
+```
+set -e
+
+git fetch origin
+
+# Пустой базовый commit ветки mock
+MOCK_COMMIT=$(git rev-parse origin/mock)
+
+# Актуальное дерево ветки init
+INIT_TREE=$(git rev-parse 'origin/init^{tree}')
+
+# Создаём новый review-commit:
+# содержимое = актуальный init
+# родитель = пустой mock
+REVIEW_COMMIT=$(
+  printf '%s\n' "Full init code snapshot for review" |
+  git commit-tree "$INIT_TREE" -p "$MOCK_COMMIT"
+)
+
+# Обновляем техническую ветку
+git branch -f init-full-review "$REVIEW_COMMIT"
+
+# Обновляем PR
+git push --force-with-lease origin init-full-review
+```
