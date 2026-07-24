@@ -46,7 +46,7 @@ class PresignedUrlIntegrationTest extends AbstractReportingIntegrationTest {
     @Test
     void generatePresignedUrlDoesNotOutliveReport() throws Exception {
         var reportId = reportingHandler.createReport(ReportRequestFixtures.payments("url-report-expiry-1"));
-        var now = Instant.now();
+        var now = Instant.now().truncatedTo(ChronoUnit.MICROS);
         var reportExpiresAt = now.plus(5, ChronoUnit.MINUTES);
         ReportRecordFixtures.markReportCreated(
                 jdbcTemplate,
