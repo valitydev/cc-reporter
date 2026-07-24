@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <springProperty scope="context" name="logbackAppender" source="logback.appender" defaultValue="COLOR_CONSOLE"/>
+    <springProperty scope="context" name="loggingLevelRoot" source="logging.level.root" defaultValue="INFO"/>
+
+    <if condition='"${logbackAppender}".equals("COLOR_CONSOLE")'>
+        <then>
+            <appender name="COLOR_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+                <encoder>
+                    <pattern>
+                        %black(%d{ISO8601}) [%blue(%t)] %magenta(${PID:- }) %highlight(%-5level) %cyan(%logger{36}).%yellow(%M):%white(%L) — %m%n%wEx
+                    </pattern>
+                </encoder>
+            </appender>
+
+            <root level="${loggingLevelRoot}">
+                <appender-ref ref="COLOR_CONSOLE"/>
+            </root>
+        </then>
+    </if>
+
+    <if condition='"${logbackAppender}".equals("DEFAULT_CONSOLE")'>
+        <then>
+            <appender name="DEFAULT_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+                <encoder>
+                    <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+                    <charset>${CONSOLE_LOG_CHARSET}</charset>
+                </encoder>
+            </appender>
+
+            <root level="${loggingLevelRoot}">
+                <appender-ref ref="DEFAULT_CONSOLE"/>
+            </root>
+        </then>
+    </if>
+
+    <if condition='"${logbackAppender}".equals("JSON_K8S_CONSOLE")'>
+        <then>
+            <appender name="JSON_K8S_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+                <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+                    <providers>
+                        <mdc/>
+                        <pattern>
+                            <pattern>
+                                {
+                                    "@timestamp": "%date{yyy-MM-dd'T'HH:mm:ss.SSSXXX, UTC}",
+                                    "@severity": "%level",
+                                    "thread_name": "%thread",
+                                    "logger_name": "%logger",
+                                    "message": "%message"
+                                }
+                            </pattern>
+                        </pattern>
+                        <stackTrace>
+                            <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                                <maxDepthPerThrowable>30</maxDepthPerThrowable>
+                                <maxLength>2048</maxLength>
+                                <shortenedClassNameLength>20</shortenedClassNameLength>
+                                <exclude>^sun\.reflect\..*\.invoke</exclude>
+                                <exclude>^net\.sf\.cglib\.proxy\.MethodProxy\.invoke</exclude>
+                                <rootCauseFirst>true</rootCauseFirst>
+                            </throwableConverter>
+                        </stackTrace>
+                    </providers>
+                </encoder>
+            </appender>
+
+            <root level="${loggingLevelRoot}">
+                <appender-ref ref="JSON_K8S_CONSOLE"/>
+            </root>
+        </then>
+    </if>
+</configuration>

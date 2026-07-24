@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: dev.vality.ccreporter.integration.DominantLookupIngestionIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.226 s -- in dev.vality.ccreporter.integration.DominantLookupIngestionIntegrationTest

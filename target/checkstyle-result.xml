@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<checkstyle version="13.2.0">
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/handler/support/ReportingHandlerLogSupport.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/handler/support/ThriftLoggingHandler.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/handler/ReportingHandler.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/ingestion/payment/PaymentIngestionService.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/ingestion/payment/PaymentEventProjector.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/ingestion/payment/support/PaymentToolExtractor.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/ingestion/payment/support/ProxyStateExtractor.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/ingestion/payment/support/TransactionExtraExtractor.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/ingestion/withdrawal/WithdrawalIngestionService.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/ingestion/withdrawal/WithdrawalEventProjector.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/ingestion/withdrawal/session/WithdrawalSessionIngestionService.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/ingestion/withdrawal/session/WithdrawalSessionEventProjector.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/ingestion/shared/cashflow/CashFlowAmountExtractor.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/ingestion/shared/status/StatusDetailExtractor.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/ingestion/shared/status/FailureSummaryExtractor.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/ingestion/dominant/DominantLookupIngestionService.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/ServiceApplication.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/util/SearchValueNormalizer.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/util/TimestampUtils.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/config/JacksonConfig.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/config/JooqConfig.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/config/properties/ReportSchedulerProperties.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/config/properties/FileStorageProperties.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/config/properties/CcrApiProperties.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/config/properties/CcrKafkaProperties.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/config/properties/ReportProperties.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/config/KafkaIngestionConfig.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/config/ThriftEndpointConfig.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/config/FileStorageConfig.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/config/SchedulingConfig.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/security/RequestAuditMetadataResolver.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/constants/ReportAuditEventType.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/dao/WithdrawalTxnCurrentDao.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/dao/ReportLifecycleDao.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/dao/ReportCsvDao.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/dao/ReportCommandDao.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/dao/ReportQueryDao.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/dao/PaymentTxnCurrentDao.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/dao/mapper/ReportRecordMapper.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/dao/mapper/ReportAuditMapper.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/dao/ReportAuditDao.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/dao/DominantLookupDao.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/dao/support/DaoUpsertUtils.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/dao/WithdrawalSessionDao.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/storage/FileStorageService.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/storage/FileStorageClientService.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/kafka/listener/WithdrawalSessionEventListener.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/kafka/listener/DominantEventListener.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/kafka/listener/WithdrawalEventListener.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/kafka/listener/PaymentEventListener.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/kafka/support/BatchLoggingKafkaListener.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/kafka/support/BatchConsumerLogUtil.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/model/DownloadableFile.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/model/GeneratedCsvReport.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/model/ReportTask.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/model/RequestAuditMetadata.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/model/ReportProjection.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/report/ReportCsvService.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/report/ReportAuditService.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/report/ReportManagementService.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/report/ReportQueryService.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/report/mapper/ReportThriftMapper.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/report/ReportRequestValidator.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/report/ReportLifecycleService.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/report/ReportLifecycleScheduler.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/serde/thrift/MachineEventParser.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/serde/thrift/ThriftDeserializer.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/serde/json/ThriftJsonCodec.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/main/java/dev/vality/ccreporter/serde/json/ContinuationTokenJsonSerializer.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/fixture/DominantCommitFixtures.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/fixture/ReportRecordFixtures.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/fixture/RealFixtureCoverageTest.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/fixture/WithdrawalIngestionEventFixtures.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/fixture/CurrentStateTableFixtures.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/fixture/CurrentStateUpdateFixtures.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/fixture/RealWithdrawalIngestionEventFixtures.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/fixture/RealPaymentIngestionEventFixtures.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/fixture/SerializedIngestionEventFixtures.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/fixture/ReportRequestFixtures.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/fixture/PaymentIngestionEventFixtures.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/config/FileStorageConfigTest.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/integration/IngestionSerializedEventsIntegrationTest.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/integration/ReportLifecycleConcurrencyIntegrationTest.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/integration/KafkaListenerIntegrationTest.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/integration/config/ReportingIntegrationTestConfig.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/integration/DominantLookupIngestionIntegrationTest.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/integration/KafkaListenerRetryIntegrationTest.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/integration/ReportLifecycleIntegrationTest.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/integration/ReportExecutionIntegrationTest.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/integration/IngestionToReportLifecycleIntegrationTest.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/integration/CurrentStateDaoIntegrationTest.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/integration/support/KafkaIntegrationTestSupport.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/integration/PresignedUrlIntegrationTest.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/integration/ReportQueryFilteringIntegrationTest.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/integration/ReportAuditIntegrationTest.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/integration/ReportingApiSmokeTest.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/integration/ReportLifecycleWorkerIntegrationTest.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/integration/base/AbstractReportingIntegrationTest.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/report/ReportCsvServiceTest.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/serde/thrift/ThriftSerializer.java">
+</file>
+<file name="/Users/karleowne/dev/cc-reporter/src/test/java/dev/vality/ccreporter/serde/json/ThriftJsonCodecTest.java">
+</file>
+</checkstyle>

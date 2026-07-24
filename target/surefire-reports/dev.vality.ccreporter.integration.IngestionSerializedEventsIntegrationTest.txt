@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: dev.vality.ccreporter.integration.IngestionSerializedEventsIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.046 s -- in dev.vality.ccreporter.integration.IngestionSerializedEventsIntegrationTest
