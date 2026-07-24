@@ -15,9 +15,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import static dev.vality.ccreporter.ingestion.shared.status.StatusDetailExtractor.*;
 import static dev.vality.ccreporter.util.SearchValueNormalizer.normalize;
@@ -31,16 +32,20 @@ public class PaymentEventProjector {
     private final ProxyStateExtractor proxyStateExtractor;
 
     public List<PaymentTxnCurrent> project(MachineEvent event, EventPayload payload) {
-        var updates = new ArrayList<PaymentTxnCurrent>();
-        if (!payload.isSetInvoiceChanges()) {
-            return updates;
+        if (payload == null || !payload.isSetInvoiceChanges()) {
+            return List.of();
         }
+        var updatesByPaymentId = new LinkedHashMap<String, PaymentTxnCurrent>();
         for (InvoiceChange change : payload.getInvoiceChanges()) {
             if (change.isSetInvoicePaymentChange()) {
-                projectPaymentChange(event, change).ifPresent(updates::add);
+                projectPaymentChange(event, change).ifPresent(update -> updatesByPaymentId.merge(
+                        update.getPaymentId(),
+                        update,
+                        this::mergeUpdates
+                ));
             }
         }
-        return updates;
+        return List.copyOf(updatesByPaymentId.values());
     }
 
     private Optional<PaymentTxnCurrent> projectPaymentChange(MachineEvent event, InvoiceChange change) {
@@ -185,6 +190,41 @@ public class PaymentEventProjector {
                 .setPaymentId(paymentChange.getId())
                 .setDomainEventId(event.getEventId())
                 .setDomainEventCreatedAt(toLocalDateTime(event.getCreatedAt()));
+    }
+
+    private PaymentTxnCurrent mergeUpdates(PaymentTxnCurrent accumulated, PaymentTxnCurrent update) {
+        copyIfPresent(update.getPartyId(), accumulated::setPartyId);
+        copyIfPresent(update.getShopId(), accumulated::setShopId);
+        copyIfPresent(update.getCreatedAt(), accumulated::setCreatedAt);
+        if (accumulated.getFinalizedAt() == null) {
+            copyIfPresent(update.getFinalizedAt(), accumulated::setFinalizedAt);
+        }
+        copyIfPresent(update.getStatus(), accumulated::setStatus);
+        copyIfPresent(update.getProviderId(), accumulated::setProviderId);
+        copyIfPresent(update.getTerminalId(), accumulated::setTerminalId);
+        copyIfPresent(update.getAmount(), accumulated::setAmount);
+        copyIfPresent(update.getFee(), accumulated::setFee);
+        copyIfPresent(update.getCurrency(), accumulated::setCurrency);
+        copyIfPresent(update.getTrxId(), accumulated::setTrxId);
+        copyIfPresent(update.getExternalId(), accumulated::setExternalId);
+        copyIfPresent(update.getRrn(), accumulated::setRrn);
+        copyIfPresent(update.getApprovalCode(), accumulated::setApprovalCode);
+        copyIfPresent(update.getPaymentToolType(), accumulated::setPaymentToolType);
+        copyIfPresent(update.getErrorSummary(), accumulated::setErrorSummary);
+        copyIfPresent(update.getOriginalAmount(), accumulated::setOriginalAmount);
+        copyIfPresent(update.getOriginalCurrency(), accumulated::setOriginalCurrency);
+        copyIfPresent(update.getConvertedAmount(), accumulated::setConvertedAmount);
+        copyIfPresent(update.getExchangeRateInternal(), accumulated::setExchangeRateInternal);
+        copyIfPresent(update.getProviderAmount(), accumulated::setProviderAmount);
+        copyIfPresent(update.getProviderCurrency(), accumulated::setProviderCurrency);
+        copyIfPresent(update.getTrxSearch(), accumulated::setTrxSearch);
+        return accumulated;
+    }
+
+    private <T> void copyIfPresent(T value, Consumer<T> setter) {
+        if (value != null) {
+            setter.accept(value);
+        }
     }
 
     private SessionChangePayload sessionPayload(InvoicePaymentChange paymentChange) {

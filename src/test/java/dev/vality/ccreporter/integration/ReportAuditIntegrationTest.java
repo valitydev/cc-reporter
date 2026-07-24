@@ -39,11 +39,26 @@ class ReportAuditIntegrationTest extends AbstractReportingIntegrationTest {
     @Test
     void cancelReportAndPresignedUrlWriteAuditEvents() throws Exception {
         bindCallerWithAuditMetadata("user-9");
-        var reportId = reportingHandler.createReport(ReportRequestFixtures.payments("audit-actions-1"));
-        var fileCreatedAt = Instant.parse("2026-01-05T10:00:00Z");
-        ReportRecordFixtures.attachCsvFile(jdbcTemplate, reportId, "file-audit-1", fileCreatedAt);
+        var canceledReportId = reportingHandler.createReport(ReportRequestFixtures.payments("audit-cancel-1"));
+        var downloadableReportId = reportingHandler.createReport(ReportRequestFixtures.payments("audit-url-1"));
+        var now = Instant.now();
+        ReportRecordFixtures.markReportCreated(
+                jdbcTemplate,
+                downloadableReportId,
+                now.minusSeconds(120),
+                now.minusSeconds(120),
+                now.minusSeconds(60),
+                now.plus(1, ChronoUnit.HOURS),
+                1L
+        );
+        ReportRecordFixtures.attachCsvFile(
+                jdbcTemplate,
+                downloadableReportId,
+                "file-audit-1",
+                now.minusSeconds(60)
+        );
 
-        reportingHandler.cancelReport(new CancelReportRequest(reportId));
+        reportingHandler.cancelReport(new CancelReportRequest(canceledReportId));
 
         var request = new GeneratePresignedUrlRequest(
                 "file-audit-1"
@@ -51,14 +66,16 @@ class ReportAuditIntegrationTest extends AbstractReportingIntegrationTest {
         request.setRequestedExpiresAt(Instant.now().plus(2, ChronoUnit.HOURS).toString());
         reportingHandler.generatePresignedUrl(request);
 
-        var cancelAudit = findLatestAudit(reportId, "report_canceled");
+        var cancelAudit = findLatestAudit(canceledReportId, "report_canceled");
         assertThat(cancelAudit.get("actor")).isEqualTo("alice@example.com");
-        assertThat(jsonText(reportId, "report_canceled", "{details,stateChanged}")).isEqualTo("true");
+        assertThat(jsonText(canceledReportId, "report_canceled", "{details,stateChanged}")).isEqualTo("true");
 
-        var presignedAudit = findLatestAudit(reportId, "presigned_url_generated");
+        var presignedAudit = findLatestAudit(downloadableReportId, "presigned_url_generated");
         assertThat(presignedAudit.get("actor")).isEqualTo("alice@example.com");
-        assertThat(jsonText(reportId, "presigned_url_generated", "{details,fileId}")).isEqualTo("file-audit-1");
-        assertThat(jsonText(reportId, "presigned_url_generated", "{details,requestedExpiresAt}")).isNotBlank();
+        assertThat(jsonText(downloadableReportId, "presigned_url_generated", "{details,fileId}"))
+                .isEqualTo("file-audit-1");
+        assertThat(jsonText(downloadableReportId, "presigned_url_generated", "{details,requestedExpiresAt}"))
+                .isNotBlank();
         assertThat(presignedAudit.get("created_at")).isNotNull();
     }
 

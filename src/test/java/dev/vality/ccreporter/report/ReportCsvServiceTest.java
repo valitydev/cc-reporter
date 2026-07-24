@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,9 +35,9 @@ class ReportCsvServiceTest {
         when(reportCsvDao.currentSnapshot()).thenReturn(Instant.parse("2023-11-14T22:13:20.123456789Z"));
         when(reportCsvDao.fetchPayments(any())).thenReturn(cursor);
         when(cursor.iterator()).thenReturn(List.of(row).iterator());
-        when(row.get("created_at", Timestamp.class)).thenReturn(Timestamp.from(Instant.parse("2026-01-01T10:00:00Z")));
-        when(row.get("finalized_at", Timestamp.class))
-                .thenReturn(Timestamp.from(Instant.parse("2026-01-01T11:00:00Z")));
+        when(row.get("created_at", LocalDateTime.class)).thenReturn(LocalDateTime.parse("2026-01-01T10:00:00"));
+        when(row.get("finalized_at", LocalDateTime.class))
+                .thenReturn(LocalDateTime.parse("2026-01-01T11:00:00"));
         when(row.get("amount")).thenReturn(1000L);
         when(row.get("provider_amount")).thenReturn(990L);
         when(row.get("original_amount")).thenReturn(1100L);
@@ -48,7 +48,7 @@ class ReportCsvServiceTest {
         when(row.get("trx_id")).thenReturn("trx-cursor-1");
         when(row.get("provider_id")).thenReturn("provider-1");
         when(row.get("terminal_id")).thenReturn("terminal-1");
-        when(row.get("shop_id")).thenReturn("shop-1");
+        when(row.get("shop_id")).thenReturn("shop\r1");
         when(row.get("exchange_rate_internal")).thenReturn(new BigDecimal("1.1000000000"));
         when(row.get("provider_currency")).thenReturn("EUR");
         when(row.get("original_currency")).thenReturn("USD");
@@ -64,8 +64,12 @@ class ReportCsvServiceTest {
         assertThat(generatedCsvReport.rowsCount()).isEqualTo(1L);
         assertThat(generatedCsvReport.dataSnapshotFixedAt())
                 .isEqualTo(Instant.parse("2023-11-14T22:13:20.123456789Z"));
-        assertThat(Files.readString(generatedCsvReport.contentPath(), StandardCharsets.UTF_8))
-                .contains("invoice-cursor-1,payment-cursor-1,captured,10.00,RUB,trx-cursor-1");
+        var csv = Files.readString(generatedCsvReport.contentPath(), StandardCharsets.UTF_8);
+        assertThat(csv)
+                .contains("invoice-cursor-1,payment-cursor-1,captured,10.00,RUB,trx-cursor-1")
+                .contains("\"shop\r1\"")
+                .contains("\r\n");
+        assertThat(csv.replace("\r\n", "")).doesNotContain("\n");
 
         Files.deleteIfExists(generatedCsvReport.contentPath());
     }

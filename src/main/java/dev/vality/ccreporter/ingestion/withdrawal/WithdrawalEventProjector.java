@@ -62,6 +62,7 @@ public class WithdrawalEventProjector {
                 .setExternalId(withdrawal.getExternalId())
                 .setOriginalAmount(quote != null ? quote.getCashFrom().getAmount() : null)
                 .setOriginalCurrency(quote != null ? quote.getCashFrom().getCurrency().getSymbolicCode() : null)
+                .setConvertedAmount(quote != null ? body.getAmount() : null)
                 .setExchangeRateInternal(toRate(quote))
                 .setProviderAmount(quote != null ? quote.getCashTo().getAmount() : null)
                 .setProviderCurrency(quote != null ? quote.getCashTo().getCurrency().getSymbolicCode() : null));

@@ -3,8 +3,9 @@ package dev.vality.ccreporter.fixture;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 /**
  * Наполняет current-state таблицы тестовыми строками там, где нужен готовый срез данных без участия ingestion.
@@ -40,11 +41,11 @@ public final class CurrentStateTableFixtures {
                 invoiceId,
                 paymentId,
                 1L,
-                Timestamp.from(createdAt),
+                toUtcLocalDateTime(createdAt),
                 "party-1",
                 "shop-1",
-                Timestamp.from(createdAt),
-                finalizedAt == null ? null : Timestamp.from(finalizedAt),
+                toUtcLocalDateTime(createdAt),
+                finalizedAt == null ? null : toUtcLocalDateTime(finalizedAt),
                 "captured",
                 "provider-1",
                 "terminal-1",
@@ -80,21 +81,21 @@ public final class CurrentStateTableFixtures {
                             party_id, wallet_id, destination_id, created_at,
                             finalized_at, status, provider_id, terminal_id, amount, fee, currency, external_id,
                             error_summary, original_amount, original_currency, exchange_rate_internal,
-                            provider_amount, provider_currency
+                            provider_amount, provider_currency, converted_amount
                         )
                         VALUES (
                             ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                            ?, ?, ?, ?, ?
+                            ?, ?, ?, ?, ?, ?
                         )
                         """,
                 withdrawalId,
                 1L,
-                Timestamp.from(createdAt),
+                toUtcLocalDateTime(createdAt),
                 "party-1",
                 "wallet-1",
                 "destination-1",
-                Timestamp.from(createdAt),
-                finalizedAt == null ? null : Timestamp.from(finalizedAt),
+                toUtcLocalDateTime(createdAt),
+                finalizedAt == null ? null : toUtcLocalDateTime(finalizedAt),
                 "succeeded",
                 "provider-1",
                 "terminal-1",
@@ -107,7 +108,8 @@ public final class CurrentStateTableFixtures {
                 "USD",
                 new BigDecimal("1.0500000000"),
                 1990L,
-                "EUR"
+                "EUR",
+                2000L
         );
         insertWithdrawalSessionRow(
                 jdbcTemplate,
@@ -138,9 +140,13 @@ public final class CurrentStateTableFixtures {
                 sessionId,
                 withdrawalId,
                 domainEventId,
-                Timestamp.from(eventCreatedAt),
+                toUtcLocalDateTime(eventCreatedAt),
                 trxId,
                 trxId
         );
+    }
+
+    private static LocalDateTime toUtcLocalDateTime(Instant value) {
+        return LocalDateTime.ofInstant(value, ZoneOffset.UTC);
     }
 }

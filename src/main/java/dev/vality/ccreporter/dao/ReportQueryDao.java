@@ -2,7 +2,8 @@ package dev.vality.ccreporter.dao;
 
 import dev.vality.ccreporter.GetReportsFilter;
 import dev.vality.ccreporter.dao.mapper.ReportRecordMapper;
-import dev.vality.ccreporter.domain.tables.pojos.ReportFile;
+import dev.vality.ccreporter.domain.enums.ReportStatus;
+import dev.vality.ccreporter.model.DownloadableFile;
 import dev.vality.ccreporter.model.ReportProjection;
 import dev.vality.ccreporter.serde.json.ContinuationTokenJsonSerializer.PageCursor;
 import lombok.RequiredArgsConstructor;
@@ -12,14 +13,14 @@ import org.jooq.Record;
 import org.jooq.SelectJoinStep;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static dev.vality.ccreporter.domain.Tables.REPORT_FILE;
 import static dev.vality.ccreporter.domain.Tables.REPORT_JOB;
-import static dev.vality.ccreporter.util.TimestampUtils.parse;
-import static dev.vality.ccreporter.util.TimestampUtils.toLocalDateTime;
+import static dev.vality.ccreporter.util.TimestampUtils.*;
 
 @Repository
 @RequiredArgsConstructor
@@ -42,11 +43,19 @@ public class ReportQueryDao {
                 .fetch(ReportRecordMapper::mapReportProjection);
     }
 
-    public Optional<ReportFile> getFile(String createdBy, String fileId) {
-        return baseFileSelect()
+    public Optional<DownloadableFile> getDownloadableFile(String createdBy, String fileId, Instant now) {
+        return dslContext.select(REPORT_FILE.fields())
+                .select(REPORT_JOB.EXPIRES_AT)
+                .from(REPORT_FILE)
+                .join(REPORT_JOB).on(REPORT_JOB.ID.eq(REPORT_FILE.REPORT_ID))
                 .where(REPORT_FILE.FILE_ID.eq(fileId))
                 .and(REPORT_JOB.CREATED_BY.eq(createdBy))
-                .fetchOptional(ReportRecordMapper::mapReportFile);
+                .and(REPORT_JOB.STATUS.eq(ReportStatus.created))
+                .and(REPORT_JOB.EXPIRES_AT.gt(toLocalDateTime(now)))
+                .fetchOptional(record -> new DownloadableFile(
+                        ReportRecordMapper.mapReportFile(record),
+                        toInstant(record.get(REPORT_JOB.EXPIRES_AT))
+                ));
     }
 
     private List<Condition> buildReportConditions(String createdBy, GetReportsFilter filter, PageCursor cursor) {
@@ -114,9 +123,4 @@ public class ReportQueryDao {
                 .leftJoin(REPORT_FILE).on(REPORT_FILE.REPORT_ID.eq(REPORT_JOB.ID));
     }
 
-    private SelectJoinStep<Record> baseFileSelect() {
-        return dslContext.select(REPORT_FILE.fields())
-                .from(REPORT_FILE)
-                .join(REPORT_JOB).on(REPORT_JOB.ID.eq(REPORT_FILE.REPORT_ID));
-    }
 }

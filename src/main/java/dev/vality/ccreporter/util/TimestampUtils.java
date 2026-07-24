@@ -2,7 +2,6 @@ package dev.vality.ccreporter.util;
 
 import lombok.experimental.UtilityClass;
 
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -33,16 +32,8 @@ public class TimestampUtils {
         return value == null ? null : LocalDateTime.ofInstant(value, ZoneOffset.UTC);
     }
 
-    public static Instant toInstant(Timestamp timestamp) {
-        return timestamp.toInstant();
-    }
-
     public static Instant toInstant(LocalDateTime value) {
         return value.toInstant(ZoneOffset.UTC);
-    }
-
-    public static Instant toOptionalInstant(Timestamp timestamp) {
-        return timestamp == null ? null : timestamp.toInstant();
     }
 
     public static Instant toOptionalInstant(LocalDateTime value) {

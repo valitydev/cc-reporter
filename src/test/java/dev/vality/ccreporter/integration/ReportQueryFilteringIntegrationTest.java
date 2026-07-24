@@ -89,6 +89,59 @@ class ReportQueryFilteringIntegrationTest extends AbstractReportingIntegrationTe
     }
 
     @Test
+    void paymentsSearchTreatsSqlWildcardsAsLiteralCharacters() throws Exception {
+        CurrentStateTableFixtures.insertPaymentRow(
+                jdbcTemplate,
+                "invoice-percent-1",
+                "payment-percent-1",
+                Instant.parse("2026-01-01T10:00:00Z"),
+                Instant.parse("2026-01-01T11:00:00Z")
+        );
+        CurrentStateTableFixtures.insertPaymentRow(
+                jdbcTemplate,
+                "invoice-percent-2",
+                "payment-percent-2",
+                Instant.parse("2026-01-01T10:01:00Z"),
+                Instant.parse("2026-01-01T11:01:00Z")
+        );
+        jdbcTemplate.update(
+                "UPDATE ccr.payment_txn_current SET shop_id = 'shop-percent-2' " +
+                        "WHERE invoice_id = 'invoice-percent-2'"
+        );
+        dominantLookupDao.upsert(
+                DominantLookupDao.LookupType.SHOP,
+                "shop-1",
+                "Growth 100% Shop",
+                1L,
+                false
+        );
+        dominantLookupDao.upsert(
+                DominantLookupDao.LookupType.SHOP,
+                "shop-percent-2",
+                "Growth 1000 Shop",
+                1L,
+                false
+        );
+
+        var request = ReportRequestFixtures.payments("payments-literal-wildcard-1");
+        var filter = new PaymentsSearchFilter();
+        filter.setShopTerm("100%");
+        request.getQuery().getPayments().setFilter(filter);
+        var reportId = reportingHandler.createReport(request);
+
+        reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
+
+        var report = reportingHandler.getReport(new GetReportRequest(reportId));
+        var csv = new String(
+                stubFileStorageClient.getStoredContent(report.getFile().getFileId()),
+                StandardCharsets.UTF_8
+        );
+        assertThat(report.getRowsCount()).isEqualTo(1L);
+        assertThat(csv).contains("invoice-percent-1,payment-percent-1");
+        assertThat(csv).doesNotContain("invoice-percent-2,payment-percent-2");
+    }
+
+    @Test
     void withdrawalsQueryFiltersExcludeNonMatchingRows() throws Exception {
         CurrentStateTableFixtures.insertWithdrawalRow(
                 jdbcTemplate,

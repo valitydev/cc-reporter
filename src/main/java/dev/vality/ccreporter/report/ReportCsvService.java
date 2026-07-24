@@ -25,8 +25,9 @@ import java.nio.file.Path;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Currency;
 import java.util.HexFormat;
@@ -37,6 +38,7 @@ import java.util.Locale;
 @RequiredArgsConstructor
 public class ReportCsvService {
 
+    private static final String CSV_LINE_ENDING = "\r\n";
     private static final DateTimeFormatter CSV_DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
     private static final DateTimeFormatter CSV_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final List<String> PAYMENT_COLUMNS = List.of(
@@ -78,7 +80,8 @@ public class ReportCsvService {
             "provider_amount",
             "provider_currency",
             "original_amount",
-            "original_currency"
+            "original_currency",
+            "converted_amount"
     );
 
     private final ReportCsvDao reportCsvDao;
@@ -131,7 +134,7 @@ public class ReportCsvService {
 
     private long writePaymentsCsv(BufferedWriter writer, PaymentsQuery query, ZoneId zoneId) throws IOException {
         writer.write(String.join(",", PAYMENT_COLUMNS));
-        writer.newLine();
+        writer.write(CSV_LINE_ENDING);
         try (var rows = reportCsvDao.fetchPayments(query)) {
             return writeRows(writer, rows, PAYMENT_COLUMNS, zoneId);
         }
@@ -143,7 +146,7 @@ public class ReportCsvService {
             ZoneId zoneId
     ) throws IOException {
         writer.write(String.join(",", WITHDRAWAL_COLUMNS));
-        writer.newLine();
+        writer.write(CSV_LINE_ENDING);
         try (var rows = reportCsvDao.fetchWithdrawals(query)) {
             return writeRows(writer, rows, WITHDRAWAL_COLUMNS, zoneId);
         }
@@ -176,15 +179,15 @@ public class ReportCsvService {
             var column = columns.get(i);
             writer.write(escapeCsv(renderValue(row, column, zoneId)));
         }
-        writer.newLine();
+        writer.write(CSV_LINE_ENDING);
     }
 
     private String renderValue(Record row, String column, ZoneId zoneId) {
         return switch (column) {
-            case "created_date" -> renderTimestampDate(row.get("created_at", Timestamp.class), zoneId);
-            case "created_time" -> renderTimestampTime(row.get("created_at", Timestamp.class), zoneId);
-            case "finalized_date" -> renderTimestampDate(row.get("finalized_at", Timestamp.class), zoneId);
-            case "finalized_time" -> renderTimestampTime(row.get("finalized_at", Timestamp.class), zoneId);
+            case "created_date" -> renderTimestampDate(row.get("created_at", LocalDateTime.class), zoneId);
+            case "created_time" -> renderTimestampTime(row.get("created_at", LocalDateTime.class), zoneId);
+            case "finalized_date" -> renderTimestampDate(row.get("finalized_at", LocalDateTime.class), zoneId);
+            case "finalized_time" -> renderTimestampTime(row.get("finalized_at", LocalDateTime.class), zoneId);
             case "amount" -> renderMinorUnits(row.get("amount"), row.get("currency", String.class));
             case "provider_amount" -> renderMinorUnits(
                     row.get("provider_amount"),
@@ -212,19 +215,19 @@ public class ReportCsvService {
         return value.toString();
     }
 
-    private String renderTimestampDate(Timestamp timestamp, ZoneId zoneId) {
+    private String renderTimestampDate(LocalDateTime timestamp, ZoneId zoneId) {
         if (timestamp == null) {
             return "";
         }
-        var localDateTime = timestamp.toInstant().atZone(zoneId).toLocalDateTime();
+        var localDateTime = timestamp.atZone(ZoneOffset.UTC).withZoneSameInstant(zoneId).toLocalDateTime();
         return CSV_DATE_FORMATTER.format(localDateTime.toLocalDate());
     }
 
-    private String renderTimestampTime(Timestamp timestamp, ZoneId zoneId) {
+    private String renderTimestampTime(LocalDateTime timestamp, ZoneId zoneId) {
         if (timestamp == null) {
             return "";
         }
-        var localDateTime = timestamp.toInstant().atZone(zoneId).toLocalDateTime();
+        var localDateTime = timestamp.atZone(ZoneOffset.UTC).withZoneSameInstant(zoneId).toLocalDateTime();
         return CSV_TIME_FORMATTER.format(localDateTime.toLocalTime());
     }
 
@@ -263,7 +266,10 @@ public class ReportCsvService {
     }
 
     private String escapeCsv(String value) {
-        if (!value.contains(",") && !value.contains("\"") && !value.contains("\n")) {
+        if (!value.contains(",")
+                && !value.contains("\"")
+                && !value.contains("\n")
+                && !value.contains("\r")) {
             return value;
         }
         return "\"" + value.replace("\"", "\"\"") + "\"";
