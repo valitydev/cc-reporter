@@ -12,7 +12,6 @@ import dev.vality.ccreporter.serde.json.ContinuationTokenJsonSerializer;
 import dev.vality.ccreporter.storage.FileStorageService;
 import dev.vality.ccreporter.util.TimestampUtils;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -37,8 +36,7 @@ public class ReportManagementService {
     private final FileStorageService fileStorageService;
 
     @Transactional
-    @SneakyThrows
-    public long createReport(CreateReportRequest request) {
+    public long createReport(CreateReportRequest request) throws InvalidRequest {
         reportRequestValidator.validateCreate(request);
         var auditMetadata = requestAuditMetadataResolver.resolve();
         var timezone = StringUtils.hasText(request.getTimezone()) ? request.getTimezone() : "UTC";
@@ -57,8 +55,7 @@ public class ReportManagementService {
         return result.reportId();
     }
 
-    @SneakyThrows
-    public Report getReport(GetReportRequest request) {
+    public Report getReport(GetReportRequest request) throws InvalidRequest, ReportNotFound {
         if (request == null) {
             throw invalidRequest("request is required");
         }
@@ -68,8 +65,7 @@ public class ReportManagementService {
                 .orElseThrow(ReportNotFound::new);
     }
 
-    @SneakyThrows
-    public GetReportsResponse getReports(GetReportsRequest request) {
+    public GetReportsResponse getReports(GetReportsRequest request) throws InvalidRequest, BadContinuationToken {
         var createdBy = requestAuditMetadataResolver.resolve().email();
         var safeRequest = request == null ? new GetReportsRequest() : request;
         reportRequestValidator.validateGetReports(safeRequest);
@@ -79,12 +75,14 @@ public class ReportManagementService {
         var cursor = meta != null && meta.isSetContinuationToken()
                 ? continuationTokenJsonSerializer.deserialize(meta.getContinuationToken())
                 : null;
-        var storedReports = reportQueryDao.getReports(createdBy, safeRequest.getFilter(), cursor, limit);
+        var storedReports = reportQueryDao.getReports(createdBy, safeRequest.getFilter(), cursor, limit + 1);
+        var hasNextPage = storedReports.size() > limit;
+        var page = hasNextPage ? storedReports.subList(0, limit) : storedReports;
 
         var response = new GetReportsResponse();
-        response.setReports(storedReports.stream().map(reportThriftMapper::mapReport).toList());
-        if (storedReports.size() == limit) {
-            var lastReport = storedReports.getLast();
+        response.setReports(page.stream().map(reportThriftMapper::mapReport).toList());
+        if (hasNextPage) {
+            var lastReport = page.getLast();
             response.setContinuationToken(
                     continuationTokenJsonSerializer.serialize(
                             TimestampUtils.toInstant(lastReport.job().getCreatedAt()),
@@ -96,8 +94,7 @@ public class ReportManagementService {
     }
 
     @Transactional
-    @SneakyThrows
-    public void cancelReport(CancelReportRequest request) {
+    public void cancelReport(CancelReportRequest request) throws InvalidRequest, ReportNotFound {
         if (request == null) {
             throw invalidRequest("request is required");
         }
@@ -110,37 +107,44 @@ public class ReportManagementService {
         reportAuditService.writeReportCanceled(request.getReportId(), createdBy, auditMetadata, updated);
     }
 
-    @SneakyThrows
-    public String generatePresignedUrl(GeneratePresignedUrlRequest request) {
+    public String generatePresignedUrl(GeneratePresignedUrlRequest request) throws InvalidRequest, FileNotFound {
         if (request == null) {
             throw invalidRequest("request is required");
         }
         var auditMetadata = requestAuditMetadataResolver.resolve();
         var createdBy = auditMetadata.email();
-        var fileData = reportQueryDao.getFile(createdBy, request.getFileId());
+        var now = Instant.now();
+        var fileData = reportQueryDao.getDownloadableFile(createdBy, request.getFileId(), now);
         if (fileData.isEmpty()) {
             throw new FileNotFound();
         }
 
-        var effectiveExpiresAt = resolveEffectivePresignedUrlExpiresAt(request);
+        var downloadableFile = fileData.get();
+        var effectiveExpiresAt = resolveEffectivePresignedUrlExpiresAt(
+                request,
+                downloadableFile.reportExpiresAt(),
+                now
+        );
         var url = fileStorageService.generateDownloadUrl(
-                fileData.get().getFileId(),
+                downloadableFile.file().getFileId(),
                 effectiveExpiresAt
         );
         reportAuditService.writePresignedUrlGenerated(
-                fileData.get().getReportId(),
+                downloadableFile.file().getReportId(),
                 createdBy,
                 auditMetadata,
                 request,
                 effectiveExpiresAt,
-                fileData.get().getFileId()
+                downloadableFile.file().getFileId()
         );
         return url;
     }
 
-    @SneakyThrows
-    private Instant resolveEffectivePresignedUrlExpiresAt(GeneratePresignedUrlRequest request) {
-        var now = Instant.now();
+    private Instant resolveEffectivePresignedUrlExpiresAt(
+            GeneratePresignedUrlRequest request,
+            Instant reportExpiresAt,
+            Instant now
+    ) throws InvalidRequest {
         var ttlCap = now.plusSeconds(reportProperties.getPresignedUrlTtlSec());
         var requestedExpiresAt = request.isSetRequestedExpiresAt()
                 ? TimestampUtils.parse(request.getRequestedExpiresAt())
@@ -148,7 +152,8 @@ public class ReportManagementService {
         if (!requestedExpiresAt.isAfter(now)) {
             throw invalidRequest("requested_expires_at must be in the future");
         }
-        return requestedExpiresAt.isAfter(ttlCap) ? ttlCap : requestedExpiresAt;
+        var requestAndConfigCap = requestedExpiresAt.isAfter(ttlCap) ? ttlCap : requestedExpiresAt;
+        return requestAndConfigCap.isAfter(reportExpiresAt) ? reportExpiresAt : requestAndConfigCap;
     }
 
     private int resolveLimit(GetReportsMeta meta) {

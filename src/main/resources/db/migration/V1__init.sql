@@ -167,6 +167,7 @@ CREATE TABLE ccr.withdrawal_txn_current (
   error_summary VARCHAR,
   original_amount BIGINT,
   original_currency VARCHAR,
+  converted_amount BIGINT,
   exchange_rate_internal NUMERIC(20, 10),
   provider_amount BIGINT,
   provider_currency VARCHAR,

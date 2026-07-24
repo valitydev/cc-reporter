@@ -34,6 +34,10 @@ public final class SerializedIngestionEventFixtures {
         return PaymentIngestionEventFixtures.failedPaymentEvents();
     }
 
+    public static List<MachineEvent> paymentChangesCombinedInSingleEvent() {
+        return PaymentIngestionEventFixtures.paymentChangesCombinedInSingleEvent();
+    }
+
     public static List<MachineEvent> realPaymentEvents() {
         return RealPaymentIngestionEventFixtures.paymentEvents();
     }

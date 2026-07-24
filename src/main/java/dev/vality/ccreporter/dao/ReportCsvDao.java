@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import org.jooq.*;
 import org.jooq.Record;
 import org.jooq.impl.DSL;
-import org.jooq.impl.SQLDataType;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
@@ -17,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static dev.vality.ccreporter.domain.Tables.*;
+import static dev.vality.ccreporter.util.SearchValueNormalizer.normalize;
 import static dev.vality.ccreporter.util.TimestampUtils.parse;
 import static dev.vality.ccreporter.util.TimestampUtils.toLocalDateTime;
 
@@ -42,8 +42,8 @@ public class ReportCsvDao {
     public Cursor<? extends Record> fetchPayments(PaymentsQuery query) {
         var conditions = buildPaymentsConditions(query);
         return dslContext.select(
-                        timestampField(PAYMENT_TXN_CURRENT.CREATED_AT, CREATED_AT),
-                        timestampField(PAYMENT_TXN_CURRENT.FINALIZED_AT, FINALIZED_AT),
+                        PAYMENT_TXN_CURRENT.CREATED_AT.as(CREATED_AT),
+                        PAYMENT_TXN_CURRENT.FINALIZED_AT.as(FINALIZED_AT),
                         PAYMENT_TXN_CURRENT.INVOICE_ID.as("invoice_id"),
                         PAYMENT_TXN_CURRENT.PAYMENT_ID.as("payment_id"),
                         PAYMENT_TXN_CURRENT.STATUS.as("status"),
@@ -92,8 +92,8 @@ public class ReportCsvDao {
         var latestSessionSessionId = latestSession.field("session_id", String.class);
         var conditions = buildWithdrawalConditions(query, latestSessionTrxId, latestSessionTrxSearch);
         return dslContext.select(
-                        timestampField(WITHDRAWAL_TXN_CURRENT.CREATED_AT, CREATED_AT),
-                        timestampField(WITHDRAWAL_TXN_CURRENT.FINALIZED_AT, FINALIZED_AT),
+                        WITHDRAWAL_TXN_CURRENT.CREATED_AT.as(CREATED_AT),
+                        WITHDRAWAL_TXN_CURRENT.FINALIZED_AT.as(FINALIZED_AT),
                         WITHDRAWAL_TXN_CURRENT.WITHDRAWAL_ID.as("withdrawal_id"),
                         WITHDRAWAL_TXN_CURRENT.STATUS.as("status"),
                         WITHDRAWAL_TXN_CURRENT.AMOUNT.as("amount"),
@@ -106,7 +106,8 @@ public class ReportCsvDao {
                         WITHDRAWAL_TXN_CURRENT.PROVIDER_AMOUNT.as("provider_amount"),
                         WITHDRAWAL_TXN_CURRENT.PROVIDER_CURRENCY.as(PROVIDER_CURRENCY),
                         WITHDRAWAL_TXN_CURRENT.ORIGINAL_AMOUNT.as("original_amount"),
-                        WITHDRAWAL_TXN_CURRENT.ORIGINAL_CURRENCY.as(ORIGINAL_CURRENCY)
+                        WITHDRAWAL_TXN_CURRENT.ORIGINAL_CURRENCY.as(ORIGINAL_CURRENCY),
+                        WITHDRAWAL_TXN_CURRENT.CONVERTED_AMOUNT.as("converted_amount")
                 )
                 .from(WITHDRAWAL_TXN_CURRENT)
                 .leftJoin(latestSession).on(DSL.trueCondition())
@@ -134,22 +135,22 @@ public class ReportCsvDao {
         appendInCondition(conditions, PAYMENT_TXN_CURRENT.TRX_ID, query.getTrxIds());
         appendInCondition(conditions, PAYMENT_TXN_CURRENT.CURRENCY, query.getCurrencies());
         appendInCondition(conditions, PAYMENT_TXN_CURRENT.STATUS, query.getStatuses());
-        appendSearchCondition(conditions, lowercaseSearchField(SHOP_LOOKUP.SHOP_SEARCH), query.getFilter(), "shop");
+        appendSearchCondition(conditions, SHOP_LOOKUP.SHOP_SEARCH, query.getFilter(), "shop");
         appendSearchCondition(
                 conditions,
-                lowercaseSearchField(PROVIDER_LOOKUP.PROVIDER_SEARCH),
+                PROVIDER_LOOKUP.PROVIDER_SEARCH,
                 query.getFilter(),
                 "provider"
         );
         appendSearchCondition(
                 conditions,
-                lowercaseSearchField(TERMINAL_LOOKUP.TERMINAL_SEARCH),
+                TERMINAL_LOOKUP.TERMINAL_SEARCH,
                 query.getFilter(),
                 "terminal"
         );
         appendSearchCondition(
                 conditions,
-                lowercaseSearchField(PAYMENT_TXN_CURRENT.TRX_SEARCH),
+                PAYMENT_TXN_CURRENT.TRX_SEARCH,
                 query.getFilter(),
                 "trx"
         );
@@ -177,23 +178,23 @@ public class ReportCsvDao {
         appendInCondition(conditions, WITHDRAWAL_TXN_CURRENT.STATUS, query.getStatuses());
         appendSearchCondition(
                 conditions,
-                lowercaseSearchField(WALLET_LOOKUP.WALLET_SEARCH),
+                WALLET_LOOKUP.WALLET_SEARCH,
                 query.getFilter(),
                 "wallet"
         );
         appendSearchCondition(
                 conditions,
-                lowercaseSearchField(PROVIDER_LOOKUP.PROVIDER_SEARCH),
+                PROVIDER_LOOKUP.PROVIDER_SEARCH,
                 query.getFilter(),
                 "provider"
         );
         appendSearchCondition(
                 conditions,
-                lowercaseSearchField(TERMINAL_LOOKUP.TERMINAL_SEARCH),
+                TERMINAL_LOOKUP.TERMINAL_SEARCH,
                 query.getFilter(),
                 "terminal"
         );
-        appendSearchCondition(conditions, lowercaseSearchField(latestSessionTrxSearch), query.getFilter(), "trx");
+        appendSearchCondition(conditions, latestSessionTrxSearch, query.getFilter(), "trx");
         return conditions;
     }
 
@@ -244,14 +245,15 @@ public class ReportCsvDao {
         if (value == null || value.isBlank()) {
             return;
         }
-        conditions.add(field.like("%" + value.toLowerCase() + "%"));
+        var normalizedValue = normalize(value);
+        var pattern = "%" + escapeLikeLiteral(normalizedValue) + "%";
+        conditions.add(DSL.condition("{0} LIKE {1} ESCAPE '!'", field, DSL.val(pattern)));
     }
 
-    private Field<String> lowercaseSearchField(Field<String> field) {
-        return DSL.lower(DSL.coalesce(field, ""));
-    }
-
-    private Field<java.sql.Timestamp> timestampField(Field<java.time.LocalDateTime> field, String alias) {
-        return field.cast(SQLDataType.TIMESTAMP).as(alias);
+    private String escapeLikeLiteral(String value) {
+        return value
+                .replace("!", "!!")
+                .replace("%", "!%")
+                .replace("_", "!_");
     }
 }

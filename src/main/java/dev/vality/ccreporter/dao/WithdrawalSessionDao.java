@@ -42,10 +42,7 @@ public class WithdrawalSessionDao {
                         OVERWRITE_FIELDS,
                         Map.of(WITHDRAWAL_SESSION.UPDATED_AT, UTC_NOW)
                 ))
-                .where(isIncomingEventNewer(
-                        WITHDRAWAL_SESSION.DOMAIN_EVENT_CREATED_AT,
-                        WITHDRAWAL_SESSION.DOMAIN_EVENT_ID
-                ))
+                .where(isIncomingEventNewer(WITHDRAWAL_SESSION.DOMAIN_EVENT_ID))
                 .execute();
     }
 }

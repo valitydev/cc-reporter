@@ -6,6 +6,7 @@ import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Короткая проверка базового контракта API: сервис стартует, создаёт отчёт и умеет его читать обратно.
@@ -87,6 +88,27 @@ class ReportingApiSmokeTest extends AbstractReportingIntegrationTest {
 
         assertThat(response.getReports()).hasSize(1);
         assertThat(response.getContinuationToken()).isNotBlank();
+    }
+
+    @Test
+    void getReportsOmitsContinuationTokenWhenPageHasNoMoreRows() throws Exception {
+        reportingHandler.createReport(ReportRequestFixtures.payments("last-page-1"));
+
+        var meta = new GetReportsMeta();
+        meta.setLimit(1);
+        var response = reportingHandler.getReports(new GetReportsRequest().setMeta(meta));
+
+        assertThat(response.getReports()).hasSize(1);
+        assertThat(response.isSetContinuationToken()).isFalse();
+    }
+
+    @Test
+    void getReportsValidatesEachCreationTimestampIndependently() {
+        var filter = new GetReportsFilter();
+        filter.setCreatedFrom("not-an-instant");
+
+        assertThatThrownBy(() -> reportingHandler.getReports(new GetReportsRequest().setFilter(filter)))
+                .isInstanceOf(InvalidRequest.class);
     }
 
     @Test

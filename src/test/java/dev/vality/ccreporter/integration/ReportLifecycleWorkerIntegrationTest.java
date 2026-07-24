@@ -7,9 +7,9 @@ import dev.vality.ccreporter.fixture.ReportRequestFixtures;
 import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.Objects;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -149,12 +149,12 @@ class ReportLifecycleWorkerIntegrationTest extends AbstractReportingIntegrationT
     }
 
     private Instant readInstant(String sql, long reportId) {
-        var timestamp = jdbcTemplate.queryForObject(sql, Timestamp.class, reportId);
-        return Objects.requireNonNull(timestamp).toInstant();
+        var timestamp = jdbcTemplate.queryForObject(sql, LocalDateTime.class, reportId);
+        return timestamp.toInstant(ZoneOffset.UTC);
     }
 
     private Instant readNullableInstant(String sql, long reportId) {
-        var timestamp = jdbcTemplate.queryForObject(sql, Timestamp.class, reportId);
-        return timestamp == null ? null : timestamp.toInstant();
+        var timestamp = jdbcTemplate.queryForObject(sql, LocalDateTime.class, reportId);
+        return timestamp == null ? null : timestamp.toInstant(ZoneOffset.UTC);
     }
 }

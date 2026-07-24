@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.time.DateTimeException;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,19 +46,42 @@ public class ReportRequestValidator {
             errors.add("meta.limit must be positive");
         }
         var filter = request.getFilter();
-        if (filter != null && filter.isSetCreatedFrom() && filter.isSetCreatedTo()) {
-            try {
-                var createdFrom = TimestampUtils.parse(filter.getCreatedFrom());
-                var createdTo = TimestampUtils.parse(filter.getCreatedTo());
-                if (createdFrom.isAfter(createdTo)) {
-                    errors.add("filter.created_from must be before or equal to filter.created_to");
-                }
-            } catch (DateTimeException ex) {
-                errors.add("filter creation timestamps must use ISO-8601 format");
+        if (filter != null) {
+            var createdFrom = parseFilterTimestamp(
+                    filter.isSetCreatedFrom(),
+                    filter.getCreatedFrom(),
+                    "filter.created_from",
+                    errors
+            );
+            var createdTo = parseFilterTimestamp(
+                    filter.isSetCreatedTo(),
+                    filter.getCreatedTo(),
+                    "filter.created_to",
+                    errors
+            );
+            if (createdFrom != null && createdTo != null && createdFrom.isAfter(createdTo)) {
+                errors.add("filter.created_from must be before or equal to filter.created_to");
             }
         }
         if (!errors.isEmpty()) {
             throw new InvalidRequest(errors);
+        }
+    }
+
+    private Instant parseFilterTimestamp(
+            boolean isSet,
+            String value,
+            String fieldName,
+            List<String> errors
+    ) {
+        if (!isSet) {
+            return null;
+        }
+        try {
+            return TimestampUtils.parse(value);
+        } catch (DateTimeException ex) {
+            errors.add(fieldName + " must use ISO-8601 format");
+            return null;
         }
     }
 

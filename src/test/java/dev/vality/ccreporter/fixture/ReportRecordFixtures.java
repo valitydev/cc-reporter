@@ -2,8 +2,9 @@ package dev.vality.ccreporter.fixture;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 /**
  * Подготавливает записи о заданиях и файлах отчётов для сценариев, которым нужен уже заданный status в базе.
@@ -27,8 +28,8 @@ public final class ReportRecordFixtures {
                             data_snapshot_fixed_at = ?
                         WHERE id = ?
                         """,
-                Timestamp.from(startedAt),
-                Timestamp.from(snapshotFixedAt),
+                toUtcLocalDateTime(startedAt),
+                toUtcLocalDateTime(snapshotFixedAt),
                 reportId
         );
     }
@@ -53,10 +54,10 @@ public final class ReportRecordFixtures {
                             rows_count = ?
                         WHERE id = ?
                         """,
-                Timestamp.from(startedAt),
-                Timestamp.from(snapshotFixedAt),
-                Timestamp.from(finishedAt),
-                Timestamp.from(expiresAt),
+                toUtcLocalDateTime(startedAt),
+                toUtcLocalDateTime(snapshotFixedAt),
+                toUtcLocalDateTime(finishedAt),
+                toUtcLocalDateTime(expiresAt),
                 rowsCount,
                 reportId
         );
@@ -82,9 +83,9 @@ public final class ReportRecordFixtures {
                             error_message = ?
                         WHERE id = ?
                         """,
-                Timestamp.from(startedAt),
-                Timestamp.from(snapshotFixedAt),
-                Timestamp.from(finishedAt),
+                toUtcLocalDateTime(startedAt),
+                toUtcLocalDateTime(snapshotFixedAt),
+                toUtcLocalDateTime(finishedAt),
                 errorCode,
                 errorMessage,
                 reportId
@@ -118,7 +119,11 @@ public final class ReportRecordFixtures {
                 128L,
                 "md5-value",
                 "sha256-value",
-                Timestamp.from(createdAt)
+                toUtcLocalDateTime(createdAt)
         );
+    }
+
+    private static LocalDateTime toUtcLocalDateTime(Instant value) {
+        return LocalDateTime.ofInstant(value, ZoneOffset.UTC);
     }
 }
