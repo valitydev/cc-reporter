@@ -1,0 +1,112 @@
+server:
+  port: ${server.port}
+
+spring:
+  application:
+    name: ${project.name}
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: org.postgresql.Driver
+    url: ${db.url}
+    username: ${db.user}
+    password: ${db.password}
+    hikari:
+      connection-timeout: 5000
+      validation-timeout: 3000
+      idle-timeout: 30000
+      minimum-idle: 2
+      maximum-pool-size: 8
+      data-source-properties:
+        reWriteBatchedInserts: true
+        connectTimeout: 5
+        socketTimeout: 1260
+        cancelSignalTimeout: 5
+        tcpKeepAlive: true
+  flyway:
+    enabled: true
+    schemas: ${db.schema}
+    postgresql:
+      transactional-lock: false
+  kafka:
+    bootstrap-servers: localhost:9092
+    client-id: cc-reporter
+    consumer:
+      group-id: cc-reporter
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      max-poll-records: 20
+      properties:
+        max.poll.interval.ms: 30000
+        session.timeout.ms: 30000
+    listener:
+      ack-mode: manual
+      poll-timeout: 3000ms
+
+management:
+  server:
+    port: ${management.port}
+  prometheus:
+    metrics:
+      export:
+        enabled: false
+  metrics:
+    tags:
+      application: ${project.name}
+  endpoint:
+    health:
+      access: none
+      probes:
+        enabled: false
+      show-details: never
+    metrics:
+      access: none
+    prometheus:
+      access: none
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      discovery:
+        enabled: false
+
+kafka:
+  consumer:
+    dominant-concurrency: 1
+    payments-concurrency: 1
+    withdrawals-concurrency: 1
+    withdrawal-sessions-concurrency: 1
+    error-backoff-interval-ms: 30000
+    error-max-attempts: -1
+    dominant-error-backoff-interval-ms: 30000
+    dominant-error-max-attempts: -1
+  topics:
+    dominant:
+      id: ""
+      enabled: false
+    payments:
+      id: ""
+      enabled: false
+    withdrawals:
+      id: ""
+      enabled: false
+    withdrawal-sessions:
+      id: ""
+      enabled: false
+scheduler:
+  enabled: false
+  poll-interval-ms: 10000
+report:
+  max-attempts: 5
+  worker-concurrency: 2
+  processing-timeout-ms: 1200000
+  presigned-url-ttl-sec: 900
+  expiration-sec: 604800
+api:
+  path: /ccreports
+  default-page-size: 50
+  max-page-size: 100
+storage:
+  file-storage:
+    url: ""
+    networkTimeout: 5000
