@@ -127,7 +127,7 @@
         <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>fistful-proto</artifactId>
-            <version>1.192-441d9bc</version>
+            <version>1.194-360c737</version>
         </dependency>
         <dependency>
             <groupId>jakarta.annotation</groupId>
