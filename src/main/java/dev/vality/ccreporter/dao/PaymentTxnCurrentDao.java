@@ -20,8 +20,7 @@ public class PaymentTxnCurrentDao {
     private static final Set<Field<?>> IMMUTABLE_FIELDS = Set.of(
             PAYMENT_TXN_CURRENT.ID,
             PAYMENT_TXN_CURRENT.INVOICE_ID,
-            PAYMENT_TXN_CURRENT.PAYMENT_ID,
-            PAYMENT_TXN_CURRENT.UPDATED_AT
+            PAYMENT_TXN_CURRENT.PAYMENT_ID
     );
 
     private static final Set<Field<?>> OVERWRITE_FIELDS = Set.of(
@@ -48,10 +47,15 @@ public class PaymentTxnCurrentDao {
                                 PAYMENT_TXN_CURRENT.UPDATED_AT,
                                 UTC_NOW,
                                 PAYMENT_TXN_CURRENT.FINALIZED_AT,
-                                DSL.coalesce(
-                                        PAYMENT_TXN_CURRENT.FINALIZED_AT,
+                                DSL.when(
+                                        DSL.excluded(PAYMENT_TXN_CURRENT.STATUS).isNotNull(),
                                         DSL.excluded(PAYMENT_TXN_CURRENT.FINALIZED_AT)
-                                )
+                                ).otherwise(PAYMENT_TXN_CURRENT.FINALIZED_AT),
+                                PAYMENT_TXN_CURRENT.ERROR_SUMMARY,
+                                DSL.when(
+                                        DSL.excluded(PAYMENT_TXN_CURRENT.STATUS).isNotNull(),
+                                        DSL.excluded(PAYMENT_TXN_CURRENT.ERROR_SUMMARY)
+                                ).otherwise(PAYMENT_TXN_CURRENT.ERROR_SUMMARY)
                         )
                 ))
                 .where(isIncomingEventNewer(PAYMENT_TXN_CURRENT.DOMAIN_EVENT_ID))

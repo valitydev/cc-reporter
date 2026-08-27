@@ -14,13 +14,13 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "ccr.kafka.topics.withdrawals", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(prefix = "kafka.topics.withdrawals", name = "enabled", havingValue = "true")
 public class WithdrawalEventListener implements BatchLoggingKafkaListener {
 
     private final WithdrawalIngestionService withdrawalIngestionService;
 
     @KafkaListener(
-            topics = "${ccr.kafka.topics.withdrawals.id}",
+            topics = "${kafka.topics.withdrawals.id}",
             containerFactory = "withdrawalsKafkaListenerContainerFactory"
     )
     public void listen(List<ConsumerRecord<String, SinkEvent>> batch, Acknowledgment acknowledgment) {

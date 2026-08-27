@@ -1,4 +1,6 @@
-## Как живёт отчёт
+# Устройство CC Reporter
+
+## Жизненный цикл отчёта
 
 ```text
                                       ┌── временная ошибка ──> pending(next_attempt_at)
@@ -10,118 +12,77 @@ pending ── claim ──> processing ──────┼── успех �
                                       └── cancel ──> canceled
 ```
 
-`pending → processing` выполняется атомарно. Claim выбирает только наступившие по `next_attempt_at` задания,
-блокирует строку через `FOR UPDATE SKIP LOCKED`, увеличивает `attempt`, записывает новый `started_at` и очищает ошибку
-предыдущей попытки.
+Переход `pending -> processing` выполняется атомарно. DAO выбирает только задания, для которых наступил
+`next_attempt_at`, блокирует строку через `FOR UPDATE SKIP LOCKED`, увеличивает `attempt`, записывает `started_at`
+и очищает ошибку предыдущей попытки. Поэтому несколько экземпляров сервиса могут разбирать одну очередь без
+двойной обработки одного задания.
 
-Scheduler запускает до `ccr.report.worker-concurrency` отчётов одновременно. Executor имеет фиксированный размер,
-равный этому параметру. Следующая порция заданий выбирается после завершения текущей.
+Число одновременно выполняемых отчётов задаёт `report.worker-concurrency`. Одна попытка ограничена
+`report.processing-timeout-ms`. При превышении лимита worker получает interrupt, а запись условно переводится
+из `processing` в `timed_out`. Позднее завершение worker не может перезаписать уже установленный терминальный статус.
 
-Одна попытка ограничена `ccr.report.processing-timeout-ms`. По достижении deadline worker task сначала получает
-`cancel(true)`, затем строка условно переводится из `processing` в `timed_out`. Генерация CSV проверяет interrupt между
-строками, а SQL работает с локальным PostgreSQL `statement_timeout`.
+При временной ошибке отчёт возвращается в `pending` с новым `next_attempt_at`. После исчерпания попыток он
+переходит в `failed`. Завершение отчёта и добавление `report_file` выполняются в одной транзакции.
 
-Stale cleanup использует тот же timeout и закрывает оставшиеся `processing` после остановки процесса или потери
-instance. Позднее завершение не может перезаписать `timed_out`, `canceled` или другой терминальный статус:
-`completeReport`, retry, failure и timeout обновляют строку только из ожидаемого исходного статуса.
+Scheduler переводит готовые отчёты в `expired` после `expires_at`. `GetReport` и `GetReports` перед чтением также
+выполняют идемпотентное истечение просроченных `created`-отчётов, поэтому корректность API не зависит от точности
+срабатывания фонового scheduler. `GeneratePresignedUrl` дополнительно разрешает скачивание только пока отчёт
+не просрочен.
 
-При временной ошибке отчёт возвращается в `pending`. `next_attempt_at` рассчитывается от фактического времени ошибки.
-После исчерпания `max-attempts` отчёт переходит в `failed`.
+## Согласованность current-state
 
-`processing → created` и добавление `report_file` выполняются в одной транзакции. Готовый отчёт переходит в `expired`
-после `expires_at`.
+`payment_txn_current` и `withdrawal_txn_current` содержат не историю, а последнее известное состояние сущности.
+Обновление принимается только если `MachineEvent.eventId` больше уже сохранённого. Повторные и более старые события
+не откатывают состояние назад.
 
-Cancel разрешён только для `pending` и `processing`, устанавливает `finished_at` и очищает `next_attempt_at`.
+Событие смены статуса является авторитетным для полей, которые зависят от статуса:
 
-## Соединения при построении отчёта
+- `status` заменяется значением более нового status-event;
+- для терминального статуса `finalized_at` становится временем этого события;
+- если новый статус нетерминальный, `finalized_at` очищается;
+- `error_summary` заменяется значением нового status-event и очищается, если новая ошибка отсутствует.
 
-Один отчёт удерживает одно соединение на время транзакции `READ ONLY REPEATABLE READ`.
+События, которые статус не меняют, эти поля сохраняют. Это важно для корректировок, меняющих один финальный статус
+на другой.
 
-Параметры по умолчанию:
+## Payments
 
-- report workers: `2`;
-- Hikari maximum pool size: `8`;
-- Hikari connection timeout: `5` секунд;
-- PostgreSQL connect timeout: `5` секунд;
-- PostgreSQL socket timeout: `1260` секунд;
-- PostgreSQL cancel signal timeout: `5` секунд;
-- PostgreSQL TCP keepalive: включён.
+`PaymentEventProjector` обрабатывает изменения платежа по порядку внутри `MachineEvent`.
 
-При старте сервис проверяет условие `maximum-pool-size >= worker-concurrency + 2`. Резервные соединения требуются для
-условного обновления статуса после отмены worker task и прочих транзакций instance. Для смешанной нагрузки
-рекомендуется резерв `+4`.
+- `InvoicePaymentStarted` задаёт исходные идентификаторы, сумму, валюту, маршрут и статус `pending`.
+- `InvoicePaymentRouteChanged` обновляет provider/terminal.
+- `InvoicePaymentCashChanged` обновляет `amount` и `currency`.
+- `InvoicePaymentCashFlowChanged` пересчитывает `amount` и `fee` через `CashFlowAmountExtractor`.
+- `InvoicePaymentStatusChanged` обновляет статус, `finalized_at`, `error_summary` и данные `capturedCost`.
+- `SessionTransactionBound` сохраняет `trx_id`, RRN, approval code и данные конвертации.
+- `SessionProxyStateChanged` используется как fallback для `trx_id`.
 
-## Вычитывание полей `amount`, `provider`, `original` из потока событий
+Если в одном `MachineEvent` есть несколько изменений одного платежа, они объединяются в порядке поступления.
+При нескольких status-event последнее изменение статуса определяет `status`, `finalized_at` и `error_summary`.
 
-### Платежи
+## Withdrawals
 
-Класс: `PaymentEventProjector`
+`WithdrawalEventProjector` обрабатывает:
 
-- `InvoicePaymentStarted`
-    - при первом старте платежа заполняются основные денежные поля;
-    - `amount` и `currency` берутся из `payment.cost`;
-    - `providerId` и `terminalId` берутся из `started.route`, если маршрут уже есть;
-    - `originalAmount` и `originalCurrency` на этом шаге тоже ставятся из `payment.cost`.
+- `created`: исходные данные вывода, body, маршрут и quote;
+- `body_changed`: заменяет текущие `amount` и `currency` значениями из `new_body`;
+- `route`: обновляет provider/terminal;
+- `status_changed`: обновляет статус, `finalized_at` и `error_summary`;
+- `transfer.payload.created.transfer.cashflow`: обновляет `fee`.
 
-- `InvoicePaymentRouteChanged`
-    - обновляет только маршрут;
-    - `providerId` и `terminalId` перечитываются из нового `route`.
+`original_amount`, `original_currency`, `provider_amount`, `provider_currency` и внутренний курс первоначально
+вычисляются из quote события создания. Текущая сумма вывода при этом может измениться отдельным `body_changed`.
 
-- `InvoicePaymentCashChanged`
-    - обновляет сумму платежа;
-    - `amount` и `currency` берутся из `newCash`.
+`WithdrawalSessionEventProjector` хранит связь с выводом и транзакционные данные сессии (`trx_id`, `trx_search`).
+В CSV используется последняя подходящая сессия.
 
-- `InvoicePaymentCashFlowChanged`
-    - пересчитывает денежные значения по проводкам;
-    - `amount` берётся через `DomainCashFlowExtractor.extractPaymentAmount(...)`;
-    - дополнительно здесь же обновляется `fee`;
-    - `originalAmount` и `originalCurrency` это событие не меняет.
+## Построение CSV
 
-- `InvoicePaymentStatusChanged`
-    - не меняет пользовательскую сумму платежа;
-    - обновляет провайдерскую сторону расчёта:
-    - `providerAmount` и `providerCurrency` берутся из `capturedCost`, если он есть в статусе.
+Один отчёт выполняется в транзакции `READ ONLY REPEATABLE READ` и использует один согласованный снимок PostgreSQL.
+Данные читаются курсором, поэтому весь набор строк не загружается в память.
 
-Итого по платежу:
+Денежные значения хранятся в minor units и при записи CSV переводятся в decimal по exponent валюты.
+`exchange_rate_internal` записывается как обычное десятичное число без экспоненциальной формы.
 
-- обычная сумма платежа сначала приходит из `InvoicePaymentStarted`, потом может поменяться через
-  `InvoicePaymentCashChanged` или `InvoicePaymentCashFlowChanged`;
-- провайдер определяется сначала в `InvoicePaymentStarted`, потом может быть переопределён через
-  `InvoicePaymentRouteChanged`;
-- `originalAmount` и `originalCurrency` выставляются только на старте платежа и дальше этим проектором не обновляются.
-
-### Выводы
-
-Класс: `WithdrawalEventProjector`
-
-- `Created`
-    - на создании вывода заполняются и текущая сумма, и исходная сумма, и маршрут;
-    - `amount` и `currency` берутся из `withdrawal.body`;
-    - `providerId` и `terminalId` берутся из `withdrawal.route`, если маршрут уже известен;
-    - `originalAmount` и `originalCurrency` берутся из `quote.cashFrom`, если есть котировка;
-    - дополнительно провайдерская сумма заполняется из `quote.cashTo`;
-    - курс `exchangeRateInternal` считается как отношение `cashTo / cashFrom`.
-
-- `Route`
-    - обновляет только маршрут;
-    - `providerId` и `terminalId` перечитываются из нового `route`.
-
-- `StatusChanged`
-    - сумму, маршрут и исходную сумму не меняет.
-
-- `Transfer -> payload.created.transfer.cashflow`
-    - обновляет только `fee`;
-    - `amount`, `providerId`, `originalAmount` и связанные валюты не трогает.
-
-Итого по выводу:
-
-- `amount` приходит из события создания и дальше этим проектором не меняется;
-- провайдер приходит из события создания и может обновиться отдельным событием смены маршрута;
-- `originalAmount` и `originalCurrency` приходят из котировки в событии создания и дальше не меняются.
-
-### Сессия вывода
-
-Класс: `WithdrawalSessionEventProjector`
-
-Этот проектор не работает с `amount`, `provider` и `original`. Он сохраняет связь с выводом и данные по транзакции (
-`trxId`, `trxSearch`).
+Локальный временный CSV удаляется при ошибке генерации. После успешной загрузки жизненный цикл файла контролируется
+через запись отчёта и TTL внешнего хранилища.

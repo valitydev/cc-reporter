@@ -29,7 +29,7 @@ public class ReportWorkerConfig {
                 && hikariDataSource.getMaximumPoolSize() < minimumPoolSize) {
             throw new IllegalStateException(
                     "spring.datasource.hikari.maximum-pool-size must be at least " + minimumPoolSize +
-                            " for ccr.report.worker-concurrency=" + reportProperties.getWorkerConcurrency()
+                            " for report.worker-concurrency=" + reportProperties.getWorkerConcurrency()
             );
         }
     }

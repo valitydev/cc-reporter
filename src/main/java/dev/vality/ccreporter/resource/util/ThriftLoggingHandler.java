@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.handler.support;
+package dev.vality.ccreporter.resource.util;
 
 import org.slf4j.LoggerFactory;
 

@@ -1,8 +1,8 @@
-package dev.vality.ccreporter.handler;
+package dev.vality.ccreporter.resource;
 
 import dev.vality.ccreporter.*;
-import dev.vality.ccreporter.handler.support.ReportingHandlerLogSupport;
-import dev.vality.ccreporter.handler.support.ThriftLoggingHandler;
+import dev.vality.ccreporter.resource.util.ReportingHandlerLogSupport;
+import dev.vality.ccreporter.resource.util.ThriftLoggingHandler;
 import dev.vality.ccreporter.report.ReportManagementService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;

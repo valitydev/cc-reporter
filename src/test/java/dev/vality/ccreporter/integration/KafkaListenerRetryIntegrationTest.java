@@ -26,9 +26,9 @@ import static org.mockito.Mockito.doAnswer;
 @TestPropertySource(properties = {
         "spring.kafka.bootstrap-servers=${spring.embedded.kafka.brokers}",
         "spring.kafka.consumer.group-id=ccr-kafka-retry-it",
-        "ccr.kafka.consumer.error-backoff-interval-ms=100",
-        "ccr.kafka.topics.payments.id=ccr-payments-retry-test",
-        "ccr.kafka.topics.payments.enabled=true"
+        "kafka.consumer.error-backoff-interval-ms=100",
+        "kafka.topics.payments.id=ccr-payments-retry-test",
+        "kafka.topics.payments.enabled=true"
 })
 class KafkaListenerRetryIntegrationTest extends AbstractReportingIntegrationTest {
 

@@ -7,6 +7,11 @@ import dev.vality.ccreporter.report.ReportLifecycleService;
 import dev.vality.ccreporter.storage.FileStorageService;
 import dev.vality.woody.api.trace.TraceData;
 import dev.vality.woody.api.trace.context.TraceContext;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanContext;
+import io.opentelemetry.api.trace.TraceFlags;
+import io.opentelemetry.api.trace.TraceState;
+import io.opentelemetry.context.Scope;
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +21,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -36,15 +42,17 @@ import java.util.concurrent.atomic.AtomicReference;
         properties = {
                 "server.port=0",
                 "management.server.port=0",
-                "ccr.storage.file-storage.url=http://localhost:8022/file-storage",
-                "ccr.report.max-attempts=2",
-                "ccr.report.worker-concurrency=2",
-                "ccr.report.expiration-sec=600",
-                "ccr.report.processing-timeout-ms=60000"
+                "storage.file-storage.url=http://localhost:8022/file-storage",
+                "report.max-attempts=2",
+                "report.worker-concurrency=2",
+                "report.expiration-sec=600",
+                "report.processing-timeout-ms=60000"
         }
 )
 @Import(ReportingIntegrationTestConfig.class)
 public abstract class AbstractReportingIntegrationTest {
+
+    private Scope requestTraceScope;
 
     private static final EmbeddedPostgres EMBEDDED_POSTGRES = startPostgres();
     private static final String JDBC_URL = EMBEDDED_POSTGRES.getJdbcUrl("postgres", "postgres");
@@ -89,6 +97,10 @@ public abstract class AbstractReportingIntegrationTest {
 
     @AfterEach
     void tearDownRequestContext() {
+        if (requestTraceScope != null) {
+            requestTraceScope.close();
+            requestTraceScope = null;
+        }
         TraceContext.setCurrentTraceData(null);
     }
 
@@ -98,7 +110,7 @@ public abstract class AbstractReportingIntegrationTest {
 
     protected void bindCallerWithAuditMetadata(String callerId) {
         bindTraceContext(
-                "00-4bf92f3577b34da6a3ce929d0e0e4736-00aa0ba902b7-01",
+                "00-4bf92f3577b34da6a3ce929d0e0e4736-00aa0ba902b70000-01",
                 "user-id-42",
                 "alice",
                 "alice@example.com",
@@ -128,9 +140,29 @@ public abstract class AbstractReportingIntegrationTest {
         metadata.putValue("user-identity.realm", realm);
         metadata.putValue("user-identity.X-Request-ID", requestId);
         metadata.putValue("user-identity.X-Request-Deadline", requestDeadline);
-        traceData.setInboundTraceParent(traceparent);
-        traceData.setInboundTraceState(tracestate);
         TraceContext.setCurrentTraceData(traceData);
+        bindOpenTelemetryContext(traceparent, tracestate);
+    }
+
+    private void bindOpenTelemetryContext(String traceparent, String tracestate) {
+        if (!StringUtils.hasText(traceparent)) {
+            return;
+        }
+        var parts = traceparent.split("-");
+        var traceStateBuilder = TraceState.builder();
+        if (StringUtils.hasText(tracestate)) {
+            for (var member : tracestate.split(",")) {
+                var keyValue = member.trim().split("=", 2);
+                traceStateBuilder.put(keyValue[0], keyValue[1]);
+            }
+        }
+        var spanContext = SpanContext.createFromRemoteParent(
+                parts[1],
+                parts[2],
+                TraceFlags.fromHex(parts[3], 0),
+                traceStateBuilder.build()
+        );
+        requestTraceScope = Span.wrap(spanContext).makeCurrent();
     }
 
     private static EmbeddedPostgres startPostgres() {

@@ -55,20 +55,24 @@ public class ReportManagementService {
         return result.reportId();
     }
 
+    @Transactional
     public Report getReport(GetReportRequest request) throws InvalidRequest, ReportNotFound {
         if (request == null) {
             throw invalidRequest("request is required");
         }
         var createdBy = requestAuditMetadataResolver.resolve().email();
+        reportLifecycleDao.expireReports(Instant.now());
         return reportQueryDao.getReport(createdBy, request.getReportId())
                 .map(reportThriftMapper::mapReport)
                 .orElseThrow(ReportNotFound::new);
     }
 
+    @Transactional
     public GetReportsResponse getReports(GetReportsRequest request) throws InvalidRequest, BadContinuationToken {
         var createdBy = requestAuditMetadataResolver.resolve().email();
         var safeRequest = request == null ? new GetReportsRequest() : request;
         reportRequestValidator.validateGetReports(safeRequest);
+        reportLifecycleDao.expireReports(Instant.now());
 
         var meta = safeRequest.getMeta();
         var limit = resolveLimit(meta);

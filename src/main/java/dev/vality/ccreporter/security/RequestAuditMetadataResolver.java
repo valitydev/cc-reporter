@@ -2,19 +2,17 @@ package dev.vality.ccreporter.security;
 
 import dev.vality.ccreporter.model.RequestAuditMetadata;
 import dev.vality.woody.api.trace.Metadata;
-import dev.vality.woody.api.trace.TraceData;
 import dev.vality.woody.api.trace.context.TraceContext;
 import dev.vality.woody.api.trace.context.metadata.user.UserIdentityEmailExtensionKit;
 import dev.vality.woody.api.trace.context.metadata.user.UserIdentityIdExtensionKit;
 import dev.vality.woody.api.trace.context.metadata.user.UserIdentityRealmExtensionKit;
 import dev.vality.woody.api.trace.context.metadata.user.UserIdentityUsernameExtensionKit;
-import io.opentelemetry.api.GlobalOpenTelemetry;
-import io.opentelemetry.context.propagation.TextMapSetter;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanContext;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 public class RequestAuditMetadataResolver {
@@ -23,36 +21,45 @@ public class RequestAuditMetadataResolver {
     private static final String WOODY_USERNAME = UserIdentityUsernameExtensionKit.KEY;
     private static final String WOODY_EMAIL = UserIdentityEmailExtensionKit.KEY;
     private static final String WOODY_REALM = UserIdentityRealmExtensionKit.KEY;
-    private static final String TRACE_PARENT = "traceparent";
-    private static final String TRACE_STATE = "tracestate";
 
     public RequestAuditMetadata resolve() {
         var traceData = TraceContext.getCurrentTraceData();
         var activeSpan = traceData.getActiveSpan();
         var metadata = activeSpan.getCustomMetadata();
-        var traceHeaders = extractTraceHeaders(traceData);
+        var spanContext = Span.current().getSpanContext();
         return new RequestAuditMetadata(
                 metadataValue(metadata, WOODY_USER_ID),
                 metadataValue(metadata, WOODY_USERNAME),
                 metadataValue(metadata, WOODY_EMAIL),
                 metadataValue(metadata, WOODY_REALM),
-                activeSpan.getSpan().getTraceId(),
-                traceHeaders.get(TRACE_PARENT),
-                traceHeaders.get(TRACE_STATE)
+                resolveTraceId(spanContext, activeSpan.getSpan().getTraceId()),
+                resolveTraceparent(spanContext),
+                resolveTracestate(spanContext)
         );
     }
 
-    private Map<String, String> extractTraceHeaders(TraceData traceData) {
-        var headers = new HashMap<String, String>();
-        var otelSpan = traceData.getOtelSpan();
-        if (otelSpan != null && otelSpan.getSpanContext().isValid()) {
-            GlobalOpenTelemetry.getPropagators()
-                    .getTextMapPropagator()
-                    .inject(traceData.getOtelContext(), headers, MAP_SETTER);
+    private String resolveTraceId(SpanContext spanContext, String woodyTraceId) {
+        return spanContext.isValid() ? spanContext.getTraceId() : woodyTraceId;
+    }
+
+    private String resolveTraceparent(SpanContext spanContext) {
+        if (!spanContext.isValid()) {
+            return null;
         }
-        putIfHasText(headers, TRACE_PARENT, traceData.getInboundTraceParent());
-        putIfHasText(headers, TRACE_STATE, traceData.getInboundTraceState());
-        return headers;
+        return "00-%s-%s-%s".formatted(
+                spanContext.getTraceId(),
+                spanContext.getSpanId(),
+                spanContext.getTraceFlags().asHex()
+        );
+    }
+
+    private String resolveTracestate(SpanContext spanContext) {
+        if (!spanContext.isValid() || spanContext.getTraceState().isEmpty()) {
+            return null;
+        }
+        return spanContext.getTraceState().asMap().entrySet().stream()
+                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .collect(Collectors.joining(","));
     }
 
     private String metadataValue(Metadata metadata, String key) {
@@ -72,17 +79,5 @@ public class RequestAuditMetadataResolver {
         }
         return null;
     }
-
-    private void putIfHasText(Map<String, String> headers, String key, String value) {
-        if (StringUtils.hasText(value) && !headers.containsKey(key)) {
-            headers.put(key, value.trim());
-        }
-    }
-
-    private static final TextMapSetter<Map<String, String>> MAP_SETTER = (carrier, key, value) -> {
-        if (carrier != null && StringUtils.hasText(key) && StringUtils.hasText(value)) {
-            carrier.put(key, value);
-        }
-    };
 
 }

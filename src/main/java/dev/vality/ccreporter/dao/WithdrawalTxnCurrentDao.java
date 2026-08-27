@@ -18,8 +18,7 @@ import static dev.vality.ccreporter.domain.Tables.WITHDRAWAL_TXN_CURRENT;
 public class WithdrawalTxnCurrentDao {
 
     private static final Set<Field<?>> IMMUTABLE_FIELDS = Set.of(
-            WITHDRAWAL_TXN_CURRENT.WITHDRAWAL_ID,
-            WITHDRAWAL_TXN_CURRENT.UPDATED_AT
+            WITHDRAWAL_TXN_CURRENT.WITHDRAWAL_ID
     );
 
     private static final Set<Field<?>> OVERWRITE_FIELDS = Set.of(
@@ -45,10 +44,15 @@ public class WithdrawalTxnCurrentDao {
                                 WITHDRAWAL_TXN_CURRENT.UPDATED_AT,
                                 UTC_NOW,
                                 WITHDRAWAL_TXN_CURRENT.FINALIZED_AT,
-                                DSL.coalesce(
-                                        WITHDRAWAL_TXN_CURRENT.FINALIZED_AT,
+                                DSL.when(
+                                        DSL.excluded(WITHDRAWAL_TXN_CURRENT.STATUS).isNotNull(),
                                         DSL.excluded(WITHDRAWAL_TXN_CURRENT.FINALIZED_AT)
-                                )
+                                ).otherwise(WITHDRAWAL_TXN_CURRENT.FINALIZED_AT),
+                                WITHDRAWAL_TXN_CURRENT.ERROR_SUMMARY,
+                                DSL.when(
+                                        DSL.excluded(WITHDRAWAL_TXN_CURRENT.STATUS).isNotNull(),
+                                        DSL.excluded(WITHDRAWAL_TXN_CURRENT.ERROR_SUMMARY)
+                                ).otherwise(WITHDRAWAL_TXN_CURRENT.ERROR_SUMMARY)
                         )
                 ))
                 .where(isIncomingEventNewer(WITHDRAWAL_TXN_CURRENT.DOMAIN_EVENT_ID))

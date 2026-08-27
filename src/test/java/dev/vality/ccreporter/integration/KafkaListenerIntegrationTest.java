@@ -32,14 +32,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestPropertySource(properties = {
         "spring.kafka.bootstrap-servers=${spring.embedded.kafka.brokers}",
         "spring.kafka.consumer.group-id=ccr-kafka-it",
-        "ccr.kafka.topics.dominant.id=ccr-dominant-test",
-        "ccr.kafka.topics.dominant.enabled=true",
-        "ccr.kafka.topics.payments.id=ccr-payments-test",
-        "ccr.kafka.topics.payments.enabled=true",
-        "ccr.kafka.topics.withdrawals.id=ccr-withdrawals-test",
-        "ccr.kafka.topics.withdrawals.enabled=true",
-        "ccr.kafka.topics.withdrawal-sessions.id=ccr-withdrawal-sessions-test",
-        "ccr.kafka.topics.withdrawal-sessions.enabled=true"
+        "kafka.topics.dominant.id=ccr-dominant-test",
+        "kafka.topics.dominant.enabled=true",
+        "kafka.topics.payments.id=ccr-payments-test",
+        "kafka.topics.payments.enabled=true",
+        "kafka.topics.withdrawals.id=ccr-withdrawals-test",
+        "kafka.topics.withdrawals.enabled=true",
+        "kafka.topics.withdrawal-sessions.id=ccr-withdrawal-sessions-test",
+        "kafka.topics.withdrawal-sessions.enabled=true"
 })
 class KafkaListenerIntegrationTest extends AbstractReportingIntegrationTest {
 

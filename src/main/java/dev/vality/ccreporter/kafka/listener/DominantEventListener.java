@@ -14,13 +14,13 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "ccr.kafka.topics.dominant", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(prefix = "kafka.topics.dominant", name = "enabled", havingValue = "true")
 public class DominantEventListener implements BatchLoggingKafkaListener {
 
     private final DominantLookupIngestionService dominantLookupIngestionService;
 
     @KafkaListener(
-            topics = "${ccr.kafka.topics.dominant.id}",
+            topics = "${kafka.topics.dominant.id}",
             containerFactory = "dominantKafkaListenerContainerFactory"
     )
     public void listen(List<ConsumerRecord<String, HistoricalCommit>> batch, Acknowledgment acknowledgment) {

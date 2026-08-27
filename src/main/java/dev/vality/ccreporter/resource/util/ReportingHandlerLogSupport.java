@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.handler.support;
+package dev.vality.ccreporter.resource.util;
 
 import dev.vality.ccreporter.*;
 import lombok.experimental.UtilityClass;

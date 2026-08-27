@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 import static dev.vality.ccreporter.ingestion.shared.status.StatusDetailExtractor.*;
 import static dev.vality.ccreporter.util.SearchValueNormalizer.normalize;
 import static dev.vality.ccreporter.util.TimestampUtils.toLocalDateTime;
-import static dev.vality.ccreporter.util.TimestampUtils.toOptionalLocalDateTime;
+import static dev.vality.ccreporter.util.TimestampUtils.toNullableLocalDateTime;
 
 @Component
 @RequiredArgsConstructor
@@ -139,7 +139,7 @@ public class PaymentEventProjector {
         var capturedCost = extractCapturedCost(status);
         return Optional.of(baseUpdate(event, paymentChange)
                 .setFinalizedAt(
-                        toOptionalLocalDateTime(terminalFinalizedAt(status, Instant.parse(event.getCreatedAt()))))
+                        toNullableLocalDateTime(terminalFinalizedAt(status, Instant.parse(event.getCreatedAt()))))
                 .setStatus(status.getSetField().getFieldName())
                 .setErrorSummary(extractErrorSummary(status))
                 .setProviderAmount(capturedCost != null ? capturedCost.getAmount() : null)
@@ -196,10 +196,11 @@ public class PaymentEventProjector {
         copyIfPresent(update.getPartyId(), accumulated::setPartyId);
         copyIfPresent(update.getShopId(), accumulated::setShopId);
         copyIfPresent(update.getCreatedAt(), accumulated::setCreatedAt);
-        if (accumulated.getFinalizedAt() == null) {
-            copyIfPresent(update.getFinalizedAt(), accumulated::setFinalizedAt);
+        if (update.getStatus() != null) {
+            accumulated.setStatus(update.getStatus());
+            accumulated.setFinalizedAt(update.getFinalizedAt());
+            accumulated.setErrorSummary(update.getErrorSummary());
         }
-        copyIfPresent(update.getStatus(), accumulated::setStatus);
         copyIfPresent(update.getProviderId(), accumulated::setProviderId);
         copyIfPresent(update.getTerminalId(), accumulated::setTerminalId);
         copyIfPresent(update.getAmount(), accumulated::setAmount);
@@ -210,7 +211,6 @@ public class PaymentEventProjector {
         copyIfPresent(update.getRrn(), accumulated::setRrn);
         copyIfPresent(update.getApprovalCode(), accumulated::setApprovalCode);
         copyIfPresent(update.getPaymentToolType(), accumulated::setPaymentToolType);
-        copyIfPresent(update.getErrorSummary(), accumulated::setErrorSummary);
         copyIfPresent(update.getOriginalAmount(), accumulated::setOriginalAmount);
         copyIfPresent(update.getOriginalCurrency(), accumulated::setOriginalCurrency);
         copyIfPresent(update.getConvertedAmount(), accumulated::setConvertedAmount);

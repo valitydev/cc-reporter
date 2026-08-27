@@ -28,15 +28,11 @@ public class TimestampUtils {
         return toLocalDateTime(Instant.parse(value));
     }
 
-    public static LocalDateTime toOptionalLocalDateTime(Instant value) {
+    public static LocalDateTime toNullableLocalDateTime(Instant value) {
         return value == null ? null : LocalDateTime.ofInstant(value, ZoneOffset.UTC);
     }
 
     public static Instant toInstant(LocalDateTime value) {
         return value.toInstant(ZoneOffset.UTC);
-    }
-
-    public static Instant toOptionalInstant(LocalDateTime value) {
-        return value == null ? null : value.toInstant(ZoneOffset.UTC);
     }
 }

@@ -43,47 +43,69 @@ public class ReportCsvService {
     private static final String CSV_LINE_ENDING = "\r\n";
     private static final DateTimeFormatter CSV_DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
     private static final DateTimeFormatter CSV_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
+    private static final String CREATED_DATE_COLUMN = "created_date";
+    private static final String CREATED_TIME_COLUMN = "created_time";
+    private static final String FINALIZED_DATE_COLUMN = "finalized_date";
+    private static final String FINALIZED_TIME_COLUMN = "finalized_time";
+    private static final String INVOICE_ID_COLUMN = "invoice_id";
+    private static final String PAYMENT_ID_COLUMN = "payment_id";
+    private static final String WITHDRAWAL_ID_COLUMN = "withdrawal_id";
+    private static final String STATUS_COLUMN = "status";
+    private static final String AMOUNT_COLUMN = "amount";
+    private static final String CURRENCY_COLUMN = "currency";
+    private static final String TRX_ID_COLUMN = "trx_id";
+    private static final String PROVIDER_ID_COLUMN = "provider_id";
+    private static final String TERMINAL_ID_COLUMN = "terminal_id";
+    private static final String SHOP_ID_COLUMN = "shop_id";
+    private static final String WALLET_ID_COLUMN = "wallet_id";
+    private static final String EXCHANGE_RATE_INTERNAL_COLUMN = "exchange_rate_internal";
+    private static final String PROVIDER_AMOUNT_COLUMN = "provider_amount";
+    private static final String PROVIDER_CURRENCY_COLUMN = "provider_currency";
+    private static final String ORIGINAL_AMOUNT_COLUMN = "original_amount";
+    private static final String ORIGINAL_CURRENCY_COLUMN = "original_currency";
+    private static final String CONVERTED_AMOUNT_COLUMN = "converted_amount";
+
     private static final List<String> PAYMENT_COLUMNS = List.of(
-            "created_date",
-            "created_time",
-            "finalized_date",
-            "finalized_time",
-            "invoice_id",
-            "payment_id",
-            "status",
-            "amount",
-            "currency",
-            "trx_id",
-            "provider_id",
-            "terminal_id",
-            "shop_id",
-            "exchange_rate_internal",
-            "provider_amount",
-            "provider_currency",
-            "original_amount",
-            "original_currency",
-            "converted_amount"
+            CREATED_DATE_COLUMN,
+            CREATED_TIME_COLUMN,
+            FINALIZED_DATE_COLUMN,
+            FINALIZED_TIME_COLUMN,
+            INVOICE_ID_COLUMN,
+            PAYMENT_ID_COLUMN,
+            STATUS_COLUMN,
+            AMOUNT_COLUMN,
+            CURRENCY_COLUMN,
+            TRX_ID_COLUMN,
+            PROVIDER_ID_COLUMN,
+            TERMINAL_ID_COLUMN,
+            SHOP_ID_COLUMN,
+            EXCHANGE_RATE_INTERNAL_COLUMN,
+            PROVIDER_AMOUNT_COLUMN,
+            PROVIDER_CURRENCY_COLUMN,
+            ORIGINAL_AMOUNT_COLUMN,
+            ORIGINAL_CURRENCY_COLUMN,
+            CONVERTED_AMOUNT_COLUMN
     );
 
     private static final List<String> WITHDRAWAL_COLUMNS = List.of(
-            "created_date",
-            "created_time",
-            "finalized_date",
-            "finalized_time",
-            "withdrawal_id",
-            "status",
-            "amount",
-            "currency",
-            "trx_id",
-            "provider_id",
-            "terminal_id",
-            "wallet_id",
-            "exchange_rate_internal",
-            "provider_amount",
-            "provider_currency",
-            "original_amount",
-            "original_currency",
-            "converted_amount"
+            CREATED_DATE_COLUMN,
+            CREATED_TIME_COLUMN,
+            FINALIZED_DATE_COLUMN,
+            FINALIZED_TIME_COLUMN,
+            WITHDRAWAL_ID_COLUMN,
+            STATUS_COLUMN,
+            AMOUNT_COLUMN,
+            CURRENCY_COLUMN,
+            TRX_ID_COLUMN,
+            PROVIDER_ID_COLUMN,
+            TERMINAL_ID_COLUMN,
+            WALLET_ID_COLUMN,
+            EXCHANGE_RATE_INTERNAL_COLUMN,
+            PROVIDER_AMOUNT_COLUMN,
+            PROVIDER_CURRENCY_COLUMN,
+            ORIGINAL_AMOUNT_COLUMN,
+            ORIGINAL_CURRENCY_COLUMN,
+            CONVERTED_AMOUNT_COLUMN
     );
 
     private final ReportCsvDao reportCsvDao;
@@ -195,20 +217,20 @@ public class ReportCsvService {
 
     private String renderValue(Record row, String column, ZoneId zoneId) {
         return switch (column) {
-            case "created_date" -> renderTimestampDate(row.get("created_at", LocalDateTime.class), zoneId);
-            case "created_time" -> renderTimestampTime(row.get("created_at", LocalDateTime.class), zoneId);
-            case "finalized_date" -> renderTimestampDate(row.get("finalized_at", LocalDateTime.class), zoneId);
-            case "finalized_time" -> renderTimestampTime(row.get("finalized_at", LocalDateTime.class), zoneId);
-            case "amount" -> renderMinorUnits(row.get("amount"), row.get("currency", String.class));
-            case "provider_amount" -> renderMinorUnits(
+            case CREATED_DATE_COLUMN -> renderTimestampDate(row.get("created_at", LocalDateTime.class), zoneId);
+            case CREATED_TIME_COLUMN -> renderTimestampTime(row.get("created_at", LocalDateTime.class), zoneId);
+            case FINALIZED_DATE_COLUMN -> renderTimestampDate(row.get("finalized_at", LocalDateTime.class), zoneId);
+            case FINALIZED_TIME_COLUMN -> renderTimestampTime(row.get("finalized_at", LocalDateTime.class), zoneId);
+            case AMOUNT_COLUMN -> renderMinorUnits(row.get("amount"), row.get("currency", String.class));
+            case PROVIDER_AMOUNT_COLUMN -> renderMinorUnits(
                     row.get("provider_amount"),
                     firstNonBlank(row.get("provider_currency", String.class), row.get("currency", String.class))
             );
-            case "original_amount" -> renderMinorUnits(
+            case ORIGINAL_AMOUNT_COLUMN -> renderMinorUnits(
                     row.get("original_amount"),
                     row.get("original_currency", String.class)
             );
-            case "converted_amount" -> renderMinorUnits(
+            case CONVERTED_AMOUNT_COLUMN -> renderMinorUnits(
                     row.get("converted_amount"),
                     row.get("currency", String.class)
             );

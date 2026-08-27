@@ -28,9 +28,10 @@ class ReportAuditIntegrationTest extends AbstractReportingIntegrationTest {
         assertThat(jsonText(reportId, "report_created", "{userId}")).isEqualTo("user-id-42");
         assertThat(jsonText(reportId, "report_created", "{username}")).isEqualTo("alice");
         assertThat(jsonText(reportId, "report_created", "{email}")).isEqualTo("alice@example.com");
-        assertThat(jsonText(reportId, "report_created", "{traceId}")).isEqualTo("audit-trace-id");
+        assertThat(jsonText(reportId, "report_created", "{traceId}"))
+                .isEqualTo("4bf92f3577b34da6a3ce929d0e0e4736");
         assertThat(jsonText(reportId, "report_created", "{traceparent}"))
-                .isEqualTo("00-4bf92f3577b34da6a3ce929d0e0e4736-00aa0ba902b7-01");
+                .isEqualTo("00-4bf92f3577b34da6a3ce929d0e0e4736-00aa0ba902b70000-01");
         assertThat(
                 jsonText(reportId, "report_created", "{details,idempotencyKey}")
         ).isEqualTo("audit-create-1");

@@ -9,7 +9,7 @@ import org.springframework.validation.annotation.Validated;
 @Data
 @Validated
 @Configuration
-@ConfigurationProperties(prefix = "ccr.report")
+@ConfigurationProperties(prefix = "report")
 public class ReportProperties {
 
     private int maxAttempts;
