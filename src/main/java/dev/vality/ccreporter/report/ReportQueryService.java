@@ -2,16 +2,15 @@ package dev.vality.ccreporter.report;
 
 import dev.vality.ccreporter.ReportQuery;
 import dev.vality.ccreporter.ReportType;
+import dev.vality.ccreporter.TimeRange;
 import dev.vality.ccreporter.util.TimestampUtils;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
+import java.time.DateTimeException;
 import java.time.Instant;
 
 @Service
-@RequiredArgsConstructor
 public class ReportQueryService {
 
     public QuerySpec resolveQuerySpec(ReportQuery query) {
@@ -19,38 +18,27 @@ public class ReportQueryService {
             throw new IllegalArgumentException("query is required");
         }
         if (query.isSetPayments()) {
-            var paymentsQuery = query.getPayments();
-            var timeRange = paymentsQuery.getTimeRange();
-            return new QuerySpec(
-                    ReportType.payments,
-                    new QueryTimeRange(
-                            TimestampUtils.parse(timeRange.getFromTime()),
-                            TimestampUtils.parse(timeRange.getToTime())
-                    )
-            );
+            return new QuerySpec(ReportType.payments, parseTimeRange(query.getPayments().getTimeRange()));
         }
-        var withdrawalsQuery = query.getWithdrawals();
-        var timeRange = withdrawalsQuery.getTimeRange();
-        return new QuerySpec(
-                ReportType.withdrawals,
-                new QueryTimeRange(
-                        TimestampUtils.parse(timeRange.getFromTime()),
-                        TimestampUtils.parse(timeRange.getToTime())
-                )
-        );
+        if (query.isSetWithdrawals()) {
+            return new QuerySpec(ReportType.withdrawals, parseTimeRange(query.getWithdrawals().getTimeRange()));
+        }
+        throw new IllegalArgumentException("query must select one branch");
     }
 
-    public String hash(String value) {
+    private QueryTimeRange parseTimeRange(TimeRange timeRange) {
+        if (timeRange == null
+                || !StringUtils.hasText(timeRange.getFromTime())
+                || !StringUtils.hasText(timeRange.getToTime())) {
+            throw new IllegalArgumentException("time range is required");
+        }
         try {
-            var digest = MessageDigest.getInstance("SHA-256");
-            var hashBytes = digest.digest(value.getBytes(StandardCharsets.UTF_8));
-            var stringBuilder = new StringBuilder(hashBytes.length * 2);
-            for (byte hashByte : hashBytes) {
-                stringBuilder.append(String.format("%02x", hashByte));
-            }
-            return stringBuilder.toString();
-        } catch (Exception ex) {
-            throw new IllegalStateException("Failed to hash report query", ex);
+            return new QueryTimeRange(
+                    TimestampUtils.parse(timeRange.getFromTime()),
+                    TimestampUtils.parse(timeRange.getToTime())
+            );
+        } catch (DateTimeException ex) {
+            throw new IllegalArgumentException("time range must contain ISO-8601 timestamps", ex);
         }
     }
 

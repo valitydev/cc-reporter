@@ -4,12 +4,13 @@ import dev.vality.ccreporter.domain.tables.pojos.WithdrawalTxnCurrent;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.jooq.Field;
+import org.jooq.impl.DSL;
 import org.springframework.stereotype.Repository;
 
 import java.util.Map;
 import java.util.Set;
 
-import static dev.vality.ccreporter.dao.support.DaoUpsertUtils.*;
+import static dev.vality.ccreporter.dao.util.DaoUpsertUtils.*;
 import static dev.vality.ccreporter.domain.Tables.WITHDRAWAL_TXN_CURRENT;
 
 @Repository
@@ -17,8 +18,7 @@ import static dev.vality.ccreporter.domain.Tables.WITHDRAWAL_TXN_CURRENT;
 public class WithdrawalTxnCurrentDao {
 
     private static final Set<Field<?>> IMMUTABLE_FIELDS = Set.of(
-            WITHDRAWAL_TXN_CURRENT.WITHDRAWAL_ID,
-            WITHDRAWAL_TXN_CURRENT.UPDATED_AT
+            WITHDRAWAL_TXN_CURRENT.WITHDRAWAL_ID
     );
 
     private static final Set<Field<?>> OVERWRITE_FIELDS = Set.of(
@@ -40,12 +40,22 @@ public class WithdrawalTxnCurrentDao {
                         WITHDRAWAL_TXN_CURRENT,
                         IMMUTABLE_FIELDS,
                         OVERWRITE_FIELDS,
-                        Map.of(WITHDRAWAL_TXN_CURRENT.UPDATED_AT, UTC_NOW)
+                        Map.of(
+                                WITHDRAWAL_TXN_CURRENT.UPDATED_AT,
+                                UTC_NOW,
+                                WITHDRAWAL_TXN_CURRENT.FINALIZED_AT,
+                                DSL.when(
+                                        DSL.excluded(WITHDRAWAL_TXN_CURRENT.STATUS).isNotNull(),
+                                        DSL.excluded(WITHDRAWAL_TXN_CURRENT.FINALIZED_AT)
+                                ).otherwise(WITHDRAWAL_TXN_CURRENT.FINALIZED_AT),
+                                WITHDRAWAL_TXN_CURRENT.ERROR_SUMMARY,
+                                DSL.when(
+                                        DSL.excluded(WITHDRAWAL_TXN_CURRENT.STATUS).isNotNull(),
+                                        DSL.excluded(WITHDRAWAL_TXN_CURRENT.ERROR_SUMMARY)
+                                ).otherwise(WITHDRAWAL_TXN_CURRENT.ERROR_SUMMARY)
+                        )
                 ))
-                .where(isIncomingEventNewer(
-                        WITHDRAWAL_TXN_CURRENT.DOMAIN_EVENT_CREATED_AT,
-                        WITHDRAWAL_TXN_CURRENT.DOMAIN_EVENT_ID
-                ))
+                .where(isIncomingEventNewer(WITHDRAWAL_TXN_CURRENT.DOMAIN_EVENT_ID))
                 .execute();
     }
 }

@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 
-import static dev.vality.ccreporter.dao.support.DaoUpsertUtils.buildLookupUpsertMap;
+import static dev.vality.ccreporter.dao.util.DaoUpsertUtils.buildLookupUpsertMap;
 import static dev.vality.ccreporter.domain.Tables.*;
 import static dev.vality.ccreporter.util.SearchValueNormalizer.normalize;
 

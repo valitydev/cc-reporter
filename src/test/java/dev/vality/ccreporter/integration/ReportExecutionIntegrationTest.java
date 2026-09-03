@@ -9,6 +9,8 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,9 +50,10 @@ class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
         assertThat(csvLines).containsExactly(
                 "created_date,created_time,finalized_date,finalized_time,invoice_id,payment_id,status," +
                         "amount,currency,trx_id,provider_id,terminal_id,shop_id,exchange_rate_internal," +
-                        "provider_amount,provider_currency,original_amount,original_currency,converted_amount",
+                        "provider_amount,provider_currency,original_amount,original_currency,converted_amount," +
+                        "converted_currency",
                 "2026-01-01,17:00:00,2026-01-01,18:00:00,invoice-1,payment-1,captured,10.00,RUB,trx-1," +
-                        "provider-1,terminal-1,shop-1,1.1000000000,9.90,EUR,11.00,USD,10.00"
+                        "provider-1,terminal-1,shop-1,1.1000000000,9.90,EUR,11.00,USD,10.00,RUB"
         );
     }
 
@@ -79,9 +82,9 @@ class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
         assertThat(csvLines).containsExactly(
                 "created_date,created_time,finalized_date,finalized_time,withdrawal_id,status,amount,currency," +
                         "trx_id,provider_id,terminal_id,wallet_id,exchange_rate_internal,provider_amount," +
-                        "provider_currency,original_amount,original_currency",
+                        "provider_currency,original_amount,original_currency,converted_amount,converted_currency",
                 "2026-01-01,10:00:00,2026-01-01,11:00:00,withdrawal-1,succeeded,20.00,RUB,trx-w-1," +
-                        "provider-1,terminal-1,wallet-1,1.0500000000,19.90,EUR,21.00,USD"
+                        "provider-1,terminal-1,wallet-1,1.0500000000,19.90,EUR,21.00,USD,20.00,RUB"
         );
     }
 
@@ -131,10 +134,15 @@ class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
         var reportId = reportingHandler.createReport(ReportRequestFixtures.payments("exec-failure-1"));
         stubFileStorageClient.setFailUploads(true);
 
-        reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:00Z"));
+        reportLifecycleService.processNextPendingReport(Instant.now());
         var pendingAfterRetry = reportingHandler.getReport(new GetReportRequest(reportId));
+        var retryAt = jdbcTemplate.queryForObject(
+                "SELECT next_attempt_at FROM ccr.report_job WHERE id = ?",
+                LocalDateTime.class,
+                reportId
+        ).toInstant(ZoneOffset.UTC);
 
-        reportLifecycleService.processNextPendingReport(Instant.parse("2026-01-01T12:00:31Z"));
+        reportLifecycleService.processNextPendingReport(retryAt.plusMillis(1));
         var failedReport = reportingHandler.getReport(new GetReportRequest(reportId));
 
         assertThat(pendingAfterRetry.getStatus()).isEqualTo(ReportStatus.pending);
@@ -174,13 +182,15 @@ class ReportExecutionIntegrationTest extends AbstractReportingIntegrationTest {
         var claimTime = Instant.parse("2026-01-01T12:00:00Z");
 
         reportLifecycleService.processNextPendingReport(claimTime);
-        var expired = reportLifecycleService.expireReadyReports(claimTime.plusSeconds(601));
+        var createdReport = reportingHandler.getReport(new GetReportRequest(reportId));
+        var expiresAt = Instant.parse(createdReport.getExpiresAt());
+        var expired = reportLifecycleService.expireReadyReports(expiresAt.plusSeconds(1));
 
         var report = reportingHandler.getReport(new GetReportRequest(reportId));
 
         assertThat(expired).isEqualTo(1);
         assertThat(report.getStatus()).isEqualTo(ReportStatus.expired);
-        assertThat(report.getExpiresAt()).isEqualTo(claimTime.plusSeconds(600).toString());
+        assertThat(report.getExpiresAt()).isEqualTo(expiresAt.toString());
     }
 
     private List<String> readCsvLines(byte[] bytes, java.nio.charset.Charset charset) {

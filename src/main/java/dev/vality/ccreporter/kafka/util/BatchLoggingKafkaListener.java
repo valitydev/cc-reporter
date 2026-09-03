@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.kafka.support;
+package dev.vality.ccreporter.kafka.util;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.LoggerFactory;

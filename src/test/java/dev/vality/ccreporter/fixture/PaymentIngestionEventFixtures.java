@@ -10,6 +10,7 @@ import dev.vality.machinegun.msgpack.Value;
 import org.apache.thrift.TBase;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -48,6 +49,17 @@ public final class PaymentIngestionEventFixtures {
                 paymentMachineEvent(1L, startedPayload()),
                 paymentMachineEvent(2L, failedStatusChangedPayload())
         );
+    }
+
+    public static List<MachineEvent> paymentChangesCombinedInSingleEvent() {
+        var changes = new ArrayList<InvoiceChange>();
+        changes.addAll(startedPayload().getInvoiceChanges());
+        changes.addAll(cashFlowChangedPayload().getInvoiceChanges());
+        changes.addAll(transactionBoundPayload().getInvoiceChanges());
+        changes.addAll(statusChangedPayload().getInvoiceChanges());
+        var payload = new EventPayload();
+        payload.setInvoiceChanges(changes);
+        return List.of(paymentMachineEvent(1L, payload));
     }
 
     private static MachineEvent paymentMachineEvent(long eventId, EventPayload payload) {

@@ -1,7 +1,7 @@
 package dev.vality.ccreporter.kafka.listener;
 
 import dev.vality.ccreporter.ingestion.payment.PaymentIngestionService;
-import dev.vality.ccreporter.kafka.support.BatchLoggingKafkaListener;
+import dev.vality.ccreporter.kafka.util.BatchLoggingKafkaListener;
 import dev.vality.machinegun.eventsink.SinkEvent;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -14,13 +14,13 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "ccr.kafka.topics.payments", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(prefix = "kafka.topics.payments", name = "enabled", havingValue = "true")
 public class PaymentEventListener implements BatchLoggingKafkaListener {
 
     private final PaymentIngestionService paymentIngestionService;
 
     @KafkaListener(
-            topics = "${ccr.kafka.topics.payments.id}",
+            topics = "${kafka.topics.payments.id}",
             containerFactory = "paymentsKafkaListenerContainerFactory"
     )
     public void listen(List<ConsumerRecord<String, SinkEvent>> batch, Acknowledgment acknowledgment) {

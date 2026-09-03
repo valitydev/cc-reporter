@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 
 @Data
 @Configuration
-@ConfigurationProperties(prefix = "ccr.storage.file-storage")
+@ConfigurationProperties(prefix = "storage.file-storage")
 public class FileStorageProperties {
 
     private String url;

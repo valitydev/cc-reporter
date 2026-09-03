@@ -2,15 +2,13 @@ package dev.vality.ccreporter.report;
 
 import dev.vality.ccreporter.PaymentsQuery;
 import dev.vality.ccreporter.ReportQuery;
-import dev.vality.ccreporter.ReportType;
 import dev.vality.ccreporter.WithdrawalsQuery;
+import dev.vality.ccreporter.config.properties.ReportProperties;
 import dev.vality.ccreporter.dao.ReportCsvDao;
-import dev.vality.ccreporter.dao.mapper.ReportRecordMapper;
-import dev.vality.ccreporter.domain.tables.pojos.ReportJob;
 import dev.vality.ccreporter.model.GeneratedCsvReport;
+import dev.vality.ccreporter.model.ReportTask;
 import dev.vality.ccreporter.serde.json.ThriftJsonCodec;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import org.jooq.Cursor;
 import org.jooq.Record;
 import org.springframework.stereotype.Service;
@@ -27,77 +25,109 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
-import java.sql.Timestamp;
+import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Currency;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CancellationException;
 
 @Service
 @RequiredArgsConstructor
 public class ReportCsvService {
 
+    private static final String CSV_LINE_ENDING = "\r\n";
     private static final DateTimeFormatter CSV_DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
     private static final DateTimeFormatter CSV_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
+    private static final String CREATED_DATE_COLUMN = "created_date";
+    private static final String CREATED_TIME_COLUMN = "created_time";
+    private static final String FINALIZED_DATE_COLUMN = "finalized_date";
+    private static final String FINALIZED_TIME_COLUMN = "finalized_time";
+    private static final String INVOICE_ID_COLUMN = "invoice_id";
+    private static final String PAYMENT_ID_COLUMN = "payment_id";
+    private static final String WITHDRAWAL_ID_COLUMN = "withdrawal_id";
+    private static final String STATUS_COLUMN = "status";
+    private static final String AMOUNT_COLUMN = "amount";
+    private static final String CURRENCY_COLUMN = "currency";
+    private static final String TRX_ID_COLUMN = "trx_id";
+    private static final String PROVIDER_ID_COLUMN = "provider_id";
+    private static final String TERMINAL_ID_COLUMN = "terminal_id";
+    private static final String SHOP_ID_COLUMN = "shop_id";
+    private static final String WALLET_ID_COLUMN = "wallet_id";
+    private static final String EXCHANGE_RATE_INTERNAL_COLUMN = "exchange_rate_internal";
+    private static final String PROVIDER_AMOUNT_COLUMN = "provider_amount";
+    private static final String PROVIDER_CURRENCY_COLUMN = "provider_currency";
+    private static final String ORIGINAL_AMOUNT_COLUMN = "original_amount";
+    private static final String ORIGINAL_CURRENCY_COLUMN = "original_currency";
+    private static final String CONVERTED_AMOUNT_COLUMN = "converted_amount";
+    private static final String CONVERTED_CURRENCY_COLUMN = "converted_currency";
+
     private static final List<String> PAYMENT_COLUMNS = List.of(
-            "created_date",
-            "created_time",
-            "finalized_date",
-            "finalized_time",
-            "invoice_id",
-            "payment_id",
-            "status",
-            "amount",
-            "currency",
-            "trx_id",
-            "provider_id",
-            "terminal_id",
-            "shop_id",
-            "exchange_rate_internal",
-            "provider_amount",
-            "provider_currency",
-            "original_amount",
-            "original_currency",
-            "converted_amount"
+            CREATED_DATE_COLUMN,
+            CREATED_TIME_COLUMN,
+            FINALIZED_DATE_COLUMN,
+            FINALIZED_TIME_COLUMN,
+            INVOICE_ID_COLUMN,
+            PAYMENT_ID_COLUMN,
+            STATUS_COLUMN,
+            AMOUNT_COLUMN,
+            CURRENCY_COLUMN,
+            TRX_ID_COLUMN,
+            PROVIDER_ID_COLUMN,
+            TERMINAL_ID_COLUMN,
+            SHOP_ID_COLUMN,
+            EXCHANGE_RATE_INTERNAL_COLUMN,
+            PROVIDER_AMOUNT_COLUMN,
+            PROVIDER_CURRENCY_COLUMN,
+            ORIGINAL_AMOUNT_COLUMN,
+            ORIGINAL_CURRENCY_COLUMN,
+            CONVERTED_AMOUNT_COLUMN,
+            CONVERTED_CURRENCY_COLUMN
     );
 
     private static final List<String> WITHDRAWAL_COLUMNS = List.of(
-            "created_date",
-            "created_time",
-            "finalized_date",
-            "finalized_time",
-            "withdrawal_id",
-            "status",
-            "amount",
-            "currency",
-            "trx_id",
-            "provider_id",
-            "terminal_id",
-            "wallet_id",
-            "exchange_rate_internal",
-            "provider_amount",
-            "provider_currency",
-            "original_amount",
-            "original_currency"
+            CREATED_DATE_COLUMN,
+            CREATED_TIME_COLUMN,
+            FINALIZED_DATE_COLUMN,
+            FINALIZED_TIME_COLUMN,
+            WITHDRAWAL_ID_COLUMN,
+            STATUS_COLUMN,
+            AMOUNT_COLUMN,
+            CURRENCY_COLUMN,
+            TRX_ID_COLUMN,
+            PROVIDER_ID_COLUMN,
+            TERMINAL_ID_COLUMN,
+            WALLET_ID_COLUMN,
+            EXCHANGE_RATE_INTERNAL_COLUMN,
+            PROVIDER_AMOUNT_COLUMN,
+            PROVIDER_CURRENCY_COLUMN,
+            ORIGINAL_AMOUNT_COLUMN,
+            ORIGINAL_CURRENCY_COLUMN,
+            CONVERTED_AMOUNT_COLUMN,
+            CONVERTED_CURRENCY_COLUMN
     );
 
     private final ReportCsvDao reportCsvDao;
     private final ThriftJsonCodec thriftJsonCodec;
+    private final ReportProperties reportProperties;
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
-    public GeneratedCsvReport generate(ReportJob reportJob) {
+    public GeneratedCsvReport generate(ReportTask reportTask) {
+        reportCsvDao.setLocalStatementTimeout(reportProperties.getProcessingTimeoutMs());
         var snapshotFixedAt = reportCsvDao.currentSnapshot();
-        var reportQuery = thriftJsonCodec.deserialize(reportJob.getQueryJson().data(), ReportQuery.class);
-        var zoneId = ZoneId.of(reportJob.getTimezone());
-        var reportType = ReportRecordMapper.mapEnum(reportJob.getReportType(), ReportType.class);
-        var fileName = reportType.name() + "-report-" + reportJob.getId() + ".csv";
-        var stagedFile = createTempFile(reportJob.getId());
+        var reportQuery = thriftJsonCodec.deserialize(reportTask.queryJson(), ReportQuery.class);
+        var zoneId = ZoneId.of(reportTask.timezone());
+        var reportType = reportTask.reportType();
+        var fileName = reportType.name() + "-report-" + reportTask.id() + ".csv";
+        var stagedFile = createTempFile(reportTask.id());
         try {
             var md5 = createDigest("MD5");
             var sha256 = createDigest("SHA-256");
-            var rowsCount = 0L;
+            long rowsCount;
             try (
                     var fileOutputStream = Files.newOutputStream(stagedFile);
                     var bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
@@ -111,7 +141,6 @@ public class ReportCsvService {
                     case payments -> writePaymentsCsv(writer, reportQuery.getPayments(), zoneId);
                     case withdrawals -> writeWithdrawalsCsv(writer, reportQuery.getWithdrawals(), zoneId);
                 };
-                writer.flush();
             }
             return new GeneratedCsvReport(
                     fileName,
@@ -134,7 +163,7 @@ public class ReportCsvService {
 
     private long writePaymentsCsv(BufferedWriter writer, PaymentsQuery query, ZoneId zoneId) throws IOException {
         writer.write(String.join(",", PAYMENT_COLUMNS));
-        writer.newLine();
+        writer.write(CSV_LINE_ENDING);
         try (var rows = reportCsvDao.fetchPayments(query)) {
             return writeRows(writer, rows, PAYMENT_COLUMNS, zoneId);
         }
@@ -146,25 +175,31 @@ public class ReportCsvService {
             ZoneId zoneId
     ) throws IOException {
         writer.write(String.join(",", WITHDRAWAL_COLUMNS));
-        writer.newLine();
+        writer.write(CSV_LINE_ENDING);
         try (var rows = reportCsvDao.fetchWithdrawals(query)) {
             return writeRows(writer, rows, WITHDRAWAL_COLUMNS, zoneId);
         }
     }
 
-    @SneakyThrows
     private long writeRows(
             BufferedWriter writer,
             Cursor<? extends Record> rows,
             List<String> columns,
             ZoneId zoneId
-    ) {
+    ) throws IOException {
         var rowCount = 0L;
         for (var row : rows) {
+            throwIfInterrupted();
             writeRow(writer, row, columns, zoneId);
             rowCount++;
         }
         return rowCount;
+    }
+
+    private void throwIfInterrupted() {
+        if (Thread.currentThread().isInterrupted()) {
+            throw new CancellationException("Report CSV generation was interrupted");
+        }
     }
 
     private void writeRow(
@@ -180,27 +215,27 @@ public class ReportCsvService {
             var column = columns.get(i);
             writer.write(escapeCsv(renderValue(row, column, zoneId)));
         }
-        writer.newLine();
+        writer.write(CSV_LINE_ENDING);
     }
 
     private String renderValue(Record row, String column, ZoneId zoneId) {
         return switch (column) {
-            case "created_date" -> renderTimestampDate(row.get("created_at", Timestamp.class), zoneId);
-            case "created_time" -> renderTimestampTime(row.get("created_at", Timestamp.class), zoneId);
-            case "finalized_date" -> renderTimestampDate(row.get("finalized_at", Timestamp.class), zoneId);
-            case "finalized_time" -> renderTimestampTime(row.get("finalized_at", Timestamp.class), zoneId);
-            case "amount" -> renderMinorUnits(row.get("amount"), row.get("currency", String.class));
-            case "provider_amount" -> renderMinorUnits(
+            case CREATED_DATE_COLUMN -> renderTimestampDate(row.get("created_at", LocalDateTime.class), zoneId);
+            case CREATED_TIME_COLUMN -> renderTimestampTime(row.get("created_at", LocalDateTime.class), zoneId);
+            case FINALIZED_DATE_COLUMN -> renderTimestampDate(row.get("finalized_at", LocalDateTime.class), zoneId);
+            case FINALIZED_TIME_COLUMN -> renderTimestampTime(row.get("finalized_at", LocalDateTime.class), zoneId);
+            case AMOUNT_COLUMN -> renderMinorUnits(row.get("amount"), row.get("currency", String.class));
+            case PROVIDER_AMOUNT_COLUMN -> renderMinorUnits(
                     row.get("provider_amount"),
                     firstNonBlank(row.get("provider_currency", String.class), row.get("currency", String.class))
             );
-            case "original_amount" -> renderMinorUnits(
+            case ORIGINAL_AMOUNT_COLUMN -> renderMinorUnits(
                     row.get("original_amount"),
                     row.get("original_currency", String.class)
             );
-            case "converted_amount" -> renderMinorUnits(
+            case CONVERTED_AMOUNT_COLUMN -> renderMinorUnits(
                     row.get("converted_amount"),
-                    row.get("currency", String.class)
+                    row.get("converted_currency", String.class)
             );
             default -> renderScalarValue(row.get(column));
         };
@@ -216,19 +251,19 @@ public class ReportCsvService {
         return value.toString();
     }
 
-    private String renderTimestampDate(Timestamp timestamp, ZoneId zoneId) {
+    private String renderTimestampDate(LocalDateTime timestamp, ZoneId zoneId) {
         if (timestamp == null) {
             return "";
         }
-        var localDateTime = timestamp.toInstant().atZone(zoneId).toLocalDateTime();
+        var localDateTime = timestamp.atZone(ZoneOffset.UTC).withZoneSameInstant(zoneId).toLocalDateTime();
         return CSV_DATE_FORMATTER.format(localDateTime.toLocalDate());
     }
 
-    private String renderTimestampTime(Timestamp timestamp, ZoneId zoneId) {
+    private String renderTimestampTime(LocalDateTime timestamp, ZoneId zoneId) {
         if (timestamp == null) {
             return "";
         }
-        var localDateTime = timestamp.toInstant().atZone(zoneId).toLocalDateTime();
+        var localDateTime = timestamp.atZone(ZoneOffset.UTC).withZoneSameInstant(zoneId).toLocalDateTime();
         return CSV_TIME_FORMATTER.format(localDateTime.toLocalTime());
     }
 
@@ -267,7 +302,10 @@ public class ReportCsvService {
     }
 
     private String escapeCsv(String value) {
-        if (!value.contains(",") && !value.contains("\"") && !value.contains("\n")) {
+        if (!value.contains(",")
+                && !value.contains("\"")
+                && !value.contains("\n")
+                && !value.contains("\r")) {
             return value;
         }
         return "\"" + value.replace("\"", "\"\"") + "\"";
@@ -284,7 +322,7 @@ public class ReportCsvService {
     private MessageDigest createDigest(String algorithm) {
         try {
             return MessageDigest.getInstance(algorithm);
-        } catch (Exception ex) {
+        } catch (NoSuchAlgorithmException ex) {
             throw new IllegalStateException("Failed to initialize " + algorithm + " digest", ex);
         }
     }

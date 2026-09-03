@@ -22,7 +22,7 @@ class ReportLifecycleIntegrationTest extends AbstractReportingIntegrationTest {
         final var startedAt = Instant.parse("2026-01-02T10:00:00Z");
         final var snapshotFixedAt = Instant.parse("2026-01-02T10:05:00Z");
         final var finishedAt = Instant.parse("2026-01-02T10:10:00Z");
-        final var expiresAt = Instant.parse("2026-02-01T00:00:00Z");
+        final var expiresAt = Instant.parse("2100-02-01T00:00:00Z");
 
         var pendingReport = reportingHandler.getReport(new GetReportRequest(reportId));
         assertThat(pendingReport.getStatus()).isEqualTo(ReportStatus.pending);
@@ -66,6 +66,58 @@ class ReportLifecycleIntegrationTest extends AbstractReportingIntegrationTest {
         assertThat(response.getReports()).extracting(Report::getReportId).contains(reportId);
     }
 
+
+    @Test
+    void getReportExpiresOverdueCreatedReportBeforeReturningIt() throws Exception {
+        var now = Instant.now();
+        var reportId = reportingHandler.createReport(ReportRequestFixtures.payments("expired-get-1"));
+
+        ReportRecordFixtures.markReportCreated(
+                jdbcTemplate,
+                reportId,
+                now.minusSeconds(120),
+                now.minusSeconds(90),
+                now.minusSeconds(60),
+                now.minusSeconds(1),
+                1L
+        );
+        ReportRecordFixtures.attachCsvFile(jdbcTemplate, reportId, "file-expired-get-1", now.minusSeconds(60));
+
+        var report = reportingHandler.getReport(new GetReportRequest(reportId));
+
+        assertThat(report.getStatus()).isEqualTo(ReportStatus.expired);
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT status::text FROM ccr.report_job WHERE id = ?",
+                String.class,
+                reportId
+        )).isEqualTo("expired");
+    }
+
+    @Test
+    void getReportsExpiresOverdueRowsBeforeApplyingStatusFilter() throws Exception {
+        var now = Instant.now();
+        var reportId = reportingHandler.createReport(ReportRequestFixtures.payments("expired-list-1"));
+
+        ReportRecordFixtures.markReportCreated(
+                jdbcTemplate,
+                reportId,
+                now.minusSeconds(120),
+                now.minusSeconds(90),
+                now.minusSeconds(60),
+                now.minusSeconds(1),
+                1L
+        );
+        ReportRecordFixtures.attachCsvFile(jdbcTemplate, reportId, "file-expired-list-1", now.minusSeconds(60));
+
+        var createdFilter = new GetReportsFilter().setStatuses(List.of(ReportStatus.created));
+        var createdResponse = reportingHandler.getReports(new GetReportsRequest().setFilter(createdFilter));
+        assertThat(createdResponse.getReports()).extracting(Report::getReportId).doesNotContain(reportId);
+
+        var expiredFilter = new GetReportsFilter().setStatuses(List.of(ReportStatus.expired));
+        var expiredResponse = reportingHandler.getReports(new GetReportsRequest().setFilter(expiredFilter));
+        assertThat(expiredResponse.getReports()).extracting(Report::getReportId).contains(reportId);
+    }
+
     @Test
     void processingReportCanBeCanceledAndBecomesTerminal() throws Exception {
         var reportId = reportingHandler.createReport(ReportRequestFixtures.payments("cancel-processing-1"));
@@ -82,6 +134,29 @@ class ReportLifecycleIntegrationTest extends AbstractReportingIntegrationTest {
         assertThat(canceledReport.getStartedAt()).isEqualTo(startedAt.toString());
         assertThat(canceledReport.getDataSnapshotFixedAt()).isEqualTo(snapshotFixedAt.toString());
         assertThat(canceledReport.getFinishedAt()).isNotBlank();
+    }
+
+    @Test
+    void canceledRetryDoesNotKeepNextAttemptTime() throws Exception {
+        var reportId = reportingHandler.createReport(ReportRequestFixtures.payments("cancel-retry-1"));
+        var startedAt = Instant.parse("2026-01-03T11:00:00Z");
+        var retryAt = Instant.parse("2026-01-03T11:05:00Z");
+
+        reportLifecycleDao.claimNextPendingReport(startedAt).orElseThrow();
+        assertThat(reportLifecycleDao.rescheduleForRetry(
+                reportId,
+                retryAt,
+                "temporary_error",
+                "retry later"
+        )).isTrue();
+
+        reportingHandler.cancelReport(new CancelReportRequest(reportId));
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT next_attempt_at IS NULL FROM ccr.report_job WHERE id = ?",
+                Boolean.class,
+                reportId
+        )).isTrue();
     }
 
     @Test

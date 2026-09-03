@@ -3,7 +3,7 @@ package dev.vality.ccreporter.integration;
 import dev.vality.ccreporter.fixture.SerializedIngestionEventFixtures;
 import dev.vality.ccreporter.ingestion.payment.PaymentIngestionService;
 import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
-import dev.vality.ccreporter.integration.support.KafkaIntegrationTestSupport;
+import dev.vality.ccreporter.integration.util.KafkaIntegrationTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,9 +26,9 @@ import static org.mockito.Mockito.doAnswer;
 @TestPropertySource(properties = {
         "spring.kafka.bootstrap-servers=${spring.embedded.kafka.brokers}",
         "spring.kafka.consumer.group-id=ccr-kafka-retry-it",
-        "ccr.kafka.consumer.error-backoff-interval-ms=100",
-        "ccr.kafka.topics.payments.id=ccr-payments-retry-test",
-        "ccr.kafka.topics.payments.enabled=true"
+        "kafka.consumer.error-backoff-interval-ms=100",
+        "kafka.topics.payments.id=ccr-payments-retry-test",
+        "kafka.topics.payments.enabled=true"
 })
 class KafkaListenerRetryIntegrationTest extends AbstractReportingIntegrationTest {
 

@@ -2,14 +2,14 @@ package dev.vality.ccreporter.integration;
 
 import dev.vality.ccreporter.GetReportRequest;
 import dev.vality.ccreporter.ReportStatus;
-import dev.vality.ccreporter.fixture.ReportRecordFixtures;
+import dev.vality.ccreporter.domain.tables.pojos.ReportFile;
 import dev.vality.ccreporter.fixture.ReportRequestFixtures;
 import dev.vality.ccreporter.integration.base.AbstractReportingIntegrationTest;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.Objects;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -27,14 +27,27 @@ class ReportLifecycleWorkerIntegrationTest extends AbstractReportingIntegrationT
         var claimedReport = reportLifecycleDao.claimNextPendingReport(claimTime);
 
         assertThat(claimedReport).isPresent();
-        assertThat(claimedReport.get().getId()).isEqualTo(firstReportId);
-        assertThat(claimedReport.get().getAttempt()).isEqualTo(1);
+        assertThat(claimedReport.get().id()).isEqualTo(firstReportId);
+        assertThat(claimedReport.get().attempt()).isEqualTo(1);
         assertReportStatus(firstReportId, ReportStatus.processing);
         assertThat(readInstant("SELECT started_at FROM ccr.report_job WHERE id = ?", firstReportId)).isEqualTo(
                 claimTime);
         assertThat(
                 readNullableInstant("SELECT next_attempt_at FROM ccr.report_job WHERE id = ?", firstReportId)).isNull();
         assertReportStatus(secondReportId, ReportStatus.pending);
+    }
+
+    @Test
+    void lifecycleTickDrainsAllReadyReports() throws Exception {
+        var firstReportId = reportingHandler.createReport(ReportRequestFixtures.payments("tick-drain-1"));
+        var secondReportId = reportingHandler.createReport(ReportRequestFixtures.payments("tick-drain-2"));
+
+        reportLifecycleService.runLifecycleTick();
+
+        assertThat(reportingHandler.getReport(new GetReportRequest(firstReportId)).getStatus())
+                .isEqualTo(ReportStatus.created);
+        assertThat(reportingHandler.getReport(new GetReportRequest(secondReportId)).getStatus())
+                .isEqualTo(ReportStatus.created);
     }
 
     @Test
@@ -51,53 +64,39 @@ class ReportLifecycleWorkerIntegrationTest extends AbstractReportingIntegrationT
                 "storage_unavailable",
                 "temporary upload issue"
         );
-        var prematureClaim =
-                reportLifecycleDao.claimNextPendingReport(firstClaimTime.plusSeconds(30));
+        var prematureClaim = reportLifecycleDao.claimNextPendingReport(firstClaimTime.plusSeconds(30));
         var secondClaim = reportLifecycleDao.claimNextPendingReport(secondClaimTime).orElseThrow();
 
-        assertThat(firstClaim.getId()).isEqualTo(reportId);
+        assertThat(firstClaim.id()).isEqualTo(reportId);
         assertThat(rescheduled).isTrue();
         assertThat(prematureClaim).isEmpty();
-        assertThat(secondClaim.getId()).isEqualTo(reportId);
-        assertThat(secondClaim.getAttempt()).isEqualTo(2);
+        assertThat(secondClaim.id()).isEqualTo(reportId);
+        assertThat(secondClaim.attempt()).isEqualTo(2);
 
         var retriedReport = reportingHandler.getReport(new GetReportRequest(reportId));
         assertThat(retriedReport.getStatus()).isEqualTo(ReportStatus.processing);
-        assertThat(retriedReport.getError().getCode()).isEqualTo("storage_unavailable");
-        assertThat(retriedReport.getError().getMessage()).isEqualTo("temporary upload issue");
+        assertThat(retriedReport.isSetError()).isFalse();
+        assertThat(retriedReport.getStartedAt()).isEqualTo(secondClaimTime.toString());
     }
 
     @Test
-    void terminalTransitionPreservesFirstFinishedAtAndBlocksLaterTerminalRewrite() throws Exception {
+    void terminalTransitionBlocksLaterTimeoutRewrite() throws Exception {
         var reportId = reportingHandler.createReport(ReportRequestFixtures.payments("terminal-1"));
         var claimTime = Instant.parse("2026-01-06T12:00:00Z");
-        var snapshotFixedAt = Instant.parse("2026-01-06T12:01:00Z");
         var failedAt = Instant.parse("2026-01-06T12:02:00Z");
         var timedOutAt = Instant.parse("2026-01-06T12:03:00Z");
 
         reportLifecycleDao.claimNextPendingReport(claimTime).orElseThrow();
-        var failed = reportLifecycleDao.markFailed(
-                reportId,
-                snapshotFixedAt,
-                failedAt,
-                "storage_error",
-                "upload failed"
-        );
-        var timedOut = reportLifecycleDao.markTimedOut(
-                reportId,
-                snapshotFixedAt.plusSeconds(30),
-                timedOutAt,
-                "worker_timeout",
-                "worker exceeded timeout"
-        );
+        var failed = reportLifecycleDao.markFailed(reportId, failedAt, "storage_error", "upload failed");
+        var timedOut = reportLifecycleDao.timeoutStaleProcessingReports(timedOutAt, timedOutAt);
 
         assertThat(failed).isTrue();
-        assertThat(timedOut).isFalse();
+        assertThat(timedOut).isZero();
 
         var report = reportingHandler.getReport(new GetReportRequest(reportId));
         assertThat(report.getStatus()).isEqualTo(ReportStatus.failed);
         assertThat(report.getFinishedAt()).isEqualTo(failedAt.toString());
-        assertThat(report.getDataSnapshotFixedAt()).isEqualTo(snapshotFixedAt.toString());
+        assertThat(report.isSetDataSnapshotFixedAt()).isFalse();
         assertThat(report.getError().getCode()).isEqualTo("storage_error");
         assertThat(report.getError().getMessage()).isEqualTo("upload failed");
     }
@@ -110,14 +109,28 @@ class ReportLifecycleWorkerIntegrationTest extends AbstractReportingIntegrationT
         var createdAt = Instant.parse("2026-01-06T13:02:00Z");
         var expiresAt = Instant.parse("2026-02-06T00:00:00Z");
         var expiredAt = Instant.parse("2026-02-06T00:05:00Z");
+        var reportFile = new ReportFile()
+                .setFileId("file-expire-1")
+                .setFileType(dev.vality.ccreporter.domain.enums.FileType.csv)
+                .setFilename("payments.csv")
+                .setContentType("text/csv")
+                .setSizeBytes(128L)
+                .setMd5("md5-value")
+                .setSha256("sha256-value");
 
         reportLifecycleDao.claimNextPendingReport(claimTime).orElseThrow();
-        var created = reportLifecycleDao.markCreated(reportId, snapshotFixedAt, createdAt, expiresAt, 7L);
-        ReportRecordFixtures.attachCsvFile(jdbcTemplate, reportId, "file-expire-1", createdAt);
-        var expired = reportLifecycleDao.expireReport(reportId, expiredAt);
+        var created = reportLifecycleDao.completeReport(
+                reportId,
+                reportFile,
+                snapshotFixedAt,
+                createdAt,
+                expiresAt,
+                7L
+        );
+        var expired = reportLifecycleDao.expireReports(expiredAt);
 
         assertThat(created).isTrue();
-        assertThat(expired).isTrue();
+        assertThat(expired).isEqualTo(1);
 
         var report = reportingHandler.getReport(new GetReportRequest(reportId));
         assertThat(report.getStatus()).isEqualTo(ReportStatus.expired);
@@ -137,12 +150,12 @@ class ReportLifecycleWorkerIntegrationTest extends AbstractReportingIntegrationT
     }
 
     private Instant readInstant(String sql, long reportId) {
-        var timestamp = jdbcTemplate.queryForObject(sql, Timestamp.class, reportId);
-        return Objects.requireNonNull(timestamp).toInstant();
+        var timestamp = jdbcTemplate.queryForObject(sql, LocalDateTime.class, reportId);
+        return timestamp.toInstant(ZoneOffset.UTC);
     }
 
     private Instant readNullableInstant(String sql, long reportId) {
-        var timestamp = jdbcTemplate.queryForObject(sql, Timestamp.class, reportId);
-        return timestamp == null ? null : timestamp.toInstant();
+        var timestamp = jdbcTemplate.queryForObject(sql, LocalDateTime.class, reportId);
+        return timestamp == null ? null : timestamp.toInstant(ZoneOffset.UTC);
     }
 }

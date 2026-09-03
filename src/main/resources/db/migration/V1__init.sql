@@ -28,10 +28,6 @@ CREATE TABLE ccr.report_job (
   report_type ccr.report_type NOT NULL,
   file_type ccr.file_type NOT NULL,
   query_json JSONB NOT NULL,
-  query_hash VARCHAR(64) NOT NULL,
-
-  requested_time_from TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-  requested_time_to TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   timezone VARCHAR NOT NULL DEFAULT 'UTC',
 
   status ccr.report_status NOT NULL DEFAULT 'pending',
@@ -47,13 +43,11 @@ CREATE TABLE ccr.report_job (
   error_message VARCHAR,
 
   created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
-  updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
   started_at TIMESTAMP WITHOUT TIME ZONE,
   finished_at TIMESTAMP WITHOUT TIME ZONE,
   expires_at TIMESTAMP WITHOUT TIME ZONE,
 
-  CONSTRAINT report_job_attempt_chk CHECK (attempt >= 0),
-  CONSTRAINT report_job_time_range_chk CHECK (requested_time_from < requested_time_to)
+  CONSTRAINT report_job_attempt_chk CHECK (attempt >= 0)
 );
 
 CREATE TABLE ccr.report_file (
@@ -62,8 +56,6 @@ CREATE TABLE ccr.report_file (
 
   file_id VARCHAR NOT NULL UNIQUE,
   file_type ccr.file_type NOT NULL,
-  bucket VARCHAR NOT NULL,
-  object_key VARCHAR NOT NULL,
   filename VARCHAR NOT NULL,
   content_type VARCHAR NOT NULL DEFAULT 'text/csv',
 
@@ -73,8 +65,7 @@ CREATE TABLE ccr.report_file (
 
   created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
 
-  CONSTRAINT report_file_report_id_uniq UNIQUE (report_id),
-  CONSTRAINT report_file_storage_uniq UNIQUE (bucket, object_key)
+  CONSTRAINT report_file_report_id_uniq UNIQUE (report_id)
 );
 
 CREATE TABLE ccr.report_audit_event (
@@ -147,6 +138,7 @@ CREATE TABLE ccr.payment_txn_current (
   original_amount BIGINT,
   original_currency VARCHAR,
   converted_amount BIGINT,
+  converted_currency VARCHAR,
   exchange_rate_internal NUMERIC(20, 10),
   provider_amount BIGINT,
   provider_currency VARCHAR,
@@ -176,6 +168,8 @@ CREATE TABLE ccr.withdrawal_txn_current (
   error_summary VARCHAR,
   original_amount BIGINT,
   original_currency VARCHAR,
+  converted_amount BIGINT,
+  converted_currency VARCHAR,
   exchange_rate_internal NUMERIC(20, 10),
   provider_amount BIGINT,
   provider_currency VARCHAR,
@@ -203,12 +197,9 @@ CREATE INDEX report_job_pending_idx
   ON ccr.report_job (next_attempt_at, created_at, id)
   WHERE status = 'pending';
 
-CREATE INDEX report_job_processing_updated_at_idx
-  ON ccr.report_job (updated_at, id)
+CREATE INDEX report_job_processing_started_at_idx
+  ON ccr.report_job (started_at, id)
   WHERE status = 'processing';
-
-CREATE INDEX report_job_time_range_idx
-  ON ccr.report_job (requested_time_from, requested_time_to, id DESC);
 
 CREATE INDEX report_job_report_type_file_type_created_at_idx
   ON ccr.report_job (report_type, file_type, created_at DESC, id DESC);

@@ -11,10 +11,17 @@ spring:
     username: ${db.user}
     password: ${db.password}
     hikari:
+      connection-timeout: 5000
+      validation-timeout: 3000
       idle-timeout: 30000
-      maximum-pool-size: 2
+      minimum-idle: 2
+      maximum-pool-size: 8
       data-source-properties:
         reWriteBatchedInserts: true
+        connectTimeout: 5
+        socketTimeout: 1260
+        cancelSignalTimeout: 5
+        tcpKeepAlive: true
   flyway:
     enabled: true
     schemas: ${db.schema}
@@ -39,22 +46,23 @@ spring:
 management:
   server:
     port: ${management.port}
-  metrics:
-    export:
-      prometheus:
+  prometheus:
+    metrics:
+      export:
         enabled: false
+  metrics:
     tags:
       application: ${project.name}
   endpoint:
     health:
-      enabled: false
+      access: none
       probes:
         enabled: false
       show-details: never
     metrics:
-      enabled: false
+      access: none
     prometheus:
-      enabled: false
+      access: none
   endpoints:
     web:
       exposure:
@@ -62,43 +70,43 @@ management:
       discovery:
         enabled: false
 
-ccr:
-  kafka:
-    consumer:
-      dominant-concurrency: 1
-      payments-concurrency: 1
-      withdrawals-concurrency: 1
-      withdrawal-sessions-concurrency: 1
-      error-backoff-interval-ms: 30000
-      error-max-attempts: -1
-      dominant-error-backoff-interval-ms: 30000
-      dominant-error-max-attempts: -1
-    topics:
-      dominant:
-        id: ""
-        enabled: false
-      payments:
-        id: ""
-        enabled: false
-      withdrawals:
-        id: ""
-        enabled: false
-      withdrawal-sessions:
-        id: ""
-        enabled: false
-  scheduler:
-    enabled: false
-    poll-interval-ms: 10000
-    stale-processing-timeout-ms: 1200000
-  report:
-    max-attempts: 5
-    presigned-url-ttl-sec: 900
-    expiration-sec: 604800
-  api:
-    path: /ccreports
-    default-page-size: 50
-    max-page-size: 100
-  storage:
-    file-storage:
-      url: ""
-      networkTimeout: 5000
+kafka:
+  consumer:
+    dominant-concurrency: 1
+    payments-concurrency: 1
+    withdrawals-concurrency: 1
+    withdrawal-sessions-concurrency: 1
+    error-backoff-interval-ms: 30000
+    error-max-attempts: -1
+    dominant-error-backoff-interval-ms: 30000
+    dominant-error-max-attempts: -1
+  topics:
+    dominant:
+      id: ""
+      enabled: false
+    payments:
+      id: ""
+      enabled: false
+    withdrawals:
+      id: ""
+      enabled: false
+    withdrawal-sessions:
+      id: ""
+      enabled: false
+scheduler:
+  enabled: false
+  poll-interval-ms: 10000
+report:
+  max-attempts: 5
+  worker-concurrency: 2
+  processing-timeout-ms: 1200000
+  presigned-url-ttl-sec: 900
+  expiration-sec: 604800
+api:
+  path: /ccreports
+  default-page-size: 50
+  max-page-size: 100
+storage:
+  file-storage:
+    url: ""
+    networkTimeout: 5000

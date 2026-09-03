@@ -6,7 +6,7 @@
     <parent>
         <groupId>dev.vality</groupId>
         <artifactId>service-parent-pom</artifactId>
-        <version>4.0.0-BETA-1</version>
+        <version>4.0.1</version>
     </parent>
 
     <artifactId>cc-reporter</artifactId>
@@ -36,7 +36,7 @@
         <!--spring -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -79,6 +79,13 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- OpenTelemetry SDK and exporters are initialized by the Java agent from shared-resources. -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
         </dependency>
 
         <!--dev.vality-->
@@ -114,9 +121,13 @@
             <artifactId>damsel</artifactId>
         </dependency>
         <dependency>
+            <groupId>dev.vality.geck</groupId>
+            <artifactId>serializer</artifactId>
+        </dependency>
+        <dependency>
             <groupId>dev.vality</groupId>
             <artifactId>fistful-proto</artifactId>
-            <version>1.188-f7ce08e</version>
+            <version>1.194-360c737</version>
         </dependency>
         <dependency>
             <groupId>jakarta.annotation</groupId>
@@ -157,6 +168,7 @@
                 <filtering>true</filtering>
                 <excludes>
                     <exclude>Dockerfile</exclude>
+                    <exclude>opentelemetry-javaagent.jar</exclude>
                 </excludes>
             </resource>
             <resource>

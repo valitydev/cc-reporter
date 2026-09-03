@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 
 @Data
 @Configuration
-@ConfigurationProperties(prefix = "ccr.api")
+@ConfigurationProperties(prefix = "api")
 public class CcrApiProperties {
 
     private String path;

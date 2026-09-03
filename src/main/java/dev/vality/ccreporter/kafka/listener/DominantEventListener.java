@@ -1,7 +1,7 @@
 package dev.vality.ccreporter.kafka.listener;
 
 import dev.vality.ccreporter.ingestion.dominant.DominantLookupIngestionService;
-import dev.vality.ccreporter.kafka.support.BatchLoggingKafkaListener;
+import dev.vality.ccreporter.kafka.util.BatchLoggingKafkaListener;
 import dev.vality.damsel.domain_config_v2.HistoricalCommit;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -14,13 +14,13 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "ccr.kafka.topics.dominant", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(prefix = "kafka.topics.dominant", name = "enabled", havingValue = "true")
 public class DominantEventListener implements BatchLoggingKafkaListener {
 
     private final DominantLookupIngestionService dominantLookupIngestionService;
 
     @KafkaListener(
-            topics = "${ccr.kafka.topics.dominant.id}",
+            topics = "${kafka.topics.dominant.id}",
             containerFactory = "dominantKafkaListenerContainerFactory"
     )
     public void listen(List<ConsumerRecord<String, HistoricalCommit>> batch, Acknowledgment acknowledgment) {

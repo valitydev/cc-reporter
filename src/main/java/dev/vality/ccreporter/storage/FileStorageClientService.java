@@ -1,5 +1,6 @@
 package dev.vality.ccreporter.storage;
 
+import dev.vality.ccreporter.config.properties.FileStorageProperties;
 import dev.vality.file.storage.FileStorageSrv;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -10,6 +11,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 
@@ -19,6 +21,7 @@ public class FileStorageClientService implements FileStorageService {
 
     private final FileStorageSrv.Iface fileStorageClient;
     private final HttpClient httpClient;
+    private final FileStorageProperties fileStorageProperties;
 
     @Override
     @SneakyThrows
@@ -41,6 +44,7 @@ public class FileStorageClientService implements FileStorageService {
         var request = HttpRequest.newBuilder()
                 .uri(URI.create(newFileResult.getUploadUrl()))
                 .header("Content-Type", contentType)
+                .timeout(Duration.ofMillis(fileStorageProperties.getNetworkTimeout()))
                 .PUT(bodyPublisher)
                 .build();
         var response = httpClient.send(

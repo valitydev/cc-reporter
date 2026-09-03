@@ -4,7 +4,7 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Data
-@ConfigurationProperties(prefix = "ccr.kafka")
+@ConfigurationProperties(prefix = "kafka")
 public class CcrKafkaProperties {
 
     private Consumer consumer;

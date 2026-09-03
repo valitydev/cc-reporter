@@ -1,14 +1,11 @@
 package dev.vality.ccreporter.dao;
 
 import dev.vality.ccreporter.PaymentsQuery;
-import dev.vality.ccreporter.PaymentsSearchFilter;
 import dev.vality.ccreporter.WithdrawalsQuery;
-import dev.vality.ccreporter.WithdrawalsSearchFilter;
 import lombok.RequiredArgsConstructor;
 import org.jooq.*;
 import org.jooq.Record;
 import org.jooq.impl.DSL;
-import org.jooq.impl.SQLDataType;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
@@ -17,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static dev.vality.ccreporter.domain.Tables.*;
+import static dev.vality.ccreporter.util.SearchValueNormalizer.normalize;
 import static dev.vality.ccreporter.util.TimestampUtils.parse;
 import static dev.vality.ccreporter.util.TimestampUtils.toLocalDateTime;
 
@@ -29,6 +27,7 @@ public class ReportCsvDao {
     private static final String FINALIZED_AT = "finalized_at";
     private static final String PROVIDER_CURRENCY = "provider_currency";
     private static final String ORIGINAL_CURRENCY = "original_currency";
+    private static final String CONVERTED_CURRENCY = "converted_currency";
     private static final String CURRENCY = "currency";
 
     private final DSLContext dslContext;
@@ -39,11 +38,18 @@ public class ReportCsvDao {
                 .toInstant();
     }
 
+    public void setLocalStatementTimeout(long timeoutMs) {
+        dslContext.fetchSingle(
+                "SELECT set_config('statement_timeout', ?, true)",
+                timeoutMs + "ms"
+        );
+    }
+
     public Cursor<? extends Record> fetchPayments(PaymentsQuery query) {
         var conditions = buildPaymentsConditions(query);
         return dslContext.select(
-                        timestampField(PAYMENT_TXN_CURRENT.CREATED_AT, CREATED_AT),
-                        timestampField(PAYMENT_TXN_CURRENT.FINALIZED_AT, FINALIZED_AT),
+                        PAYMENT_TXN_CURRENT.CREATED_AT.as(CREATED_AT),
+                        PAYMENT_TXN_CURRENT.FINALIZED_AT.as(FINALIZED_AT),
                         PAYMENT_TXN_CURRENT.INVOICE_ID.as("invoice_id"),
                         PAYMENT_TXN_CURRENT.PAYMENT_ID.as("payment_id"),
                         PAYMENT_TXN_CURRENT.STATUS.as("status"),
@@ -58,7 +64,8 @@ public class ReportCsvDao {
                         PAYMENT_TXN_CURRENT.PROVIDER_CURRENCY.as(PROVIDER_CURRENCY),
                         PAYMENT_TXN_CURRENT.ORIGINAL_AMOUNT.as("original_amount"),
                         PAYMENT_TXN_CURRENT.ORIGINAL_CURRENCY.as(ORIGINAL_CURRENCY),
-                        PAYMENT_TXN_CURRENT.CONVERTED_AMOUNT.as("converted_amount")
+                        PAYMENT_TXN_CURRENT.CONVERTED_AMOUNT.as("converted_amount"),
+                        PAYMENT_TXN_CURRENT.CONVERTED_CURRENCY.as(CONVERTED_CURRENCY)
                 )
                 .from(PAYMENT_TXN_CURRENT)
                 .leftJoin(SHOP_LOOKUP).on(SHOP_LOOKUP.SHOP_ID.eq(PAYMENT_TXN_CURRENT.SHOP_ID))
@@ -92,8 +99,8 @@ public class ReportCsvDao {
         var latestSessionSessionId = latestSession.field("session_id", String.class);
         var conditions = buildWithdrawalConditions(query, latestSessionTrxId, latestSessionTrxSearch);
         return dslContext.select(
-                        timestampField(WITHDRAWAL_TXN_CURRENT.CREATED_AT, CREATED_AT),
-                        timestampField(WITHDRAWAL_TXN_CURRENT.FINALIZED_AT, FINALIZED_AT),
+                        WITHDRAWAL_TXN_CURRENT.CREATED_AT.as(CREATED_AT),
+                        WITHDRAWAL_TXN_CURRENT.FINALIZED_AT.as(FINALIZED_AT),
                         WITHDRAWAL_TXN_CURRENT.WITHDRAWAL_ID.as("withdrawal_id"),
                         WITHDRAWAL_TXN_CURRENT.STATUS.as("status"),
                         WITHDRAWAL_TXN_CURRENT.AMOUNT.as("amount"),
@@ -106,7 +113,9 @@ public class ReportCsvDao {
                         WITHDRAWAL_TXN_CURRENT.PROVIDER_AMOUNT.as("provider_amount"),
                         WITHDRAWAL_TXN_CURRENT.PROVIDER_CURRENCY.as(PROVIDER_CURRENCY),
                         WITHDRAWAL_TXN_CURRENT.ORIGINAL_AMOUNT.as("original_amount"),
-                        WITHDRAWAL_TXN_CURRENT.ORIGINAL_CURRENCY.as(ORIGINAL_CURRENCY)
+                        WITHDRAWAL_TXN_CURRENT.ORIGINAL_CURRENCY.as(ORIGINAL_CURRENCY),
+                        WITHDRAWAL_TXN_CURRENT.CONVERTED_AMOUNT.as("converted_amount"),
+                        WITHDRAWAL_TXN_CURRENT.CONVERTED_CURRENCY.as(CONVERTED_CURRENCY)
                 )
                 .from(WITHDRAWAL_TXN_CURRENT)
                 .leftJoin(latestSession).on(DSL.trueCondition())
@@ -134,24 +143,26 @@ public class ReportCsvDao {
         appendInCondition(conditions, PAYMENT_TXN_CURRENT.TRX_ID, query.getTrxIds());
         appendInCondition(conditions, PAYMENT_TXN_CURRENT.CURRENCY, query.getCurrencies());
         appendInCondition(conditions, PAYMENT_TXN_CURRENT.STATUS, query.getStatuses());
-        appendSearchCondition(conditions, lowercaseSearchField(SHOP_LOOKUP.SHOP_SEARCH), query.getFilter(), "shop");
+        var filter = query.getFilter();
         appendSearchCondition(
                 conditions,
-                lowercaseSearchField(PROVIDER_LOOKUP.PROVIDER_SEARCH),
-                query.getFilter(),
-                "provider"
+                SHOP_LOOKUP.SHOP_SEARCH,
+                filter == null ? null : filter.getShopTerm()
         );
         appendSearchCondition(
                 conditions,
-                lowercaseSearchField(TERMINAL_LOOKUP.TERMINAL_SEARCH),
-                query.getFilter(),
-                "terminal"
+                PROVIDER_LOOKUP.PROVIDER_SEARCH,
+                filter == null ? null : filter.getProviderTerm()
         );
         appendSearchCondition(
                 conditions,
-                lowercaseSearchField(PAYMENT_TXN_CURRENT.TRX_SEARCH),
-                query.getFilter(),
-                "trx"
+                TERMINAL_LOOKUP.TERMINAL_SEARCH,
+                filter == null ? null : filter.getTerminalTerm()
+        );
+        appendSearchCondition(
+                conditions,
+                PAYMENT_TXN_CURRENT.TRX_SEARCH,
+                filter == null ? null : filter.getTrxTerm()
         );
         return conditions;
     }
@@ -175,25 +186,27 @@ public class ReportCsvDao {
         appendInCondition(conditions, latestSessionTrxId, query.getTrxIds());
         appendInCondition(conditions, WITHDRAWAL_TXN_CURRENT.CURRENCY, query.getCurrencies());
         appendInCondition(conditions, WITHDRAWAL_TXN_CURRENT.STATUS, query.getStatuses());
+        var filter = query.getFilter();
         appendSearchCondition(
                 conditions,
-                lowercaseSearchField(WALLET_LOOKUP.WALLET_SEARCH),
-                query.getFilter(),
-                "wallet"
+                WALLET_LOOKUP.WALLET_SEARCH,
+                filter == null ? null : filter.getWalletTerm()
         );
         appendSearchCondition(
                 conditions,
-                lowercaseSearchField(PROVIDER_LOOKUP.PROVIDER_SEARCH),
-                query.getFilter(),
-                "provider"
+                PROVIDER_LOOKUP.PROVIDER_SEARCH,
+                filter == null ? null : filter.getProviderTerm()
         );
         appendSearchCondition(
                 conditions,
-                lowercaseSearchField(TERMINAL_LOOKUP.TERMINAL_SEARCH),
-                query.getFilter(),
-                "terminal"
+                TERMINAL_LOOKUP.TERMINAL_SEARCH,
+                filter == null ? null : filter.getTerminalTerm()
         );
-        appendSearchCondition(conditions, lowercaseSearchField(latestSessionTrxSearch), query.getFilter(), "trx");
+        appendSearchCondition(
+                conditions,
+                latestSessionTrxSearch,
+                filter == null ? null : filter.getTrxTerm()
+        );
         return conditions;
     }
 
@@ -204,54 +217,19 @@ public class ReportCsvDao {
         conditions.add(field.in(values));
     }
 
-    private void appendSearchCondition(
-            List<Condition> conditions,
-            Field<String> field,
-            PaymentsSearchFilter filter,
-            String filterType
-    ) {
-        if (filter == null) {
-            return;
-        }
-        appendSearchCondition(conditions, field, switch (filterType) {
-            case "shop" -> filter.getShopTerm();
-            case "provider" -> filter.getProviderTerm();
-            case "terminal" -> filter.getTerminalTerm();
-            case "trx" -> filter.getTrxTerm();
-            default -> null;
-        });
-    }
-
-    private void appendSearchCondition(
-            List<Condition> conditions,
-            Field<String> field,
-            WithdrawalsSearchFilter filter,
-            String filterType
-    ) {
-        if (filter == null) {
-            return;
-        }
-        appendSearchCondition(conditions, field, switch (filterType) {
-            case "wallet" -> filter.getWalletTerm();
-            case "provider" -> filter.getProviderTerm();
-            case "terminal" -> filter.getTerminalTerm();
-            case "trx" -> filter.getTrxTerm();
-            default -> null;
-        });
-    }
-
     private void appendSearchCondition(List<Condition> conditions, Field<String> field, String value) {
         if (value == null || value.isBlank()) {
             return;
         }
-        conditions.add(field.like("%" + value.toLowerCase() + "%"));
+        var normalizedValue = normalize(value);
+        var pattern = "%" + escapeLikeLiteral(normalizedValue) + "%";
+        conditions.add(DSL.condition("{0} LIKE {1} ESCAPE '!'", field, DSL.val(pattern)));
     }
 
-    private Field<String> lowercaseSearchField(Field<String> field) {
-        return DSL.lower(DSL.coalesce(field, ""));
-    }
-
-    private Field<java.sql.Timestamp> timestampField(Field<java.time.LocalDateTime> field, String alias) {
-        return field.cast(SQLDataType.TIMESTAMP).as(alias);
+    private String escapeLikeLiteral(String value) {
+        return value
+                .replace("!", "!!")
+                .replace("%", "!%")
+                .replace("_", "!_");
     }
 }

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Map;
 import java.util.Set;
 
-import static dev.vality.ccreporter.dao.support.DaoUpsertUtils.*;
+import static dev.vality.ccreporter.dao.util.DaoUpsertUtils.*;
 import static dev.vality.ccreporter.domain.Tables.WITHDRAWAL_SESSION;
 
 @Repository
@@ -42,10 +42,7 @@ public class WithdrawalSessionDao {
                         OVERWRITE_FIELDS,
                         Map.of(WITHDRAWAL_SESSION.UPDATED_AT, UTC_NOW)
                 ))
-                .where(isIncomingEventNewer(
-                        WITHDRAWAL_SESSION.DOMAIN_EVENT_CREATED_AT,
-                        WITHDRAWAL_SESSION.DOMAIN_EVENT_ID
-                ))
+                .where(isIncomingEventNewer(WITHDRAWAL_SESSION.DOMAIN_EVENT_ID))
                 .execute();
     }
 }

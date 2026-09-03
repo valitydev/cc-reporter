@@ -58,6 +58,25 @@ class CurrentStateDaoIntegrationTest extends AbstractReportingIntegrationTest {
     }
 
     @Test
+    void paymentUpsertUsesEventIdInsteadOfEventTimestampForOrdering() {
+        var event10 = CurrentStateUpdateFixtures.paymentUpdate(10L, "pending", null)
+                .setDomainEventCreatedAt(LocalDateTime.parse("2026-01-01T12:00:00"));
+        var event11 = CurrentStateUpdateFixtures.paymentUpdate(11L, "captured", Instant.parse("2026-01-01T11:30:00Z"))
+                .setDomainEventCreatedAt(LocalDateTime.parse("2026-01-01T11:00:00"));
+
+        paymentTxnCurrentDao.upsert(event10);
+        paymentTxnCurrentDao.upsert(event11);
+
+        var row = jdbcTemplate.queryForMap(
+                "SELECT domain_event_id, status FROM ccr.payment_txn_current " +
+                        "WHERE invoice_id = 'invoice-1' AND payment_id = 'payment-1'"
+        );
+
+        assertThat(row.get("domain_event_id")).isEqualTo(11L);
+        assertThat(row.get("status")).isEqualTo("captured");
+    }
+
+    @Test
     void withdrawalSessionIsMonotonic() {
         withdrawalSessionDao.upsert(CurrentStateUpdateFixtures.withdrawalSessionUpdate(
                 "session-1",
@@ -129,6 +148,63 @@ class CurrentStateDaoIntegrationTest extends AbstractReportingIntegrationTest {
         assertThat(row.get("status")).isEqualTo("failed");
         assertThat(((Timestamp) Objects.requireNonNull(row.get("finalized_at"))).toLocalDateTime())
                 .isEqualTo(LocalDateTime.ofInstant(laterFinalizedAt, ZoneOffset.UTC));
+    }
+
+
+    @Test
+    void paymentStatusCorrectionReplacesFinalizationAndClearsError() {
+        var failedAt = Instant.parse("2026-01-01T10:10:00Z");
+        var capturedAt = Instant.parse("2026-01-01T10:20:00Z");
+
+        paymentTxnCurrentDao.upsert(
+                CurrentStateUpdateFixtures.paymentUpdate(40L, "failed", failedAt)
+                        .setErrorSummary("declined")
+        );
+        paymentTxnCurrentDao.upsert(
+                CurrentStateUpdateFixtures.paymentUpdate(41L, "captured", capturedAt)
+                        .setErrorSummary(null)
+        );
+
+        var row = jdbcTemplate.queryForMap(
+                """
+                        SELECT status, finalized_at, error_summary
+                        FROM ccr.payment_txn_current
+                        WHERE invoice_id = 'invoice-1' AND payment_id = 'payment-1'
+                        """
+        );
+
+        assertThat(row.get("status")).isEqualTo("captured");
+        assertThat(((Timestamp) Objects.requireNonNull(row.get("finalized_at"))).toLocalDateTime())
+                .isEqualTo(LocalDateTime.ofInstant(capturedAt, ZoneOffset.UTC));
+        assertThat(row.get("error_summary")).isNull();
+    }
+
+    @Test
+    void withdrawalStatusCorrectionReplacesFinalizationAndClearsError() {
+        var failedAt = Instant.parse("2026-01-01T11:10:00Z");
+        var succeededAt = Instant.parse("2026-01-01T11:20:00Z");
+
+        withdrawalTxnCurrentDao.upsert(
+                CurrentStateUpdateFixtures.withdrawalUpdate(50L, "failed", failedAt)
+                        .setErrorSummary("declined")
+        );
+        withdrawalTxnCurrentDao.upsert(
+                CurrentStateUpdateFixtures.withdrawalUpdate(51L, "succeeded", succeededAt)
+                        .setErrorSummary(null)
+        );
+
+        var row = jdbcTemplate.queryForMap(
+                """
+                        SELECT status, finalized_at, error_summary
+                        FROM ccr.withdrawal_txn_current
+                        WHERE withdrawal_id = 'withdrawal-1'
+                        """
+        );
+
+        assertThat(row.get("status")).isEqualTo("succeeded");
+        assertThat(((Timestamp) Objects.requireNonNull(row.get("finalized_at"))).toLocalDateTime())
+                .isEqualTo(LocalDateTime.ofInstant(succeededAt, ZoneOffset.UTC));
+        assertThat(row.get("error_summary")).isNull();
     }
 
     @Test

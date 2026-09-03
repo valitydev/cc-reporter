@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.dao.support;
+package dev.vality.ccreporter.dao.util;
 
 import lombok.experimental.UtilityClass;
 import org.jooq.Field;
@@ -59,14 +59,7 @@ public class DaoUpsertUtils {
         );
     }
 
-    public static org.jooq.Condition isIncomingEventNewer(
-            Field<LocalDateTime> createdAtField,
-            Field<Long> eventIdField
-    ) {
-        return DSL.excluded(createdAtField).gt(createdAtField)
-                .or(
-                        DSL.excluded(createdAtField).eq(createdAtField)
-                                .and(DSL.excluded(eventIdField).gt(eventIdField))
-                );
+    public static org.jooq.Condition isIncomingEventNewer(Field<Long> eventIdField) {
+        return DSL.excluded(eventIdField).gt(eventIdField);
     }
 }

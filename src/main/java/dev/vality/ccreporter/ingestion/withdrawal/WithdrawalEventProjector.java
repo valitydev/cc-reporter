@@ -19,7 +19,7 @@ import java.util.Optional;
 import static dev.vality.ccreporter.ingestion.shared.status.StatusDetailExtractor.PENDING_STATUS;
 import static dev.vality.ccreporter.ingestion.shared.status.StatusDetailExtractor.extractErrorSummary;
 import static dev.vality.ccreporter.util.TimestampUtils.toLocalDateTime;
-import static dev.vality.ccreporter.util.TimestampUtils.toOptionalLocalDateTime;
+import static dev.vality.ccreporter.util.TimestampUtils.toNullableLocalDateTime;
 
 @Component
 public class WithdrawalEventProjector {
@@ -35,6 +35,7 @@ public class WithdrawalEventProjector {
 
     private Optional<WithdrawalTxnCurrent> projectChange(MachineEvent event, Change change) {
         return createdUpdate(event, change)
+                .or(() -> bodyChangedUpdate(event, change))
                 .or(() -> routeChangedUpdate(event, change))
                 .or(() -> statusChangedUpdate(event, change))
                 .or(() -> transferCashFlowUpdate(event, change));
@@ -62,9 +63,21 @@ public class WithdrawalEventProjector {
                 .setExternalId(withdrawal.getExternalId())
                 .setOriginalAmount(quote != null ? quote.getCashFrom().getAmount() : null)
                 .setOriginalCurrency(quote != null ? quote.getCashFrom().getCurrency().getSymbolicCode() : null)
+                .setConvertedAmount(quote != null ? body.getAmount() : null)
+                .setConvertedCurrency(quote != null ? body.getCurrency().getSymbolicCode() : null)
                 .setExchangeRateInternal(toRate(quote))
                 .setProviderAmount(quote != null ? quote.getCashTo().getAmount() : null)
                 .setProviderCurrency(quote != null ? quote.getCashTo().getCurrency().getSymbolicCode() : null));
+    }
+
+    private Optional<WithdrawalTxnCurrent> bodyChangedUpdate(MachineEvent event, Change change) {
+        if (!change.isSetBodyChanged()) {
+            return Optional.empty();
+        }
+        var body = change.getBodyChanged().getNewBody();
+        return Optional.of(baseUpdate(event)
+                .setAmount(body.getAmount())
+                .setCurrency(body.getCurrency().getSymbolicCode()));
     }
 
     private Optional<WithdrawalTxnCurrent> routeChangedUpdate(MachineEvent event, Change change) {
@@ -85,7 +98,7 @@ public class WithdrawalEventProjector {
         return Optional.of(baseUpdate(event)
                 .setStatus(status.getSetField().getFieldName())
                 .setFinalizedAt(
-                        toOptionalLocalDateTime(terminalFinalizedAt(status, Instant.parse(event.getCreatedAt()))))
+                        toNullableLocalDateTime(terminalFinalizedAt(status, Instant.parse(event.getCreatedAt()))))
                 .setErrorSummary(extractErrorSummary(status)));
     }
 

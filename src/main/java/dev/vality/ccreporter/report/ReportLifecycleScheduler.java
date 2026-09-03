@@ -7,15 +7,13 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "ccr.scheduler", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(prefix = "scheduler", name = "enabled", havingValue = "true")
 public class ReportLifecycleScheduler {
 
     private final ReportLifecycleService reportLifecycleService;
 
-    @Scheduled(fixedDelayString = "${ccr.scheduler.poll-interval-ms:10000}")
+    @Scheduled(fixedDelayString = "${scheduler.poll-interval-ms:10000}")
     public void runLifecycleTick() {
-        reportLifecycleService.timeoutStaleProcessingReports();
-        reportLifecycleService.expireReadyReports();
-        reportLifecycleService.processNextPendingReport();
+        reportLifecycleService.runLifecycleTick();
     }
 }
