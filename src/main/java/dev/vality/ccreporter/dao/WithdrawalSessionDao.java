@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Map;
 import java.util.Set;
 
-import static dev.vality.ccreporter.dao.support.DaoUpsertUtils.*;
+import static dev.vality.ccreporter.dao.util.DaoUpsertUtils.*;
 import static dev.vality.ccreporter.domain.Tables.WITHDRAWAL_SESSION;
 
 @Repository

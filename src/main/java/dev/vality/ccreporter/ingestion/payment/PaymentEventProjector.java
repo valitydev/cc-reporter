@@ -1,9 +1,9 @@
 package dev.vality.ccreporter.ingestion.payment;
 
 import dev.vality.ccreporter.domain.tables.pojos.PaymentTxnCurrent;
-import dev.vality.ccreporter.ingestion.payment.support.PaymentToolExtractor;
-import dev.vality.ccreporter.ingestion.payment.support.ProxyStateExtractor;
-import dev.vality.ccreporter.ingestion.payment.support.TransactionExtraExtractor;
+import dev.vality.ccreporter.ingestion.payment.util.PaymentToolExtractor;
+import dev.vality.ccreporter.ingestion.payment.util.ProxyStateExtractor;
+import dev.vality.ccreporter.ingestion.payment.util.TransactionExtraExtractor;
 import dev.vality.ccreporter.ingestion.shared.cashflow.CashFlowAmountExtractor;
 import dev.vality.damsel.domain.InvoicePaymentStatus;
 import dev.vality.damsel.payment_processing.EventPayload;
@@ -158,13 +158,17 @@ public class PaymentEventProjector {
         var info = trx.getAdditionalInfo();
         var code = info != null ? info.getApprovalCode() : null;
         var rrn = info != null ? info.getRrn() : null;
-        return Optional.of(baseUpdate(event, paymentChange)
+        var update = baseUpdate(event, paymentChange)
                 .setTrxId(trx.getId())
                 .setRrn(rrn)
                 .setApprovalCode(code)
-                .setConvertedAmount(TransactionExtraExtractor.getConvertedAmount(trx))
-                .setExchangeRateInternal(TransactionExtraExtractor.getExchangeRate(trx))
-                .setTrxSearch(normalize(trx.getId(), rrn, code)));
+                .setTrxSearch(normalize(trx.getId(), rrn, code));
+        TransactionExtraExtractor.extractFxConversion(trx).ifPresent(conversion -> update
+                .setOriginalCurrency(conversion.originalCurrency())
+                .setConvertedAmount(conversion.convertedAmount())
+                .setConvertedCurrency(conversion.convertedCurrency())
+                .setExchangeRateInternal(conversion.exchangeRate()));
+        return Optional.of(update);
     }
 
     private Optional<PaymentTxnCurrent> paymentProxyStateFallbackUpdate(
@@ -214,6 +218,7 @@ public class PaymentEventProjector {
         copyIfPresent(update.getOriginalAmount(), accumulated::setOriginalAmount);
         copyIfPresent(update.getOriginalCurrency(), accumulated::setOriginalCurrency);
         copyIfPresent(update.getConvertedAmount(), accumulated::setConvertedAmount);
+        copyIfPresent(update.getConvertedCurrency(), accumulated::setConvertedCurrency);
         copyIfPresent(update.getExchangeRateInternal(), accumulated::setExchangeRateInternal);
         copyIfPresent(update.getProviderAmount(), accumulated::setProviderAmount);
         copyIfPresent(update.getProviderCurrency(), accumulated::setProviderCurrency);

@@ -1,7 +1,7 @@
 package dev.vality.ccreporter.kafka.listener;
 
 import dev.vality.ccreporter.ingestion.withdrawal.session.WithdrawalSessionIngestionService;
-import dev.vality.ccreporter.kafka.support.BatchLoggingKafkaListener;
+import dev.vality.ccreporter.kafka.util.BatchLoggingKafkaListener;
 import dev.vality.machinegun.eventsink.SinkEvent;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;

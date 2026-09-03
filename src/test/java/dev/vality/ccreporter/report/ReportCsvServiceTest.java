@@ -45,6 +45,7 @@ class ReportCsvServiceTest {
         when(row.get("provider_amount")).thenReturn(990L);
         when(row.get("original_amount")).thenReturn(1100L);
         when(row.get("converted_amount")).thenReturn(1000L);
+        when(row.get("converted_currency")).thenReturn("JPY");
         when(row.get("invoice_id")).thenReturn("invoice-cursor-1");
         when(row.get("payment_id")).thenReturn("payment-cursor-1");
         when(row.get("status")).thenReturn("captured");
@@ -59,6 +60,7 @@ class ReportCsvServiceTest {
         when(row.get("currency", String.class)).thenReturn("RUB");
         when(row.get("provider_currency", String.class)).thenReturn("EUR");
         when(row.get("original_currency", String.class)).thenReturn("USD");
+        when(row.get("converted_currency", String.class)).thenReturn("JPY");
 
         var generatedCsvReport = reportCsvService.generate(claimedPaymentsJob(thriftJsonCodec));
 
@@ -71,6 +73,7 @@ class ReportCsvServiceTest {
         var csv = Files.readString(generatedCsvReport.contentPath(), StandardCharsets.UTF_8);
         assertThat(csv)
                 .contains("invoice-cursor-1,payment-cursor-1,captured,10.00,RUB,trx-cursor-1")
+                .contains(",11.00,USD,1000,JPY")
                 .contains("\"shop\r1\"")
                 .contains("\r\n");
         assertThat(csv.replace("\r\n", "")).doesNotContain("\n");

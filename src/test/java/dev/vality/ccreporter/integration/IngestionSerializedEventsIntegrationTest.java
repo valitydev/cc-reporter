@@ -34,7 +34,8 @@ class IngestionSerializedEventsIntegrationTest extends AbstractReportingIntegrat
         var row = jdbcTemplate.queryForMap(
                 """
                         SELECT status, provider_id, terminal_id, amount, fee, trx_id, rrn, approval_code, finalized_at,
-                               original_amount, original_currency, converted_amount, exchange_rate_internal,
+                               original_amount, original_currency, converted_amount, converted_currency,
+                               exchange_rate_internal,
                                provider_amount, provider_currency
                         FROM ccr.payment_txn_current
                         WHERE invoice_id = ? AND payment_id = ?
@@ -55,6 +56,7 @@ class IngestionSerializedEventsIntegrationTest extends AbstractReportingIntegrat
         assertThat(row.get("original_amount")).isEqualTo(1000L);
         assertThat(row.get("original_currency")).isEqualTo("RUB");
         assertThat(row.get("converted_amount")).isEqualTo(900L);
+        assertThat(row.get("converted_currency")).isEqualTo("EUR");
         assertThat(row.get("exchange_rate_internal")).isEqualTo(new java.math.BigDecimal("0.9000000000"));
         assertThat(row.get("provider_amount")).isEqualTo(900L);
         assertThat(row.get("provider_currency")).isEqualTo("EUR");
@@ -67,7 +69,8 @@ class IngestionSerializedEventsIntegrationTest extends AbstractReportingIntegrat
         var row = jdbcTemplate.queryForMap(
                 """
                         SELECT status, amount, fee, trx_id, rrn, approval_code,
-                               converted_amount, exchange_rate_internal, provider_amount, provider_currency
+                               converted_amount, converted_currency, exchange_rate_internal,
+                               provider_amount, provider_currency
                         FROM ccr.payment_txn_current
                         WHERE invoice_id = ? AND payment_id = ?
                         """,
@@ -82,6 +85,7 @@ class IngestionSerializedEventsIntegrationTest extends AbstractReportingIntegrat
         assertThat(row.get("rrn")).isEqualTo("rrn-payment-1");
         assertThat(row.get("approval_code")).isEqualTo("approval-payment-1");
         assertThat(row.get("converted_amount")).isEqualTo(900L);
+        assertThat(row.get("converted_currency")).isEqualTo("EUR");
         assertThat(row.get("exchange_rate_internal")).isEqualTo(new java.math.BigDecimal("0.9000000000"));
         assertThat(row.get("provider_amount")).isEqualTo(900L);
         assertThat(row.get("provider_currency")).isEqualTo("EUR");
@@ -154,7 +158,7 @@ class IngestionSerializedEventsIntegrationTest extends AbstractReportingIntegrat
         var withdrawalRow = jdbcTemplate.queryForMap(
                 """
                         SELECT status, provider_id, terminal_id, amount, fee, wallet_id, finalized_at,
-                               original_amount, original_currency, converted_amount,
+                               original_amount, original_currency, converted_amount, converted_currency,
                                provider_amount, provider_currency
                         FROM ccr.withdrawal_txn_current
                         WHERE withdrawal_id = ?
@@ -173,6 +177,7 @@ class IngestionSerializedEventsIntegrationTest extends AbstractReportingIntegrat
         assertThat(withdrawalRow.get("original_amount")).isEqualTo(1200L);
         assertThat(withdrawalRow.get("original_currency")).isEqualTo("USD");
         assertThat(withdrawalRow.get("converted_amount")).isEqualTo(1000L);
+        assertThat(withdrawalRow.get("converted_currency")).isEqualTo("RUB");
         assertThat(withdrawalRow.get("provider_amount")).isEqualTo(1000L);
         assertThat(withdrawalRow.get("provider_currency")).isEqualTo("RUB");
 

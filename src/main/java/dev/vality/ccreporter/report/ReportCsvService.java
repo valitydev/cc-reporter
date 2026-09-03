@@ -64,6 +64,7 @@ public class ReportCsvService {
     private static final String ORIGINAL_AMOUNT_COLUMN = "original_amount";
     private static final String ORIGINAL_CURRENCY_COLUMN = "original_currency";
     private static final String CONVERTED_AMOUNT_COLUMN = "converted_amount";
+    private static final String CONVERTED_CURRENCY_COLUMN = "converted_currency";
 
     private static final List<String> PAYMENT_COLUMNS = List.of(
             CREATED_DATE_COLUMN,
@@ -84,7 +85,8 @@ public class ReportCsvService {
             PROVIDER_CURRENCY_COLUMN,
             ORIGINAL_AMOUNT_COLUMN,
             ORIGINAL_CURRENCY_COLUMN,
-            CONVERTED_AMOUNT_COLUMN
+            CONVERTED_AMOUNT_COLUMN,
+            CONVERTED_CURRENCY_COLUMN
     );
 
     private static final List<String> WITHDRAWAL_COLUMNS = List.of(
@@ -105,7 +107,8 @@ public class ReportCsvService {
             PROVIDER_CURRENCY_COLUMN,
             ORIGINAL_AMOUNT_COLUMN,
             ORIGINAL_CURRENCY_COLUMN,
-            CONVERTED_AMOUNT_COLUMN
+            CONVERTED_AMOUNT_COLUMN,
+            CONVERTED_CURRENCY_COLUMN
     );
 
     private final ReportCsvDao reportCsvDao;
@@ -232,7 +235,7 @@ public class ReportCsvService {
             );
             case CONVERTED_AMOUNT_COLUMN -> renderMinorUnits(
                     row.get("converted_amount"),
-                    row.get("currency", String.class)
+                    row.get("converted_currency", String.class)
             );
             default -> renderScalarValue(row.get(column));
         };

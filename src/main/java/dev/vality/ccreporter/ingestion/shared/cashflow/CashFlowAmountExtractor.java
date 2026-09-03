@@ -38,8 +38,9 @@ public class CashFlowAmountExtractor {
                 .filter(posting -> posting.getSource().getAccountType().isSetWallet()
                         && posting.getDestination().getAccountType().isSetSystem())
                 .map(dev.vality.fistful.cashflow.FinalCashFlowPosting::getVolume)
-                .mapToLong(dev.vality.fistful.base.Cash::getAmount)
-                .sum();
+                .map(dev.vality.fistful.base.Cash::getAmount)
+                .reduce(Long::sum)
+                .orElse(null);
     }
 
     private static Long sum(
@@ -51,7 +52,8 @@ public class CashFlowAmountExtractor {
                 : postings.stream()
                 .filter(filter)
                 .map(dev.vality.damsel.domain.FinalCashFlowPosting::getVolume)
-                .mapToLong(dev.vality.damsel.domain.Cash::getAmount)
-                .sum();
+                .map(dev.vality.damsel.domain.Cash::getAmount)
+                .reduce(Long::sum)
+                .orElse(null);
     }
 }

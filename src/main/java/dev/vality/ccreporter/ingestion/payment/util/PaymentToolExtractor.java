@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.ingestion.payment.support;
+package dev.vality.ccreporter.ingestion.payment.util;
 
 import dev.vality.damsel.domain.InvoicePayment;
 import lombok.experimental.UtilityClass;

@@ -27,6 +27,7 @@ public class ReportCsvDao {
     private static final String FINALIZED_AT = "finalized_at";
     private static final String PROVIDER_CURRENCY = "provider_currency";
     private static final String ORIGINAL_CURRENCY = "original_currency";
+    private static final String CONVERTED_CURRENCY = "converted_currency";
     private static final String CURRENCY = "currency";
 
     private final DSLContext dslContext;
@@ -63,7 +64,8 @@ public class ReportCsvDao {
                         PAYMENT_TXN_CURRENT.PROVIDER_CURRENCY.as(PROVIDER_CURRENCY),
                         PAYMENT_TXN_CURRENT.ORIGINAL_AMOUNT.as("original_amount"),
                         PAYMENT_TXN_CURRENT.ORIGINAL_CURRENCY.as(ORIGINAL_CURRENCY),
-                        PAYMENT_TXN_CURRENT.CONVERTED_AMOUNT.as("converted_amount")
+                        PAYMENT_TXN_CURRENT.CONVERTED_AMOUNT.as("converted_amount"),
+                        PAYMENT_TXN_CURRENT.CONVERTED_CURRENCY.as(CONVERTED_CURRENCY)
                 )
                 .from(PAYMENT_TXN_CURRENT)
                 .leftJoin(SHOP_LOOKUP).on(SHOP_LOOKUP.SHOP_ID.eq(PAYMENT_TXN_CURRENT.SHOP_ID))
@@ -112,7 +114,8 @@ public class ReportCsvDao {
                         WITHDRAWAL_TXN_CURRENT.PROVIDER_CURRENCY.as(PROVIDER_CURRENCY),
                         WITHDRAWAL_TXN_CURRENT.ORIGINAL_AMOUNT.as("original_amount"),
                         WITHDRAWAL_TXN_CURRENT.ORIGINAL_CURRENCY.as(ORIGINAL_CURRENCY),
-                        WITHDRAWAL_TXN_CURRENT.CONVERTED_AMOUNT.as("converted_amount")
+                        WITHDRAWAL_TXN_CURRENT.CONVERTED_AMOUNT.as("converted_amount"),
+                        WITHDRAWAL_TXN_CURRENT.CONVERTED_CURRENCY.as(CONVERTED_CURRENCY)
                 )
                 .from(WITHDRAWAL_TXN_CURRENT)
                 .leftJoin(latestSession).on(DSL.trueCondition())

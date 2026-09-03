@@ -40,7 +40,7 @@ public class ReportManagementService {
         reportRequestValidator.validateCreate(request);
         var auditMetadata = requestAuditMetadataResolver.resolve();
         var timezone = StringUtils.hasText(request.getTimezone()) ? request.getTimezone() : "UTC";
-        var createdBy = auditMetadata.email();
+        var createdBy = auditMetadata.userId();
         var result = reportCommandDao.createReport(
                 createdBy,
                 request.getReportType(),
@@ -50,7 +50,8 @@ public class ReportManagementService {
                 request.getIdempotencyKey()
         );
         if (result.created()) {
-            reportAuditService.writeReportCreated(result.reportId(), createdBy, auditMetadata, request, timezone);
+            reportAuditService.writeReportCreated(
+                    result.reportId(), auditMetadata.email(), auditMetadata, request, timezone);
         }
         return result.reportId();
     }
@@ -60,7 +61,7 @@ public class ReportManagementService {
         if (request == null) {
             throw invalidRequest("request is required");
         }
-        var createdBy = requestAuditMetadataResolver.resolve().email();
+        var createdBy = requestAuditMetadataResolver.resolve().userId();
         reportLifecycleDao.expireReports(Instant.now());
         return reportQueryDao.getReport(createdBy, request.getReportId())
                 .map(reportThriftMapper::mapReport)
@@ -69,7 +70,7 @@ public class ReportManagementService {
 
     @Transactional
     public GetReportsResponse getReports(GetReportsRequest request) throws InvalidRequest, BadContinuationToken {
-        var createdBy = requestAuditMetadataResolver.resolve().email();
+        var createdBy = requestAuditMetadataResolver.resolve().userId();
         var safeRequest = request == null ? new GetReportsRequest() : request;
         reportRequestValidator.validateGetReports(safeRequest);
         reportLifecycleDao.expireReports(Instant.now());
@@ -103,12 +104,13 @@ public class ReportManagementService {
             throw invalidRequest("request is required");
         }
         var auditMetadata = requestAuditMetadataResolver.resolve();
-        var createdBy = auditMetadata.email();
+        var createdBy = auditMetadata.userId();
         var updated = reportLifecycleDao.cancelReport(createdBy, request.getReportId(), Instant.now());
         if (!updated && !reportCommandDao.reportExists(createdBy, request.getReportId())) {
             throw new ReportNotFound();
         }
-        reportAuditService.writeReportCanceled(request.getReportId(), createdBy, auditMetadata, updated);
+        reportAuditService.writeReportCanceled(
+                request.getReportId(), auditMetadata.email(), auditMetadata, updated);
     }
 
     public String generatePresignedUrl(GeneratePresignedUrlRequest request) throws InvalidRequest, FileNotFound {
@@ -116,7 +118,7 @@ public class ReportManagementService {
             throw invalidRequest("request is required");
         }
         var auditMetadata = requestAuditMetadataResolver.resolve();
-        var createdBy = auditMetadata.email();
+        var createdBy = auditMetadata.userId();
         var now = Instant.now();
         var fileData = reportQueryDao.getDownloadableFile(createdBy, request.getFileId(), now);
         if (fileData.isEmpty()) {
@@ -135,7 +137,7 @@ public class ReportManagementService {
         );
         reportAuditService.writePresignedUrlGenerated(
                 downloadableFile.file().getReportId(),
-                createdBy,
+                auditMetadata.email(),
                 auditMetadata,
                 request,
                 effectiveExpiresAt,

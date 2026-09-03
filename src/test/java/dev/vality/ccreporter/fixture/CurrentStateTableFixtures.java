@@ -30,12 +30,13 @@ public final class CurrentStateTableFixtures {
                             provider_id, terminal_id, amount,
                             fee, currency, trx_id, external_id, rrn, approval_code,
                             payment_tool_type, error_summary, original_amount, original_currency,
-                            converted_amount, exchange_rate_internal, provider_amount, provider_currency,
+                            converted_amount, converted_currency, exchange_rate_internal,
+                            provider_amount, provider_currency,
                             trx_search
                         )
                         VALUES (
                             ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
                         )
                         """,
                 invoiceId,
@@ -61,6 +62,7 @@ public final class CurrentStateTableFixtures {
                 1100L,
                 "USD",
                 1000L,
+                "RUB",
                 new BigDecimal("1.1000000000"),
                 990L,
                 "EUR",
@@ -81,11 +83,11 @@ public final class CurrentStateTableFixtures {
                             party_id, wallet_id, destination_id, created_at,
                             finalized_at, status, provider_id, terminal_id, amount, fee, currency, external_id,
                             error_summary, original_amount, original_currency, exchange_rate_internal,
-                            provider_amount, provider_currency, converted_amount
+                            provider_amount, provider_currency, converted_amount, converted_currency
                         )
                         VALUES (
                             ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                            ?, ?, ?, ?, ?, ?
+                            ?, ?, ?, ?, ?, ?, ?
                         )
                         """,
                 withdrawalId,
@@ -109,7 +111,8 @@ public final class CurrentStateTableFixtures {
                 new BigDecimal("1.0500000000"),
                 1990L,
                 "EUR",
-                2000L
+                2000L,
+                "RUB"
         );
         insertWithdrawalSessionRow(
                 jdbcTemplate,

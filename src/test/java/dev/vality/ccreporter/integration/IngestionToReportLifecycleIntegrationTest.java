@@ -74,7 +74,8 @@ class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegra
                 """
                         SELECT status, provider_id, terminal_id, amount, currency, trx_id, external_id,
                                payment_tool_type, finalized_at, original_amount, original_currency,
-                               converted_amount, exchange_rate_internal, provider_amount, provider_currency,
+                               converted_amount, converted_currency, exchange_rate_internal,
+                               provider_amount, provider_currency,
                                error_summary
                         FROM ccr.payment_txn_current
                         WHERE invoice_id = ? AND payment_id = ?
@@ -103,6 +104,7 @@ class IngestionToReportLifecycleIntegrationTest extends AbstractReportingIntegra
         assertThat(row.get("original_amount")).isEqualTo(425000L);
         assertThat(row.get("original_currency")).isEqualTo("KZT");
         assertThat(row.get("converted_amount")).isEqualTo(748L);
+        assertThat(row.get("converted_currency")).isEqualTo("EUR");
         assertThat((BigDecimal) row.get("exchange_rate_internal")).isEqualByComparingTo("568.23");
         assertThat(row.get("provider_amount")).isEqualTo(425000L);
         assertThat(row.get("provider_currency")).isEqualTo("KZT");

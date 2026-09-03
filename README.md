@@ -38,8 +38,8 @@ pending -> processing -> created -> expired
 ### Payments
 
 ```csv
-created_date,created_time,finalized_date,finalized_time,invoice_id,payment_id,status,amount,currency,trx_id,provider_id,terminal_id,shop_id,exchange_rate_internal,provider_amount,provider_currency,original_amount,original_currency,converted_amount
-2026-08-20,10:15:00,2026-08-20,10:15:04,invoice-1,payment-1,captured,1000.00,RUB,trx-1,12,34,shop-1,1.0000000000,1000.00,RUB,1000.00,RUB,1000.00
+created_date,created_time,finalized_date,finalized_time,invoice_id,payment_id,status,amount,currency,trx_id,provider_id,terminal_id,shop_id,exchange_rate_internal,provider_amount,provider_currency,original_amount,original_currency,converted_amount,converted_currency
+2026-08-20,10:15:00,2026-08-20,10:15:04,invoice-1,payment-1,captured,1000.00,RUB,trx-1,12,34,shop-1,1.0000000000,1000.00,RUB,1000.00,RUB,1000.00,RUB
 ```
 
 | CSV-поле | Источник |
@@ -52,13 +52,13 @@ created_date,created_time,finalized_date,finalized_time,invoice_id,payment_id,st
 | `provider_id`, `terminal_id`, `shop_id` | `payment_txn_current` |
 | `exchange_rate_internal` | `payment_txn_current.exchange_rate_internal` |
 | `provider_amount`, `provider_currency` | `payment_txn_current` |
-| `original_amount`, `original_currency`, `converted_amount` | `payment_txn_current` |
+| `original_amount`, `original_currency`, `converted_amount`, `converted_currency` | `payment_txn_current` |
 
 ### Withdrawals
 
 ```csv
-created_date,created_time,finalized_date,finalized_time,withdrawal_id,status,amount,currency,trx_id,provider_id,terminal_id,wallet_id,exchange_rate_internal,provider_amount,provider_currency,original_amount,original_currency,converted_amount
-2026-08-20,11:20:00,2026-08-20,11:20:05,withdrawal-1,succeeded,5000.00,RUB,trx-2,12,34,wallet-1,83.3333333333,5000.00,RUB,60.00,USD,5000.00
+created_date,created_time,finalized_date,finalized_time,withdrawal_id,status,amount,currency,trx_id,provider_id,terminal_id,wallet_id,exchange_rate_internal,provider_amount,provider_currency,original_amount,original_currency,converted_amount,converted_currency
+2026-08-20,11:20:00,2026-08-20,11:20:05,withdrawal-1,succeeded,5000.00,RUB,trx-2,12,34,wallet-1,83.3333333333,5000.00,RUB,60.00,USD,5000.00,RUB
 ```
 
 | CSV-поле | Источник |
@@ -71,7 +71,7 @@ created_date,created_time,finalized_date,finalized_time,withdrawal_id,status,amo
 | `provider_id`, `terminal_id`, `wallet_id` | `withdrawal_txn_current` |
 | `exchange_rate_internal` | `withdrawal_txn_current.exchange_rate_internal` |
 | `provider_amount`, `provider_currency` | `withdrawal_txn_current` |
-| `original_amount`, `original_currency`, `converted_amount` | `withdrawal_txn_current` |
+| `original_amount`, `original_currency`, `converted_amount`, `converted_currency` | `withdrawal_txn_current` |
 
 ## Документация
 

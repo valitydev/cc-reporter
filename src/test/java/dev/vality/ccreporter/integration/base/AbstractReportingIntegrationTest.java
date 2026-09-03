@@ -121,6 +121,10 @@ public abstract class AbstractReportingIntegrationTest {
         );
     }
 
+    protected void bindCallerIdentity(String userId, String email) {
+        bindTraceContext(null, userId, userId, email, "external", null, null, null);
+    }
+
     private void bindTraceContext(
             String traceparent,
             String userId,

@@ -78,6 +78,26 @@ class ReportingApiSmokeTest extends AbstractReportingIntegrationTest {
     }
 
     @Test
+    void reportOwnershipUsesStableUserIdInsteadOfEmail() throws Exception {
+        bindCallerIdentity("stable-user-id", "old@example.com");
+        var reportId = reportingHandler.createReport(ReportRequestFixtures.payments("owner-user-id-1"));
+
+        bindCallerIdentity("stable-user-id", "new@example.com");
+        var report = reportingHandler.getReport(new GetReportRequest(reportId));
+
+        assertThat(report.getReportId()).isEqualTo(reportId);
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT created_by FROM ccr.report_job WHERE id = ?",
+                String.class,
+                reportId
+        )).isEqualTo("stable-user-id");
+
+        bindCallerIdentity("different-user-id", "old@example.com");
+        assertThatThrownBy(() -> reportingHandler.getReport(new GetReportRequest(reportId)))
+                .isInstanceOf(ReportNotFound.class);
+    }
+
+    @Test
     void getReportsReturnsContinuationToken() throws Exception {
         reportingHandler.createReport(ReportRequestFixtures.payments("page-1"));
         reportingHandler.createReport(ReportRequestFixtures.payments("page-2"));

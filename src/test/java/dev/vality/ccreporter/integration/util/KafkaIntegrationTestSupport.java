@@ -1,4 +1,4 @@
-package dev.vality.ccreporter.integration.support;
+package dev.vality.ccreporter.integration.util;
 
 import dev.vality.ccreporter.serde.thrift.ThriftSerializer;
 import dev.vality.damsel.domain_config_v2.HistoricalCommit;

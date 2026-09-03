@@ -45,6 +45,7 @@ public final class CurrentStateUpdateFixtures {
                 .setOriginalAmount(1000L)
                 .setOriginalCurrency("RUB")
                 .setConvertedAmount(1000L)
+                .setConvertedCurrency("RUB")
                 .setExchangeRateInternal(BigDecimal.ONE)
                 .setProviderAmount(1000L)
                 .setProviderCurrency("RUB");
@@ -76,6 +77,7 @@ public final class CurrentStateUpdateFixtures {
                 .setOriginalAmount(2100L)
                 .setOriginalCurrency("USD")
                 .setConvertedAmount(2000L)
+                .setConvertedCurrency("RUB")
                 .setExchangeRateInternal(new BigDecimal("0.9523809524"))
                 .setProviderAmount(2000L)
                 .setProviderCurrency("RUB");

@@ -1,7 +1,7 @@
 package dev.vality.ccreporter.kafka.listener;
 
 import dev.vality.ccreporter.ingestion.dominant.DominantLookupIngestionService;
-import dev.vality.ccreporter.kafka.support.BatchLoggingKafkaListener;
+import dev.vality.ccreporter.kafka.util.BatchLoggingKafkaListener;
 import dev.vality.damsel.domain_config_v2.HistoricalCommit;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;

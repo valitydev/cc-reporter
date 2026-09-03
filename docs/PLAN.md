@@ -162,7 +162,7 @@ Trx ID - идентификатор транзакции со стороны п�
     - `currency`
     - отдельные колонки `date` и `time`
     - `finalized_time`
-    - блок валютного пересчета (`original_amount`, `original_currency`, `converted_amount`, `exchange_rate_internal`, `provider_amount`)
+    - блок валютного пересчета (`original_amount`, `original_currency`, `converted_amount`, `converted_currency`, `exchange_rate_internal`, `provider_amount`)
 7. Форматирование `amount` должно корректно учитывать `exponent` валюты.
 8. Тип отчета должен состоять из бизнес-типа (`payments`/`withdrawals`) и типа файла (`csv`).
 9. Сейчас одному отчету соответствует ровно один итоговый файл.
@@ -306,7 +306,7 @@ Trx ID - идентификатор транзакции со стороны п�
 Меры снижения:
 
 1. Модель актуального состояния допускает частичное заполнение с последующим объединением данных.
-2. Для `payments` FX-блока (`original_amount`, `original_currency`, `converted_amount`, `exchange_rate_internal`, `provider_amount`, `provider_currency`) на первом проходе реализации допускается временное заполнение mock-значениями с явной пометкой `TODO`, пока не будет подтвержден окончательный источник этих полей.
+2. Для `payments` FX-блока (`original_amount`, `original_currency`, `converted_amount`, `converted_currency`, `exchange_rate_internal`, `provider_amount`, `provider_currency`) на первом проходе реализации допускается временное заполнение mock-значениями с явной пометкой `TODO`, пока не будет подтвержден окончательный источник этих полей.
 3. Это временное решение нужно трактовать именно как проектную заглушку, а не как финальный бизнес-контракт или окончательную модель хранения.
 4. Отчет всегда строится по последнему актуальному состоянию на момент `data_snapshot_fixed_at`.
 
